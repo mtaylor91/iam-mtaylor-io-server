@@ -1,0 +1,10 @@
+cradle:
+  stack:
+    - path: "./src"
+      component: "api-mtaylor-io:lib"
+
+    - path: "./app/Main.hs"
+      component: "api-mtaylor-io:exe:api-mtaylor-io-exe"
+
+    - path: "./test"
+      component: "api-mtaylor-io:test:api-mtaylor-io-test"

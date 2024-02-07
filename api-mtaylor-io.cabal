@@ -1,0 +1,101 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.36.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           api-mtaylor-io
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/mtaylor91/api-mtaylor-io#readme>
+homepage:       https://github.com/mtaylor91/api-mtaylor-io#readme
+bug-reports:    https://github.com/mtaylor91/api-mtaylor-io/issues
+author:         Mike Taylor
+maintainer:     mike.charles.taylor@gmail.com
+copyright:      2024 Mike Taylor
+license:        BSD-3-Clause
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/mtaylor91/api-mtaylor-io
+
+library
+  exposed-modules:
+      Lib
+      Lib.API
+      Lib.DB
+      Lib.Handlers
+      Lib.InMemory
+      Lib.Opts
+      Lib.Server
+      Lib.User
+  other-modules:
+      Paths_api_mtaylor_io
+  autogen-modules:
+      Paths_api_mtaylor_io
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , optparse-applicative
+    , servant-server
+    , stm
+    , text
+    , uuid
+    , wai
+    , warp
+  default-language: Haskell2010
+
+executable api-mtaylor-io
+  main-is: Main.hs
+  other-modules:
+      Paths_api_mtaylor_io
+  autogen-modules:
+      Paths_api_mtaylor_io
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , api-mtaylor-io
+    , base
+    , optparse-applicative
+    , servant-server
+    , stm
+    , text
+    , uuid
+    , wai
+    , warp
+  default-language: Haskell2010
+
+test-suite api-mtaylor-io-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_api_mtaylor_io
+  autogen-modules:
+      Paths_api_mtaylor_io
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , api-mtaylor-io
+    , base
+    , hspec
+    , hspec-wai
+    , hspec-wai-json
+    , optparse-applicative
+    , servant-server
+    , stm
+    , text
+    , uuid
+    , wai
+    , warp
+  default-language: Haskell2010

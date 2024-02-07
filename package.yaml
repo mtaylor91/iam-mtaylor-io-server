@@ -1,0 +1,73 @@
+name:                api-mtaylor-io
+version:             0.1.0.0
+github:              "mtaylor91/api-mtaylor-io"
+license:             BSD-3-Clause
+author:              "Mike Taylor"
+maintainer:          "mike.charles.taylor@gmail.com"
+copyright:           "2024 Mike Taylor"
+
+extra-source-files:
+- README.md
+- CHANGELOG.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/mtaylor91/api-mtaylor-io#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- aeson
+- optparse-applicative
+- servant-server
+- stm
+- text
+- uuid
+- wai
+- warp
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+
+library:
+  source-dirs: src
+
+executables:
+  api-mtaylor-io:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - base
+    - api-mtaylor-io
+
+tests:
+  api-mtaylor-io-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - base
+    - api-mtaylor-io
+    - hspec
+    - hspec-wai
+    - hspec-wai-json
+    - aeson
