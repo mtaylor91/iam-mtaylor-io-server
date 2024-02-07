@@ -28,6 +28,7 @@ library
       Lib
       Lib.API
       Lib.DB
+      Lib.Group
       Lib.Handlers
       Lib.InMemory
       Lib.Opts

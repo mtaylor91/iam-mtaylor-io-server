@@ -9,6 +9,7 @@ import Data.Text
 data User = User
   { userEmail :: !Text
   , userIsAdmin :: !Bool
+  , userGroups :: ![Text]
   } deriving (Eq, Show)
 
 $(deriveJSON defaultOptions ''User)

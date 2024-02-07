@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Lib.Opts ( options, run, Options(..) ) where
 
-import Control.Concurrent.STM
 import Options.Applicative
 
 import Lib.InMemory
@@ -27,8 +26,8 @@ options = Options
 
 runOptions :: Options -> IO ()
 runOptions opts = do
+  db <- inMemory
   putStrLn "Starting server..."
-  db <- InMemory <$> newTVarIO []
   startApp db (port opts)
 
 

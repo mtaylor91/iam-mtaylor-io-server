@@ -2,6 +2,7 @@ module Lib.DB ( DB(..) ) where
 
 import Data.Text
 
+import Lib.Group
 import Lib.User
 
 
@@ -21,3 +22,18 @@ class DB db where
 
   -- | deleteUser removes a user from the database by its email.
   deleteUser :: db -> Text -> IO ()
+
+  -- | getGroup returns a group from the database by its name.
+  getGroup :: db -> Text -> IO (Maybe Group)
+
+  -- | listGroups returns a list of all groups in the database.
+  listGroups :: db -> IO [Group]
+
+  -- | createGroup adds a new group to the database.
+  createGroup :: db -> Group -> IO ()
+
+  -- | updateGroup updates a group in the database.
+  updateGroup :: db -> Text -> Group -> IO ()
+
+  -- | deleteGroup removes a group from the database by its name.
+  deleteGroup :: db -> Text -> IO ()

@@ -1,8 +1,5 @@
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
-
-import Control.Concurrent.STM
 
 import Test.Hspec
 import Test.Hspec.Wai
@@ -13,7 +10,7 @@ import Lib.InMemory
 
 main :: IO ()
 main = do
-  db <- InMemory <$> newTVarIO []
+  db <- inMemory
   hspec $ spec db
 
 spec :: DB db => db -> Spec
