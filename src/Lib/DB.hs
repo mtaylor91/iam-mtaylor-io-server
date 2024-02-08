@@ -1,38 +1,57 @@
-module Lib.DB ( DB(..) ) where
+{-# LANGUAGE FlexibleContexts #-}
+module Lib.DB ( DB(..), DBError(..) ) where
 
 import Control.Monad.IO.Class
+import Control.Monad.Except
 
 import Lib.IAM
+
+
+data DBError
+  = AlreadyExists
+  | NotFound
+  | InternalError
+  deriving (Show, Eq)
 
 
 class DB db where
 
   -- | getUser returns a user from the database by its email.
-  getUser :: MonadIO m => db -> UserId -> m (Maybe User)
+  getUser :: (MonadIO m, MonadError DBError m) =>
+    db -> UserId -> m User
 
   -- | listUsers returns a list of all users in the database.
-  listUsers :: MonadIO m => db -> m [UserId]
+  listUsers :: (MonadIO m, MonadError DBError m) =>
+    db -> m [UserId]
 
   -- | createUser adds a new user to the database.
-  createUser :: MonadIO m => db -> UserId -> m (Maybe UserId)
+  createUser :: (MonadIO m, MonadError DBError m) =>
+    db -> UserId -> m ()
 
   -- | deleteUser removes a user from the database by its email.
-  deleteUser :: MonadIO m => db -> UserId -> m (Maybe UserId)
+  deleteUser :: (MonadIO m, MonadError DBError m) =>
+    db -> UserId -> m ()
 
   -- | getGroup returns a group from the database by its name.
-  getGroup :: MonadIO m => db -> GroupId -> m (Maybe Group)
+  getGroup :: (MonadIO m, MonadError DBError m) =>
+    db -> GroupId -> m Group
 
   -- | listGroups returns a list of all groups in the database.
-  listGroups :: MonadIO m => db -> m [GroupId]
+  listGroups :: (MonadIO m, MonadError DBError m) =>
+    db -> m [GroupId]
 
   -- | createGroup adds a new group to the database.
-  createGroup :: MonadIO m => db -> GroupId -> m (Maybe GroupId)
+  createGroup :: (MonadIO m, MonadError DBError m) =>
+    db -> GroupId -> m ()
 
   -- | deleteGroup removes a group from the database by its name.
-  deleteGroup :: MonadIO m => db -> GroupId -> m (Maybe GroupId)
+  deleteGroup :: (MonadIO m, MonadError DBError m) =>
+    db -> GroupId -> m ()
 
   -- | createMembership adds a user to a group.
-  createMembership :: MonadIO m => db -> UserId -> GroupId -> m (Maybe (UserId, GroupId))
+  createMembership :: (MonadIO m, MonadError DBError m) =>
+    db -> UserId -> GroupId -> m Membership
 
   -- | deleteMembership removes a user from a group.
-  deleteMembership :: MonadIO m => db -> UserId -> GroupId -> m (Maybe (UserId, GroupId))
+  deleteMembership :: (MonadIO m, MonadError DBError m) =>
+    db -> UserId -> GroupId -> m Membership

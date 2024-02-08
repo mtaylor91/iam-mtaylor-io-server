@@ -44,6 +44,7 @@ library
       aeson
     , base >=4.7 && <5
     , http-types
+    , mtl
     , optparse-applicative
     , servant-server
     , stm
@@ -67,6 +68,7 @@ executable api-mtaylor-io
     , api-mtaylor-io
     , base
     , http-types
+    , mtl
     , optparse-applicative
     , servant-server
     , stm
@@ -94,6 +96,7 @@ test-suite api-mtaylor-io-test
     , hspec-wai
     , hspec-wai-json
     , http-types
+    , mtl
     , optparse-applicative
     , servant-server
     , stm
