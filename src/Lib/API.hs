@@ -43,7 +43,7 @@ type GroupAPI
     )
 
 type MembershipsAPI
-  = ReqBody '[JSON] Membership :> Post '[JSON] Membership
+  = ReqBody '[JSON] Membership :> PostCreated '[JSON] Membership
   :<|> ( Capture "group" GroupId :> Capture "user" UserId :> Delete '[JSON] Membership )
 
 api :: Proxy API
