@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds       #-}
 {-# LANGUAGE TypeOperators   #-}
-module Lib.API ( api, usersAPI, groupsAPI, API ) where
+module Lib.API ( api, usersAPI, groupsAPI, membershipsAPI, API ) where
 
 import Servant
 
@@ -11,6 +11,7 @@ import Lib.IAM
 type API
   = ( "users" :> UsersAPI
   :<|> ( "groups" :> GroupsAPI )
+  :<|> ( "memberships" :> MembershipsAPI )
     )
 
 type UsersAPI
@@ -35,6 +36,10 @@ type GroupAPI
   :<|> Delete '[JSON] GroupId
     )
 
+type MembershipsAPI
+  = ReqBody '[JSON] Membership :> Post '[JSON] Membership
+  :<|> ( Capture "group" GroupId :> Capture "user" UserId :> Delete '[JSON] Membership )
+
 usersAPI :: DB db => db -> Server UsersAPI
 usersAPI db
   = listUsersHandler db
@@ -56,6 +61,11 @@ groupAPI :: DB db => db -> GroupId -> Server GroupAPI
 groupAPI db group
   = getGroupHandler db group
   :<|> deleteGroupHandler db group
+
+membershipsAPI :: DB db => db -> Server MembershipsAPI
+membershipsAPI db
+  = createMembershipHandler db
+  :<|> deleteMembershipHandler db
 
 api :: Proxy API
 api = Proxy

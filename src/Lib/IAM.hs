@@ -3,6 +3,7 @@
 module Lib.IAM
   ( User(..)
   , Group(..)
+  , Membership(..)
   , UserId(..)
   , GroupId(..)
   ) where
@@ -43,3 +44,11 @@ data Group = Group
   } deriving (Eq, Show)
 
 $(deriveJSON defaultOptions ''Group)
+
+
+data Membership = Membership
+  { userId :: !UserId
+  , groupId :: !GroupId
+  } deriving (Eq, Show)
+
+$(deriveJSON defaultOptions ''Membership)

@@ -7,6 +7,8 @@ module Lib.Handlers
   , listGroupsHandler
   , createGroupHandler
   , deleteGroupHandler
+  , createMembershipHandler
+  , deleteMembershipHandler
   ) where
 
 import Control.Monad.IO.Class
@@ -62,3 +64,17 @@ deleteGroupHandler db group = do
   case maybeGroup of
     Just group' -> return group'
     Nothing     -> throwError err404
+
+createMembershipHandler :: DB db => db -> Membership -> Handler Membership
+createMembershipHandler db (Membership user group) = do
+  maybeMembership <- liftIO $ createMembership db user group
+  case maybeMembership of
+    Just (user', group') -> return $ Membership user' group'
+    Nothing              -> throwError err409
+
+deleteMembershipHandler :: DB db => db -> GroupId -> UserId -> Handler Membership
+deleteMembershipHandler db group user = do
+  maybeMembership <- liftIO $ deleteMembership db user group
+  case maybeMembership of
+    Just (user', group') -> return $ Membership user' group'
+    Nothing              -> throwError err404

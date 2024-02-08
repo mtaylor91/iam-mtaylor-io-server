@@ -14,4 +14,4 @@ app :: DB db => db -> Application
 app db = serve api $ server db
 
 server :: DB db => db -> Server API
-server db = usersAPI db :<|> groupsAPI db
+server db = usersAPI db :<|> groupsAPI db :<|> membershipsAPI db
