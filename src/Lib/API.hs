@@ -16,7 +16,7 @@ type API
 
 type UsersAPI
   = ( Get '[JSON] [UserId]
-  :<|> ( ReqBody '[JSON] UserId :> Post '[JSON] UserId )
+  :<|> ( ReqBody '[JSON] UserId :> PostCreated '[JSON] UserId )
   :<|> ( Capture "email" UserId :> UserAPI )
     )
 
@@ -27,7 +27,7 @@ type UserAPI
 
 type GroupsAPI
   = ( Get '[JSON] [GroupId]
-  :<|> ( ReqBody '[JSON] GroupId :> Post '[JSON] GroupId )
+  :<|> ( ReqBody '[JSON] GroupId :> PostCreated '[JSON] GroupId )
   :<|> ( Capture "group" GroupId :> GroupAPI )
     )
 

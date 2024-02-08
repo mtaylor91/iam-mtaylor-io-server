@@ -43,6 +43,7 @@ library
   build-depends:
       aeson
     , base >=4.7 && <5
+    , http-types
     , optparse-applicative
     , servant-server
     , stm
@@ -65,6 +66,7 @@ executable api-mtaylor-io
       aeson
     , api-mtaylor-io
     , base
+    , http-types
     , optparse-applicative
     , servant-server
     , stm
@@ -91,6 +93,7 @@ test-suite api-mtaylor-io-test
     , hspec
     , hspec-wai
     , hspec-wai-json
+    , http-types
     , optparse-applicative
     , servant-server
     , stm
