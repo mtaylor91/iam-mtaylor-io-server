@@ -1,13 +1,14 @@
 module Lib.Server ( app, startApp ) where
 
+import Data.UUID
 import Network.Wai
 import Network.Wai.Handler.Warp
 import Servant
 
 import Lib.API
-import Lib.DB
 import Lib.Handlers
 import Lib.IAM
+import Lib.IAM.DB
 
 startApp :: DB db => db -> Int -> IO ()
 startApp db port = run port $ app db
@@ -16,7 +17,11 @@ app :: DB db => db -> Application
 app db = serve api $ server db
 
 server :: DB db => db -> Server API
-server db = usersAPI db :<|> groupsAPI db :<|> membershipsAPI db
+server db
+  = usersAPI db
+  :<|> groupsAPI db
+  :<|> policiesAPI db
+  :<|> membershipsAPI db
 
 usersAPI :: DB db => db -> Server UsersAPI
 usersAPI db
@@ -39,6 +44,17 @@ groupAPI :: DB db => db -> GroupId -> Server GroupAPI
 groupAPI db group
   = getGroupHandler db group
   :<|> deleteGroupHandler db group
+
+policiesAPI :: DB db => db -> Server PoliciesAPI
+policiesAPI db
+  = listPoliciesHandler db
+  :<|> createPolicyHandler db
+  :<|> policyAPI db
+
+policyAPI :: DB db => db -> UUID -> Server PolicyAPI
+policyAPI db pid
+  = getPolicyHandler db pid
+  :<|> deletePolicyHandler db pid
 
 membershipsAPI :: DB db => db -> Server MembershipsAPI
 membershipsAPI db

@@ -27,10 +27,10 @@ library
   exposed-modules:
       Lib
       Lib.API
-      Lib.DB
       Lib.Handlers
       Lib.IAM
-      Lib.InMemory
+      Lib.IAM.DB
+      Lib.IAM.DB.InMemory
       Lib.Opts
       Lib.Server
   other-modules:

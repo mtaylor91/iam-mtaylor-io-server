@@ -3,7 +3,7 @@ module Lib.Opts ( options, run, Options(..) ) where
 
 import Options.Applicative
 
-import Lib.InMemory
+import Lib.IAM.DB.InMemory
 import Lib.Server
 
 

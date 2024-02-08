@@ -7,9 +7,12 @@ module Lib.API
   , GroupAPI
   , UsersAPI
   , GroupsAPI
+  , PolicyAPI
+  , PoliciesAPI
   , MembershipsAPI
   ) where
 
+import Data.UUID
 import Servant
 
 import Lib.IAM
@@ -17,6 +20,7 @@ import Lib.IAM
 type API
   = ( "users" :> UsersAPI
   :<|> ( "groups" :> GroupsAPI )
+  :<|> ( "policies" :> PoliciesAPI )
   :<|> ( "memberships" :> MembershipsAPI )
     )
 
@@ -45,6 +49,17 @@ type GroupAPI
 type MembershipsAPI
   = ReqBody '[JSON] Membership :> PostCreated '[JSON] Membership
   :<|> ( Capture "group" GroupId :> Capture "user" UserId :> Delete '[JSON] Membership )
+
+type PoliciesAPI
+  = ( Get '[JSON] [UUID]
+  :<|> ( ReqBody '[JSON] Policy :> PostCreated '[JSON] Policy )
+  :<|> ( Capture "policy" UUID :> PolicyAPI )
+    )
+
+type PolicyAPI
+  = ( Get '[JSON] Policy
+  :<|> Delete '[JSON] Policy
+    )
 
 api :: Proxy API
 api = Proxy

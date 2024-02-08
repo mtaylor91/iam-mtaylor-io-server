@@ -1,8 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-}
-module Lib.DB ( DB(..), DBError(..) ) where
+module Lib.IAM.DB ( DB(..), DBError(..) ) where
 
 import Control.Monad.IO.Class
 import Control.Monad.Except
+import Data.UUID
 
 import Lib.IAM
 
@@ -48,6 +49,26 @@ class DB db where
   deleteGroup :: (MonadIO m, MonadError DBError m) =>
     db -> GroupId -> m ()
 
+  -- | getPolicy returns a policy from the database by its id.
+  getPolicy :: (MonadIO m, MonadError DBError m) =>
+    db -> UUID -> m Policy
+
+  -- | listPolicies returns a list of all policies in the database.
+  listPolicies :: (MonadIO m, MonadError DBError m) =>
+    db -> m [UUID]
+
+  -- | createPolicy adds a new policy to the database.
+  createPolicy :: (MonadIO m, MonadError DBError m) =>
+    db -> Policy -> m Policy
+
+  -- | updatePolicy updates an existing policy in the database.
+  updatePolicy :: (MonadIO m, MonadError DBError m) =>
+    db -> Policy -> m Policy
+
+  -- | deletePolicy removes a policy from the database by its name.
+  deletePolicy :: (MonadIO m, MonadError DBError m) =>
+    db -> UUID -> m Policy
+
   -- | createMembership adds a user to a group.
   createMembership :: (MonadIO m, MonadError DBError m) =>
     db -> UserId -> GroupId -> m Membership
@@ -55,3 +76,19 @@ class DB db where
   -- | deleteMembership removes a user from a group.
   deleteMembership :: (MonadIO m, MonadError DBError m) =>
     db -> UserId -> GroupId -> m Membership
+
+  -- | createUserPolicyAttachment attaches a policy to a user.
+  createUserPolicyAttachment :: (MonadIO m, MonadError DBError m) =>
+    db -> UserId -> UUID -> m UserPolicyAttachment
+
+  -- | deleteUserPolicyAttachment detaches a policy from a user.
+  deleteUserPolicyAttachment :: (MonadIO m, MonadError DBError m) =>
+    db -> UserId -> UUID -> m UserPolicyAttachment
+
+  -- | createGroupPolicyAttachment attaches a policy to a group.
+  createGroupPolicyAttachment :: (MonadIO m, MonadError DBError m) =>
+    db -> GroupId -> UUID -> m GroupPolicyAttachment
+
+  -- | deleteGroupPolicyAttachment detaches a policy from a group.
+  deleteGroupPolicyAttachment :: (MonadIO m, MonadError DBError m) =>
+    db -> GroupId -> UUID -> m GroupPolicyAttachment

@@ -2,15 +2,22 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 module Lib.IAM
   ( User(..)
-  , Group(..)
-  , Membership(..)
   , UserId(..)
+  , Group(..)
   , GroupId(..)
+  , Effect(..)
+  , Action(..)
+  , Policy(..)
+  , PolicyRule(..)
+  , UserPolicyAttachment(UserPolicyAttachment)
+  , GroupPolicyAttachment(GroupPolicyAttachment)
+  , Membership(..)
   ) where
 
 import Data.Aeson
 import Data.Aeson.TH
 import Data.Text
+import Data.UUID
 import Servant
 
 
@@ -52,3 +59,46 @@ data Membership = Membership
   } deriving (Eq, Show)
 
 $(deriveJSON defaultOptions ''Membership)
+
+
+data Effect = Allow | Deny deriving (Eq, Show)
+
+$(deriveJSON defaultOptions ''Effect)
+
+
+data Action = Read | Write | Delete deriving (Eq, Show)
+
+$(deriveJSON defaultOptions ''Action)
+
+
+data PolicyRule = PolicyRule
+  { effect :: !Effect
+  , action :: !Action
+  , resource :: !Text
+  } deriving (Eq, Show)
+
+$(deriveJSON defaultOptions ''PolicyRule)
+
+
+data Policy = Policy
+  { policyId :: !UUID
+  , statements :: ![PolicyRule]
+  } deriving (Eq, Show)
+
+$(deriveJSON defaultOptions ''Policy)
+
+
+data UserPolicyAttachment = UserPolicyAttachment
+  { userId :: !UserId
+  , policyId :: !UUID
+  } deriving (Eq, Show)
+
+$(deriveJSON defaultOptions ''UserPolicyAttachment)
+
+
+data GroupPolicyAttachment = GroupPolicyAttachment
+  { groupId :: !GroupId
+  , policyId :: !UUID
+  } deriving (Eq, Show)
+
+$(deriveJSON defaultOptions ''GroupPolicyAttachment)

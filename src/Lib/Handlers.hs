@@ -7,16 +7,21 @@ module Lib.Handlers
   , listGroupsHandler
   , createGroupHandler
   , deleteGroupHandler
+  , getPolicyHandler
+  , listPoliciesHandler
+  , createPolicyHandler
+  , deletePolicyHandler
   , createMembershipHandler
   , deleteMembershipHandler
   ) where
 
 import Control.Monad.IO.Class
 import Control.Monad.Except
+import Data.UUID
 import Servant
 
-import Lib.DB
 import Lib.IAM
+import Lib.IAM.DB
 
 dbError :: DBError -> ServerError
 dbError AlreadyExists = err409
@@ -78,6 +83,34 @@ deleteGroupHandler db group = do
   case result of
     Right () -> return group
     Left err -> throwError $ dbError err
+
+getPolicyHandler :: DB db => db -> UUID -> Handler Policy
+getPolicyHandler db policy = do
+  result <- liftIO $ runExceptT $ getPolicy db policy
+  case result of
+    Right policy' -> return policy'
+    Left err      -> throwError $ dbError err
+
+listPoliciesHandler :: DB db => db -> Handler [UUID]
+listPoliciesHandler db = do
+  result <- liftIO $ runExceptT $ listPolicies db
+  case result of
+    Right policies' -> return policies'
+    Left err        -> throwError $ dbError err
+
+createPolicyHandler :: DB db => db -> Policy -> Handler Policy
+createPolicyHandler db policy = do
+  result <- liftIO $ runExceptT $ createPolicy db policy
+  case result of
+    Right policy' -> return policy'
+    Left err      -> throwError $ dbError err
+
+deletePolicyHandler :: DB db => db -> UUID -> Handler Policy
+deletePolicyHandler db policy = do
+  result <- liftIO $ runExceptT $ deletePolicy db policy
+  case result of
+    Right policy' -> return policy'
+    Left err      -> throwError $ dbError err
 
 createMembershipHandler :: DB db => db -> Membership -> Handler Membership
 createMembershipHandler db (Membership user group) = do
