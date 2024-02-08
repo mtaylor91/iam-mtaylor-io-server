@@ -28,12 +28,11 @@ library
       Lib
       Lib.API
       Lib.DB
-      Lib.Group
       Lib.Handlers
+      Lib.IAM
       Lib.InMemory
       Lib.Opts
       Lib.Server
-      Lib.User
   other-modules:
       Paths_api_mtaylor_io
   autogen-modules:

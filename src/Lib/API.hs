@@ -2,13 +2,11 @@
 {-# LANGUAGE TypeOperators   #-}
 module Lib.API ( api, usersAPI, groupsAPI, API ) where
 
-import Data.Text
 import Servant
 
 import Lib.DB
-import Lib.Group
 import Lib.Handlers
-import Lib.User
+import Lib.IAM
 
 type API
   = ( "users" :> UsersAPI
@@ -16,27 +14,25 @@ type API
     )
 
 type UsersAPI
-  = ( Get '[JSON] [User]
-  :<|> ( ReqBody '[JSON] User :> Post '[JSON] User )
-  :<|> ( Capture "email" Text :> UserAPI )
+  = ( Get '[JSON] [UserId]
+  :<|> ( ReqBody '[JSON] UserId :> Post '[JSON] UserId )
+  :<|> ( Capture "email" UserId :> UserAPI )
     )
 
 type UserAPI
   = ( Get '[JSON] User
-  :<|> ( ReqBody '[JSON] User :> Put '[JSON] User )
-  :<|> Delete '[JSON] (Maybe User)
+  :<|> Delete '[JSON] UserId
     )
 
 type GroupsAPI
-  = ( Get '[JSON] [Group]
-  :<|> ( ReqBody '[JSON] Group :> Post '[JSON] Group )
-  :<|> ( Capture "group" Text :> GroupAPI )
+  = ( Get '[JSON] [GroupId]
+  :<|> ( ReqBody '[JSON] GroupId :> Post '[JSON] GroupId )
+  :<|> ( Capture "group" GroupId :> GroupAPI )
     )
 
 type GroupAPI
   = ( Get '[JSON] Group
-  :<|> ( ReqBody '[JSON] Group :> Put '[JSON] Group )
-  :<|> Delete '[JSON] (Maybe Group)
+  :<|> Delete '[JSON] GroupId
     )
 
 usersAPI :: DB db => db -> Server UsersAPI
@@ -45,11 +41,10 @@ usersAPI db
   :<|> createUserHandler db
   :<|> userAPI db
 
-userAPI :: DB db => db -> Text -> Server UserAPI
-userAPI db email
-  = getUserHandler db email
-  :<|> updateUserHandler db email
-  :<|> deleteUserHandler db email
+userAPI :: DB db => db -> UserId -> Server UserAPI
+userAPI db user
+  = getUserHandler db user
+  :<|> deleteUserHandler db user
 
 groupsAPI :: DB db => db -> Server GroupsAPI
 groupsAPI db
@@ -57,11 +52,10 @@ groupsAPI db
   :<|> createGroupHandler db
   :<|> groupAPI db
 
-groupAPI :: DB db => db -> Text -> Server GroupAPI
-groupAPI db name
-  = getGroupHandler db name
-  :<|> updateGroupHandler db name
-  :<|> deleteGroupHandler db name
+groupAPI :: DB db => db -> GroupId -> Server GroupAPI
+groupAPI db group
+  = getGroupHandler db group
+  :<|> deleteGroupHandler db group
 
 api :: Proxy API
 api = Proxy
