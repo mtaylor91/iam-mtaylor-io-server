@@ -46,15 +46,15 @@ createUserHandler :: DB db => db -> UserId -> Handler UserId
 createUserHandler db user = do
   result <- liftIO $ runExceptT $ createUser db user
   case result of
-    Right () -> return user
-    Left err -> throwError $ dbError err
+    Right user' -> return user'
+    Left err    -> throwError $ dbError err
 
 deleteUserHandler :: DB db => db -> UserId -> Handler UserId
 deleteUserHandler db user = do
   result <- liftIO $ runExceptT $ deleteUser db user
   case result of
-    Right () -> return user
-    Left err -> throwError $ dbError err
+    Right user' -> return user'
+    Left err    -> throwError $ dbError err
 
 getGroupHandler :: DB db => db -> GroupId -> Handler Group
 getGroupHandler db group = do

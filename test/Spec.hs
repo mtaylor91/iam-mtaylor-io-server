@@ -26,22 +26,31 @@ spec db = with (return $ app db) $ do
   describe "GET /users" $ do
     it "responds with 200" $ do
       get "/users" `shouldRespondWith` 200
-  describe "POST /users" $ do
+  describe "POST /users with email address" $ do
     it "responds with 201" $ do
       let headers = [("Content-Type", "application/json")]
-      let userIdJSON = "{\"email\": \"bob@example.com\"}"
+          uid = UserEmail "bob@example.com"
+          userIdJSON = encode uid
       request methodPost "/users" headers userIdJSON `shouldRespondWith` 201
-      r <- liftIO $ runExceptT $ deleteUser db $ UserEmailId "bob@example.com"
-      liftIO $ r `shouldBe` Right ()
+      r <- liftIO $ runExceptT $ deleteUser db $ uid
+      liftIO $ r `shouldBe` Right uid
+  describe "POST /users with UUID" $ do
+    it "responds with 201" $ do
+      let headers = [("Content-Type", "application/json")]
+      uuid <- liftIO nextRandom
+      let userIdJSON = encode $ UserUUID uuid
+      request methodPost "/users" headers userIdJSON `shouldRespondWith` 201
+      r <- liftIO $ runExceptT $ deleteUser db $ UserUUID uuid
+      liftIO $ r `shouldBe` (Right $ UserUUID uuid)
   describe "GET /groups" $ do
     it "responds with 200" $ do
       get "/groups" `shouldRespondWith` 200
   describe "POST /groups" $ do
     it "responds with 201" $ do
       let headers = [("Content-Type", "application/json")]
-      let groupIdJSON = "{\"name\": \"admins\"}"
+      let groupIdJSON = "\"admins\""
       request methodPost "/groups" headers groupIdJSON `shouldRespondWith` 201
-      r <- liftIO $ runExceptT $ deleteGroup db $ GroupNameId "admins"
+      r <- liftIO $ runExceptT $ deleteGroup db $ GroupName "admins"
       liftIO $ r `shouldBe` Right ()
   describe "GET /policies" $ do
     it "responds with 200" $ do

@@ -51,7 +51,7 @@ instance DB InMemory where
         then return $ Left AlreadyExists
         else do
           modifyTVar' tvar addUser
-          return $ Right ()
+          return $ Right uid
     either throwError return result
     where
       addUser s = s { users = uid : users s }
@@ -62,11 +62,15 @@ instance DB InMemory where
       if uid `elem` users s
         then do
           modifyTVar' tvar delUser
-          return $ Right ()
+          return $ Right uid
         else return $ Left NotFound
     either throwError return result
     where
-      delUser s = s { users = filter (/= uid) $ users s }
+      delUser s = s
+        { users = filter (/= uid) $ users s
+        , memberships = filter ((/= uid) . fst) $ memberships s
+        , userPolicyAttachments = filter ((/= uid) . fst) $ userPolicyAttachments s
+        }
 
   getGroup (InMemory tvar) gid = do
     maybeGroup <- liftIO $ atomically $ do
@@ -103,7 +107,11 @@ instance DB InMemory where
         else return $ Left NotFound
     either throwError return result
     where
-      delGroup s = s { groups = filter (/= gid) $ groups s }
+      delGroup s = s
+        { groups = filter (/= gid) $ groups s
+        , memberships = filter ((/= gid) . snd) $ memberships s
+        , groupPolicyAttachments = filter ((/= gid) . fst) $ groupPolicyAttachments s
+        }
 
   getPolicy (InMemory tvar) pid = do
     maybePolicy <- liftIO $ atomically $ do
@@ -151,7 +159,11 @@ instance DB InMemory where
           return $ Right policy
     either throwError return result
     where
-      delPolicy s = s { policies = filter ((/= pid) . policyId) $ policies s }
+      delPolicy s = s
+        { policies = filter ((/= pid) . policyId) $ policies s
+        , userPolicyAttachments = filter ((/= pid) . snd) $ userPolicyAttachments s
+        , groupPolicyAttachments = filter ((/= pid) . snd) $ groupPolicyAttachments s
+        }
 
   createMembership (InMemory tvar) uid gid = do
     result <- liftIO $ atomically $ do

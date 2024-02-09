@@ -21,20 +21,26 @@ import Data.UUID
 import Servant
 
 
-newtype UserId = UserEmailId { email :: Text } deriving (Eq, Show)
+data UserId
+  = UserUUID !UUID
+  | UserEmail !Text
+  deriving (Eq, Show)
 
-$(deriveJSON defaultOptions ''UserId)
+$(deriveJSON defaultOptions { sumEncoding = UntaggedValue } ''UserId)
 
 instance FromHttpApiData UserId where
-  parseUrlPiece = Right . UserEmailId
+  parseUrlPiece = Right . UserEmail
 
 
-newtype GroupId = GroupNameId { name :: Text } deriving (Eq, Show)
+data GroupId
+  = GroupUUID !UUID
+  | GroupName !Text
+  deriving (Eq, Show)
 
-$(deriveJSON defaultOptions ''GroupId)
+$(deriveJSON defaultOptions { sumEncoding = UntaggedValue } ''GroupId)
 
 instance FromHttpApiData GroupId where
-  parseUrlPiece = Right . GroupNameId
+  parseUrlPiece = Right . GroupName
 
 
 data User = User

@@ -27,11 +27,11 @@ class DB db where
 
   -- | createUser adds a new user to the database.
   createUser :: (MonadIO m, MonadError DBError m) =>
-    db -> UserId -> m ()
+    db -> UserId -> m UserId
 
   -- | deleteUser removes a user from the database by its email.
   deleteUser :: (MonadIO m, MonadError DBError m) =>
-    db -> UserId -> m ()
+    db -> UserId -> m UserId
 
   -- | getGroup returns a group from the database by its name.
   getGroup :: (MonadIO m, MonadError DBError m) =>
