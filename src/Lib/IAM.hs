@@ -8,7 +8,7 @@ module Lib.IAM
   , Effect(..)
   , Action(..)
   , Policy(..)
-  , PolicyRule(..)
+  , Rule(..)
   , UserPolicyAttachment(UserPolicyAttachment)
   , GroupPolicyAttachment(GroupPolicyAttachment)
   , Membership(..)
@@ -71,18 +71,18 @@ data Action = Read | Write | Delete deriving (Eq, Show)
 $(deriveJSON defaultOptions ''Action)
 
 
-data PolicyRule = PolicyRule
+data Rule = Rule
   { effect :: !Effect
   , action :: !Action
   , resource :: !Text
   } deriving (Eq, Show)
 
-$(deriveJSON defaultOptions ''PolicyRule)
+$(deriveJSON defaultOptions ''Rule)
 
 
 data Policy = Policy
   { policyId :: !UUID
-  , statements :: ![PolicyRule]
+  , statements :: ![Rule]
   } deriving (Eq, Show)
 
 $(deriveJSON defaultOptions ''Policy)

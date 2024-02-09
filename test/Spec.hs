@@ -50,9 +50,7 @@ spec db = with (return $ app db) $ do
     it "responds with 201" $ do
       pid <- liftIO $ nextRandom
       let headers = [("Content-Type", "application/json")]
-      let allowRead = PolicyRule Allow Read "*"
-          allowWrite = PolicyRule Allow Write "*"
-          policy = Policy pid [allowRead, allowWrite]
+          policy = Policy pid [Rule Allow Read "*", Rule Allow Write "*"]
           policyJSON = encode policy
       request methodPost "/policies" headers policyJSON `shouldRespondWith` 201
       r <- liftIO $ runExceptT $ deletePolicy db pid
