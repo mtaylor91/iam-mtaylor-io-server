@@ -35,29 +35,29 @@ userAPI db caller uid
   = getUserHandler db caller uid
   :<|> deleteUserHandler db caller uid
 
-groupsAPI :: DB db => db -> Server GroupsAPI
-groupsAPI db
-  = listGroupsHandler db
-  :<|> createGroupHandler db
-  :<|> groupAPI db
+groupsAPI :: DB db => db -> User -> Server GroupsAPI
+groupsAPI db caller
+  = listGroupsHandler db caller
+  :<|> createGroupHandler db caller
+  :<|> groupAPI db caller
 
-groupAPI :: DB db => db -> GroupId -> Server GroupAPI
-groupAPI db group
-  = getGroupHandler db group
-  :<|> deleteGroupHandler db group
+groupAPI :: DB db => db -> User -> GroupId -> Server GroupAPI
+groupAPI db caller gid
+  = getGroupHandler db caller gid
+  :<|> deleteGroupHandler db caller gid
 
-policiesAPI :: DB db => db -> Server PoliciesAPI
-policiesAPI db
-  = listPoliciesHandler db
-  :<|> createPolicyHandler db
-  :<|> policyAPI db
+policiesAPI :: DB db => db -> User -> Server PoliciesAPI
+policiesAPI db caller
+  = listPoliciesHandler db caller
+  :<|> createPolicyHandler db caller
+  :<|> policyAPI db caller
 
-policyAPI :: DB db => db -> UUID -> Server PolicyAPI
-policyAPI db pid
-  = getPolicyHandler db pid
-  :<|> deletePolicyHandler db pid
+policyAPI :: DB db => db -> User -> UUID -> Server PolicyAPI
+policyAPI db caller pid
+  = getPolicyHandler db caller pid
+  :<|> deletePolicyHandler db caller pid
 
-membershipsAPI :: DB db => db -> Server MembershipsAPI
-membershipsAPI db
-  = createMembershipHandler db
-  :<|> deleteMembershipHandler db
+membershipsAPI :: DB db => db -> User -> Server MembershipsAPI
+membershipsAPI db caller
+  = createMembershipHandler db caller
+  :<|> deleteMembershipHandler db caller

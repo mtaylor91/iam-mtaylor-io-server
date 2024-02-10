@@ -19,9 +19,9 @@ import Lib.IAM
 
 type API
   = ( "users" :> AuthProtect "signature-auth" :> UsersAPI
-  :<|> ( "groups" :> GroupsAPI )
-  :<|> ( "policies" :> PoliciesAPI )
-  :<|> ( "memberships" :> MembershipsAPI )
+  :<|> ( "groups" :> AuthProtect "signature-auth" :> GroupsAPI )
+  :<|> ( "policies" :> AuthProtect "signature-auth" :> PoliciesAPI )
+  :<|> ( "memberships" :> AuthProtect "signature-auth" :> MembershipsAPI )
     )
 
 type UsersAPI

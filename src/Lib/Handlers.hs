@@ -56,71 +56,71 @@ deleteUserHandler db _ uid = do
     Right user' -> return user'
     Left err    -> throwError $ dbError err
 
-getGroupHandler :: DB db => db -> GroupId -> Handler Group
-getGroupHandler db gid = do
+getGroupHandler :: DB db => db -> User -> GroupId -> Handler Group
+getGroupHandler db _ gid = do
   result <- liftIO $ runExceptT $ getGroup db gid
   case result of
     Right group' -> return group'
     Left err     -> throwError $ dbError err
 
-listGroupsHandler :: DB db => db -> Handler [GroupId]
-listGroupsHandler db = do
+listGroupsHandler :: DB db => db -> User -> Handler [GroupId]
+listGroupsHandler db _ = do
   result <- liftIO $ runExceptT $ listGroups db
   case result of
     Right groups' -> return groups'
     Left err      -> throwError $ dbError err
 
-createGroupHandler :: DB db => db -> Group -> Handler Group
-createGroupHandler db group = do
+createGroupHandler :: DB db => db -> User -> Group -> Handler Group
+createGroupHandler db _ group = do
   result <- liftIO $ runExceptT $ createGroup db group
   case result of
     Right group' -> return group'
     Left err -> throwError $ dbError err
 
-deleteGroupHandler :: DB db => db -> GroupId -> Handler GroupId
-deleteGroupHandler db gid = do
+deleteGroupHandler :: DB db => db -> User -> GroupId -> Handler GroupId
+deleteGroupHandler db _ gid = do
   result <- liftIO $ runExceptT $ deleteGroup db gid
   case result of
     Right () -> return gid
     Left err -> throwError $ dbError err
 
-getPolicyHandler :: DB db => db -> UUID -> Handler Policy
-getPolicyHandler db policy = do
+getPolicyHandler :: DB db => db -> User -> UUID -> Handler Policy
+getPolicyHandler db _ policy = do
   result <- liftIO $ runExceptT $ getPolicy db policy
   case result of
     Right policy' -> return policy'
     Left err      -> throwError $ dbError err
 
-listPoliciesHandler :: DB db => db -> Handler [UUID]
-listPoliciesHandler db = do
+listPoliciesHandler :: DB db => db -> User -> Handler [UUID]
+listPoliciesHandler db _ = do
   result <- liftIO $ runExceptT $ listPolicies db
   case result of
     Right policies' -> return policies'
     Left err        -> throwError $ dbError err
 
-createPolicyHandler :: DB db => db -> Policy -> Handler Policy
-createPolicyHandler db policy = do
+createPolicyHandler :: DB db => db -> User -> Policy -> Handler Policy
+createPolicyHandler db _ policy = do
   result <- liftIO $ runExceptT $ createPolicy db policy
   case result of
     Right policy' -> return policy'
     Left err      -> throwError $ dbError err
 
-deletePolicyHandler :: DB db => db -> UUID -> Handler Policy
-deletePolicyHandler db policy = do
+deletePolicyHandler :: DB db => db -> User -> UUID -> Handler Policy
+deletePolicyHandler db _ policy = do
   result <- liftIO $ runExceptT $ deletePolicy db policy
   case result of
     Right policy' -> return policy'
     Left err      -> throwError $ dbError err
 
-createMembershipHandler :: DB db => db -> Membership -> Handler Membership
-createMembershipHandler db (Membership uid gid) = do
+createMembershipHandler :: DB db => db -> User -> Membership -> Handler Membership
+createMembershipHandler db _ (Membership uid gid) = do
   result <- liftIO $ runExceptT $ createMembership db uid gid
   case result of
     Right membership -> return membership
     Left err         -> throwError $ dbError err
 
-deleteMembershipHandler :: DB db => db -> GroupId -> UserId -> Handler Membership
-deleteMembershipHandler db gid uid = do
+deleteMembershipHandler :: DB db => db -> User -> GroupId -> UserId -> Handler Membership
+deleteMembershipHandler db _ gid uid = do
   result <- liftIO $ runExceptT $ deleteMembership db uid gid
   case result of
     Right membership -> return membership
