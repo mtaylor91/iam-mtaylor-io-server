@@ -27,8 +27,19 @@ import Lib.IAM.Policy
 
 
 data Auth = Auth
+  { authentication :: !Authentication
+  , authorization :: !Authorization
+  } deriving (Eq, Show)
+
+
+data Authentication = Authentication
   { authUser :: !User
   , authRequest :: !AuthRequest
+  } deriving (Eq, Show)
+
+
+newtype Authorization = Authorization
+  { authPolicies :: [Policy]
   } deriving (Eq, Show)
 
 
@@ -50,33 +61,33 @@ authContext db = authHandler db :. EmptyContext
 authHandler :: DB db => db -> AuthHandler Request Auth
 authHandler db = mkAuthHandler $ \req -> do
   (authReq, user) <- authenticate db req
-  authorize db req $ Auth user authReq
+  authorize db req $ Authentication user authReq
 
 
 authenticate :: DB db => db -> Request -> Handler (AuthRequest, User)
 authenticate db req =
   let maybeAuth = do
         userIdString <- lookup "X-User-Id" (requestHeaders req)
-        authorization <- lookup "Authorization" (requestHeaders req)
+        authHeader <- lookup "Authorization" (requestHeaders req)
         publicKeyBase64 <- lookup "X-Public-Key" (requestHeaders req)
         requestIdString <- lookup "X-Request-Id" (requestHeaders req)
         uid <- parseUserId $ decodeUtf8 userIdString
         pk <- parsePublicKey publicKeyBase64
         requestId <- fromString $ unpack $ decodeUtf8 requestIdString
-        return $ AuthRequest authorization uid pk requestId
+        return $ AuthRequest authHeader uid pk requestId
    in case maybeAuth of
     Just authReq -> do
       result <- liftIO $ runExceptT $ getUser db $ authRequestUserId authReq
       case result of
         Right user -> do
-          let authorization = authRequestHeader authReq
+          let authHeader = authRequestHeader authReq
               method = requestMethod req
               path = rawPathInfo req
               query = rawQueryString req
               stringToSign = authStringToSign method path query requestId
               requestId = authRequestId authReq
               pk = authRequestPublicKey authReq
-          if verifySignature user pk authorization stringToSign
+          if verifySignature user pk authHeader stringToSign
             then return (authReq, user)
             else throwError err401
         Left NotFound -> throwError err401
@@ -84,13 +95,13 @@ authenticate db req =
     Nothing -> throwError err401
 
 
-authorize :: DB db => db -> Request -> Auth -> Handler Auth
+authorize :: DB db => db -> Request -> Authentication -> Handler Auth
 authorize db req auth = do
   policiesResult <- liftIO $ runExceptT $ listPoliciesForUser db callerUserId
   case policiesResult of
     Right policies -> do
       if authorized req policies
-        then return auth
+        then return $ Auth auth $ Authorization policies
         else throwError err403
     Left _ -> throwError err500
   where
@@ -130,9 +141,9 @@ parseUserId s =
 
 
 verifySignature :: User -> PublicKey -> ByteString -> ByteString -> Bool
-verifySignature user pk authorization stringToSign =
+verifySignature user pk authHeader stringToSign =
   pk `elem` userPublicKeys user
-  && verifySignature' (decodeSignature =<< extractSignature authorization)
+  && verifySignature' (decodeSignature =<< extractSignature authHeader)
     where
       verifySignature' :: Maybe Signature -> Bool
       verifySignature' (Just sig) = dverify pk stringToSign sig
