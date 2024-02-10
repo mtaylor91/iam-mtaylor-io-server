@@ -2,7 +2,12 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Lib.Auth (authContext, authHandler, authStringToSign) where
+module Lib.Auth
+  ( authContext
+  , authHandler
+  , authStringToSign
+  , Auth(..)
+  ) where
 
 import Control.Monad.Except
 import Crypto.Sign.Ed25519
@@ -20,40 +25,62 @@ import Lib.IAM
 import Lib.IAM.DB
 
 
-type instance AuthServerData (AuthProtect "signature-auth") = User
+data Auth = Auth
+  { authUser :: !User
+  , authRequest :: !AuthRequest
+  } deriving (Eq, Show)
 
 
-authContext :: DB db => db -> Context (AuthHandler Request User ': '[])
+data AuthRequest = AuthRequest
+  { authRequestHeader :: !ByteString
+  , authRequestUserId :: !UserId
+  , authRequestPublicKey :: !PublicKey
+  , authRequestId :: !UUID
+  } deriving (Eq, Show)
+
+
+type instance AuthServerData (AuthProtect "signature-auth") = Auth
+
+
+authContext :: DB db => db -> Context (AuthHandler Request Auth ': '[])
 authContext db = authHandler db :. EmptyContext
 
 
-authHandler :: DB db => db -> AuthHandler Request User
-authHandler db = mkAuthHandler handler where
-  handler :: Request -> Handler User
-  handler req =
-    let maybeAuthHeader = lookup "Authorization" (requestHeaders req)
-        maybeUserIdString = lookup "X-User-Id" (requestHeaders req)
-        maybePublicKeyBase64 = lookup "X-Public-Key" (requestHeaders req)
-     in case (maybeAuthHeader, maybeUserIdString, maybePublicKeyBase64) of
-      (Just authHeader, Just userIdString, Just publicKeyBase64) ->
-        let maybeUserId = parseUserId $ decodeUtf8 userIdString
-            maybePublicKey = parsePublicKey publicKeyBase64
-         in case (maybeUserId, maybePublicKey) of
-          (Just uid, Just pk) -> do
-            result <- liftIO $ runExceptT $ getUser db uid
-            case result of
-              Right user -> do
-                let method = requestMethod req
-                    path = rawPathInfo req
-                    query = rawQueryString req
-                    stringToSign = authStringToSign method path query
-                if verifySignature user pk authHeader stringToSign
-                  then return user
-                  else throwError err401
-              Left NotFound -> throwError err401
-              Left _ -> throwError err500
-          (_, _) -> throwError err401
-      (_, _, _) -> throwError err401
+authHandler :: DB db => db -> AuthHandler Request Auth
+authHandler db = mkAuthHandler $ \req -> do
+  (authReq, user) <- authenticate db req
+  return $ Auth user authReq
+
+
+authenticate :: DB db => db -> Request -> Handler (AuthRequest, User)
+authenticate db req =
+  let maybeAuth = do
+        userIdString <- lookup "X-User-Id" (requestHeaders req)
+        authorization <- lookup "Authorization" (requestHeaders req)
+        publicKeyBase64 <- lookup "X-Public-Key" (requestHeaders req)
+        requestIdString <- lookup "X-Request-Id" (requestHeaders req)
+        uid <- parseUserId $ decodeUtf8 userIdString
+        pk <- parsePublicKey publicKeyBase64
+        requestId <- fromString $ unpack $ decodeUtf8 requestIdString
+        return $ AuthRequest authorization uid pk requestId
+   in case maybeAuth of
+    Just authReq -> do
+      result <- liftIO $ runExceptT $ getUser db $ authRequestUserId authReq
+      case result of
+        Right user -> do
+          let authorization = authRequestHeader authReq
+              method = requestMethod req
+              path = rawPathInfo req
+              query = rawQueryString req
+              stringToSign = authStringToSign method path query requestId
+              requestId = authRequestId authReq
+              pk = authRequestPublicKey authReq
+          if verifySignature user pk authorization stringToSign
+            then return (authReq, user)
+            else throwError err401
+        Left NotFound -> throwError err401
+        Left _ -> throwError err500
+    Nothing -> throwError err401
 
 
 parsePublicKey :: ByteString -> Maybe PublicKey
@@ -71,9 +98,9 @@ parseUserId s =
 
 
 verifySignature :: User -> PublicKey -> ByteString -> ByteString -> Bool
-verifySignature user pk authHeader stringToSign =
+verifySignature user pk authorization stringToSign =
   pk `elem` userPublicKeys user
-  && verifySignature' (decodeSignature =<< extractSignature authHeader)
+  && verifySignature' (decodeSignature =<< extractSignature authorization)
     where
       verifySignature' :: Maybe Signature -> Bool
       verifySignature' (Just sig) = dverify pk stringToSign sig
@@ -97,5 +124,6 @@ decodeSignature s =
 
 
 -- | Auth string to sign
-authStringToSign :: Method -> ByteString -> ByteString -> ByteString
-authStringToSign method path query = method <> "\n" <> path <> "\n" <> query
+authStringToSign :: Method -> ByteString -> ByteString -> UUID -> ByteString
+authStringToSign method path query requestId =
+  method <> "\n" <> path <> "\n" <> query <> "\n" <> encodeUtf8 (toText requestId)

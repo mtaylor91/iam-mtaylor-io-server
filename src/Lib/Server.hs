@@ -24,40 +24,40 @@ server db
   :<|> policiesAPI db
   :<|> membershipsAPI db
 
-usersAPI :: DB db => db -> User -> Server UsersAPI
+usersAPI :: DB db => db -> Auth -> Server UsersAPI
 usersAPI db caller
   = listUsersHandler db caller
   :<|> createUserHandler db caller
   :<|> userAPI db caller
 
-userAPI :: DB db => db -> User -> UserId -> Server UserAPI
+userAPI :: DB db => db -> Auth -> UserId -> Server UserAPI
 userAPI db caller uid
   = getUserHandler db caller uid
   :<|> deleteUserHandler db caller uid
 
-groupsAPI :: DB db => db -> User -> Server GroupsAPI
+groupsAPI :: DB db => db -> Auth -> Server GroupsAPI
 groupsAPI db caller
   = listGroupsHandler db caller
   :<|> createGroupHandler db caller
   :<|> groupAPI db caller
 
-groupAPI :: DB db => db -> User -> GroupId -> Server GroupAPI
+groupAPI :: DB db => db -> Auth -> GroupId -> Server GroupAPI
 groupAPI db caller gid
   = getGroupHandler db caller gid
   :<|> deleteGroupHandler db caller gid
 
-policiesAPI :: DB db => db -> User -> Server PoliciesAPI
+policiesAPI :: DB db => db -> Auth -> Server PoliciesAPI
 policiesAPI db caller
   = listPoliciesHandler db caller
   :<|> createPolicyHandler db caller
   :<|> policyAPI db caller
 
-policyAPI :: DB db => db -> User -> UUID -> Server PolicyAPI
+policyAPI :: DB db => db -> Auth -> UUID -> Server PolicyAPI
 policyAPI db caller pid
   = getPolicyHandler db caller pid
   :<|> deletePolicyHandler db caller pid
 
-membershipsAPI :: DB db => db -> User -> Server MembershipsAPI
+membershipsAPI :: DB db => db -> Auth -> Server MembershipsAPI
 membershipsAPI db caller
   = createMembershipHandler db caller
   :<|> deleteMembershipHandler db caller
