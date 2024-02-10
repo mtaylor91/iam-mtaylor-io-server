@@ -51,6 +51,12 @@ groupAPI :: DB db => db -> Auth -> GroupId -> Server GroupAPI
 groupAPI db caller gid
   = getGroupHandler db caller gid
   :<|> deleteGroupHandler db caller gid
+  :<|> groupPolicyAPI db caller gid
+
+groupPolicyAPI :: DB db => db -> Auth -> GroupId -> UUID -> Server GroupPolicyAPI
+groupPolicyAPI db caller gid pid
+  = createGroupPolicyAttachmentHandler db caller gid pid
+  :<|> deleteGroupPolicyAttachmentHandler db caller gid pid
 
 policiesAPI :: DB db => db -> Auth -> Server PoliciesAPI
 policiesAPI db caller

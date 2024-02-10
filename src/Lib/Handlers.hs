@@ -15,6 +15,8 @@ module Lib.Handlers
   , deleteMembershipHandler
   , createUserPolicyAttachmentHandler
   , deleteUserPolicyAttachmentHandler
+  , createGroupPolicyAttachmentHandler
+  , deleteGroupPolicyAttachmentHandler
   ) where
 
 import Control.Monad.IO.Class
@@ -158,6 +160,32 @@ deleteUserPolicyAttachmentHandler :: DB db =>
   db -> Auth -> UserId -> UUID -> Handler UserPolicyAttachment
 deleteUserPolicyAttachmentHandler db _ uid pid = do
   result <- liftIO $ runExceptT $ deleteUserPolicyAttachment db uid pid
+  case result of
+    Right attachment -> return attachment
+    Left err         -> throwError $ dbError err
+
+createGroupPolicyAttachmentHandler :: DB db =>
+  db -> Auth -> GroupId -> UUID -> Handler GroupPolicyAttachment
+createGroupPolicyAttachmentHandler db auth gid pid = do
+  result0 <- liftIO $ runExceptT $ getPolicy db pid
+  case result0 of
+    Right policy -> do
+      if policy `isAllowedBy` policyRules callerPolicies
+        then createGroupPolicyAttachment'
+        else throwError err403
+    Left err -> throwError $ dbError err
+  where
+    callerPolicies = authPolicies $ authorization auth
+    createGroupPolicyAttachment' = do
+      result <- liftIO $ runExceptT $ createGroupPolicyAttachment db gid pid
+      case result of
+        Right attachment -> return attachment
+        Left err         -> throwError $ dbError err
+
+deleteGroupPolicyAttachmentHandler :: DB db =>
+  db -> Auth -> GroupId -> UUID -> Handler GroupPolicyAttachment
+deleteGroupPolicyAttachmentHandler db _ gid pid = do
+  result <- liftIO $ runExceptT $ deleteGroupPolicyAttachment db gid pid
   case result of
     Right attachment -> return attachment
     Left err         -> throwError $ dbError err
