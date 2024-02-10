@@ -26,12 +26,26 @@ main :: IO ()
 main = do
   db <- inMemory
   (pk, sk) <- createKeypair
-  let callerId = UserEmail "caller@example.com"
+  callerPolicyId <- nextRandom
+  let allowReads = Rule Allow Read "*"
+      allowWrites = Rule Allow Write "*"
+      callerPolicy = Policy callerPolicyId callerPolicyRules
+      callerPolicyRules = [allowReads, allowWrites]
+      callerId = UserEmail "caller@example.com"
       callerPrincipal = UserPrincipal callerId pk
-  result <- runExceptT $ createUser db callerPrincipal
-  case result of
-    Right _  -> hspec $ spec db pk sk
-    Left _ -> error "Failed to create caller user"
+  result0 <- runExceptT $ createUser db callerPrincipal
+  case result0 of
+    Right _  -> do
+      result1 <- runExceptT $ createPolicy db callerPolicy
+      case result1 of
+        Right _ -> do
+          result2 <- runExceptT $ createUserPolicyAttachment db callerId callerPolicyId
+          case result2 of
+            Right _ ->
+              hspec $ spec db pk sk
+            Left _ -> error "Failed to attach test user policy"
+        Left _ -> error "Failed to create test user policy"
+    Left _ -> error "Failed to create test user"
 
 spec :: DB db => db -> PublicKey -> SecretKey -> Spec
 spec db callerPK callerSK = with (return $ app db) $ do

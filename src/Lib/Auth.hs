@@ -23,6 +23,7 @@ import Servant.Server.Experimental.Auth
 
 import Lib.IAM
 import Lib.IAM.DB
+import Lib.IAM.Policy
 
 
 data Auth = Auth
@@ -49,7 +50,7 @@ authContext db = authHandler db :. EmptyContext
 authHandler :: DB db => db -> AuthHandler Request Auth
 authHandler db = mkAuthHandler $ \req -> do
   (authReq, user) <- authenticate db req
-  return $ Auth user authReq
+  authorize db req $ Auth user authReq
 
 
 authenticate :: DB db => db -> Request -> Handler (AuthRequest, User)
@@ -81,6 +82,38 @@ authenticate db req =
         Left NotFound -> throwError err401
         Left _ -> throwError err500
     Nothing -> throwError err401
+
+
+authorize :: DB db => db -> Request -> Auth -> Handler Auth
+authorize db req auth = do
+  policiesResult <- liftIO $ runExceptT $ listPoliciesForUser db callerUserId
+  case policiesResult of
+    Right policies -> do
+      let authorized = any (isAuthorized req) policies
+      if authorized
+        then return auth
+        else throwError err403
+    Left _ -> throwError err500
+  where
+    callerUserId = authRequestUserId $ authRequest auth
+
+
+isAuthorized :: Request ->  Policy -> Bool
+isAuthorized req policy = policyAuthorizes policy reqAction reqResource
+  where
+    reqResource = decodeUtf8 $ rawPathInfo req
+    reqAction = case parseMethod $ requestMethod req of
+      Right method -> case method of
+        GET -> Read
+        POST -> Write
+        HEAD -> Read
+        PUT -> Write
+        DELETE -> Write
+        TRACE -> Read
+        CONNECT -> Read
+        OPTIONS -> Read
+        PATCH -> Write
+      Left _ -> Write
 
 
 parsePublicKey :: ByteString -> Maybe PublicKey

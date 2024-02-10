@@ -32,6 +32,7 @@ library
       Lib.IAM
       Lib.IAM.DB
       Lib.IAM.DB.InMemory
+      Lib.IAM.Policy
       Lib.Opts
       Lib.Server
   other-modules:

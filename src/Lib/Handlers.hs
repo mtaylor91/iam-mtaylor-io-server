@@ -92,7 +92,7 @@ getPolicyHandler db _ policy = do
     Right policy' -> return policy'
     Left err      -> throwError $ dbError err
 
-listPoliciesHandler :: DB db => db -> Auth -> Handler [UUID]
+listPoliciesHandler :: DB db => db -> Auth -> Handler [Policy]
 listPoliciesHandler db _ = do
   result <- liftIO $ runExceptT $ listPolicies db
   case result of

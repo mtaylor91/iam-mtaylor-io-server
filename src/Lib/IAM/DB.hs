@@ -55,7 +55,12 @@ class DB db where
 
   -- | listPolicies returns a list of all policies in the database.
   listPolicies :: (MonadIO m, MonadError DBError m) =>
-    db -> m [UUID]
+    db -> m [Policy]
+
+  -- | listPoliciesForUser returns a list of all policies attached
+  -- | to a user and its groups.
+  listPoliciesForUser :: (MonadIO m, MonadError DBError m) =>
+    db -> UserId -> m [Policy]
 
   -- | createPolicy adds a new policy to the database.
   createPolicy :: (MonadIO m, MonadError DBError m) =>

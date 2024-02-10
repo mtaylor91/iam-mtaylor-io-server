@@ -136,7 +136,21 @@ instance DB InMemory where
     maybe (throwError NotFound) return maybePolicy
 
   listPolicies (InMemory tvar) =
-    liftIO $ atomically $ map policyId . policies <$> readTVar tvar
+    liftIO $ atomically $ policies <$> readTVar tvar
+
+  listPoliciesForUser (InMemory tvar) uid =
+    liftIO $ atomically $ do
+      s <- readTVar tvar
+      return $ filter ((`elem` policyIds s) . policyId) $ policies s
+    where
+      grps s =
+        map snd $ filter ((== uid) . fst) $ memberships s
+      policyIds s =
+        userPolicyIds s ++ groupPolicyIds s
+      userPolicyIds s =
+        map snd $ filter ((== uid) . fst) $ userPolicyAttachments s
+      groupPolicyIds s =
+        map snd $ filter ((`elem` grps s) . fst) $ groupPolicyAttachments s
 
   createPolicy (InMemory tvar) policy = do
     result <- liftIO $ atomically $ do
