@@ -23,6 +23,7 @@ import Servant
 import Lib.Auth
 import Lib.IAM
 import Lib.IAM.DB
+import Lib.IAM.Policy
 
 dbError :: DBError -> ServerError
 dbError AlreadyExists = err409
@@ -100,11 +101,17 @@ listPoliciesHandler db _ = do
     Left err        -> throwError $ dbError err
 
 createPolicyHandler :: DB db => db -> Auth -> Policy -> Handler Policy
-createPolicyHandler db _ policy = do
-  result <- liftIO $ runExceptT $ createPolicy db policy
-  case result of
-    Right policy' -> return policy'
-    Left err      -> throwError $ dbError err
+createPolicyHandler db auth policy = do
+  let callerPolicies = authPolicies $ authorization auth
+  if policy `isAllowedBy` policyRules callerPolicies
+    then createPolicy'
+    else throwError err403
+  where
+    createPolicy' = do
+      result <- liftIO $ runExceptT $ createPolicy db policy
+      case result of
+        Right policy' -> return policy'
+        Left err      -> throwError $ dbError err
 
 deletePolicyHandler :: DB db => db -> Auth -> UUID -> Handler Policy
 deletePolicyHandler db _ policy = do

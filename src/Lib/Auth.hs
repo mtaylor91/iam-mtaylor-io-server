@@ -7,6 +7,8 @@ module Lib.Auth
   , authHandler
   , authStringToSign
   , Auth(..)
+  , Authentication(..)
+  , Authorization(..)
   ) where
 
 import Control.Monad.Except
