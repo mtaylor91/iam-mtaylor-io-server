@@ -35,14 +35,14 @@ getUserHandler db user = do
     Right user' -> return user'
     Left err    -> throwError $ dbError err
 
-listUsersHandler :: DB db => db -> Handler [UserId]
-listUsersHandler db = do
+listUsersHandler :: DB db => db -> User -> Handler [UserId]
+listUsersHandler db _ = do
   result <- liftIO $ runExceptT $ listUsers db
   case result of
     Right users' -> return users'
     Left err     -> throwError $ dbError err
 
-createUserHandler :: DB db => db -> UserId -> Handler UserId
+createUserHandler :: DB db => db -> UserPrincipal -> Handler UserPrincipal
 createUserHandler db user = do
   result <- liftIO $ runExceptT $ createUser db user
   case result of
@@ -70,11 +70,11 @@ listGroupsHandler db = do
     Right groups' -> return groups'
     Left err      -> throwError $ dbError err
 
-createGroupHandler :: DB db => db -> GroupId -> Handler GroupId
+createGroupHandler :: DB db => db -> Group -> Handler Group
 createGroupHandler db group = do
   result <- liftIO $ runExceptT $ createGroup db group
   case result of
-    Right () -> return group
+    Right group' -> return group'
     Left err -> throwError $ dbError err
 
 deleteGroupHandler :: DB db => db -> GroupId -> Handler GroupId

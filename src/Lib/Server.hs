@@ -6,6 +6,7 @@ import Network.Wai.Handler.Warp
 import Servant
 
 import Lib.API
+import Lib.Auth
 import Lib.Handlers
 import Lib.IAM
 import Lib.IAM.DB
@@ -14,7 +15,7 @@ startApp :: DB db => db -> Int -> IO ()
 startApp db port = run port $ app db
 
 app :: DB db => db -> Application
-app db = serve api $ server db
+app db = serveWithContext api (authContext db) $ server db
 
 server :: DB db => db -> Server API
 server db

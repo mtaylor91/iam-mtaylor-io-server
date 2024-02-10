@@ -21,7 +21,10 @@ description:         Please see the README on GitHub at <https://github.com/mtay
 
 dependencies:
 - base >= 4.7 && < 5
+- base64
+- bytestring
 - aeson
+- ed25519
 - http-types
 - mtl
 - optparse-applicative

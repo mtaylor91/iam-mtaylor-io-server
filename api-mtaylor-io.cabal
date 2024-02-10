@@ -27,6 +27,7 @@ library
   exposed-modules:
       Lib
       Lib.API
+      Lib.Auth
       Lib.Handlers
       Lib.IAM
       Lib.IAM.DB
@@ -43,6 +44,9 @@ library
   build-depends:
       aeson
     , base >=4.7 && <5
+    , base64
+    , bytestring
+    , ed25519
     , http-types
     , mtl
     , optparse-applicative
@@ -67,6 +71,9 @@ executable api-mtaylor-io
       aeson
     , api-mtaylor-io
     , base
+    , base64
+    , bytestring
+    , ed25519
     , http-types
     , mtl
     , optparse-applicative
@@ -92,6 +99,9 @@ test-suite api-mtaylor-io-test
       aeson
     , api-mtaylor-io
     , base
+    , base64
+    , bytestring
+    , ed25519
     , hspec
     , hspec-wai
     , hspec-wai-json

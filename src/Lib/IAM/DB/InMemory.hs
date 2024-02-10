@@ -1,4 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE TupleSections #-}
 module Lib.IAM.DB.InMemory ( inMemory, InMemory(..) ) where
 
 import Control.Concurrent.STM
@@ -6,7 +7,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Except
 import Data.UUID
 
-import Lib.IAM hiding (users, groups)
+import Lib.IAM
 import Lib.IAM.DB
 
 
@@ -14,6 +15,7 @@ data InMemoryState = InMemoryState
   { users :: ![UserId]
   , groups :: ![GroupId]
   , policies :: ![Policy]
+  , principals :: ![UserPrincipal]
   , memberships :: ![(UserId, GroupId)]
   , userPolicyAttachments :: ![(UserId, UUID)]
   , groupPolicyAttachments :: ![(GroupId, UUID)]
@@ -26,7 +28,7 @@ newtype InMemory = InMemory (TVar InMemoryState)
 
 
 inMemory :: IO InMemory
-inMemory = InMemory <$> newTVarIO (InMemoryState [] [] [] [] [] [])
+inMemory = InMemory <$> newTVarIO (InMemoryState [] [] [] [] [] [] [])
 
 
 instance DB InMemory where
@@ -39,22 +41,30 @@ instance DB InMemory where
         else return Nothing
     maybe (throwError NotFound) return maybeUser
     where
-      user s = User uid $ map snd $ filter ((== uid) . fst) $ memberships s
+      user s = User
+        { userId = uid
+        , userGroups = map snd $ filter ((== uid) . fst) $ memberships s
+        , userPublicKeys = map publicKey $ filter ((== uid) . principal) $ principals s
+        }
 
   listUsers (InMemory tvar) =
     liftIO $ atomically $ users <$> readTVar tvar
 
-  createUser (InMemory tvar) uid = do
+  createUser (InMemory tvar) up = do
+    let uid = principal up
     result <- liftIO $ atomically $ do
       s <- readTVar tvar
       if uid `elem` users s
         then return $ Left AlreadyExists
         else do
           modifyTVar' tvar addUser
-          return $ Right uid
+          return $ Right up
     either throwError return result
     where
-      addUser s = s { users = uid : users s }
+      addUser s = s
+        { users = principal up : users s
+        , principals = up : principals s
+        }
 
   deleteUser (InMemory tvar) uid = do
     result <- liftIO $ atomically $ do
@@ -68,6 +78,7 @@ instance DB InMemory where
     where
       delUser s = s
         { users = filter (/= uid) $ users s
+        , principals = filter ((/= uid) . principal) $ principals s
         , memberships = filter ((/= uid) . fst) $ memberships s
         , userPolicyAttachments = filter ((/= uid) . fst) $ userPolicyAttachments s
         }
@@ -85,17 +96,20 @@ instance DB InMemory where
   listGroups (InMemory tvar) =
     liftIO $ atomically $ groups <$> readTVar tvar
 
-  createGroup (InMemory tvar) gid = do
+  createGroup (InMemory tvar) group = do
     result <- liftIO $ atomically $ do
       s <- readTVar tvar
-      if gid `elem` groups s
+      if groupId group `elem` groups s
         then return $ Left AlreadyExists
         else do
           modifyTVar' tvar addGroup
-          return $ Right ()
+          return $ Right group
     either throwError return result
     where
-      addGroup s = s { groups = gid : groups s }
+      addGroup s = s
+        { groups = groupId group : groups s
+        , memberships = memberships s ++ ((, groupId group) <$> groupUsers group)
+        }
 
   deleteGroup (InMemory tvar) gid = do
     result <- liftIO $ atomically $ do

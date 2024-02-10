@@ -25,8 +25,8 @@ type API
     )
 
 type UsersAPI
-  = ( Get '[JSON] [UserId]
-  :<|> ( ReqBody '[JSON] UserId :> PostCreated '[JSON] UserId )
+  = ( AuthProtect "signature-auth" :> Get '[JSON] [UserId]
+  :<|> ( ReqBody '[JSON] UserPrincipal :> PostCreated '[JSON] UserPrincipal )
   :<|> ( Capture "email" UserId :> UserAPI )
     )
 
@@ -37,7 +37,7 @@ type UserAPI
 
 type GroupsAPI
   = ( Get '[JSON] [GroupId]
-  :<|> ( ReqBody '[JSON] GroupId :> PostCreated '[JSON] GroupId )
+  :<|> ( ReqBody '[JSON] Group :> PostCreated '[JSON] Group )
   :<|> ( Capture "group" GroupId :> GroupAPI )
     )
 

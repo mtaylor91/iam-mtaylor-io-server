@@ -27,7 +27,7 @@ class DB db where
 
   -- | createUser adds a new user to the database.
   createUser :: (MonadIO m, MonadError DBError m) =>
-    db -> UserId -> m UserId
+    db -> UserPrincipal -> m UserPrincipal
 
   -- | deleteUser removes a user from the database by its email.
   deleteUser :: (MonadIO m, MonadError DBError m) =>
@@ -43,7 +43,7 @@ class DB db where
 
   -- | createGroup adds a new group to the database.
   createGroup :: (MonadIO m, MonadError DBError m) =>
-    db -> GroupId -> m ()
+    db -> Group -> m Group
 
   -- | deleteGroup removes a group from the database by its name.
   deleteGroup :: (MonadIO m, MonadError DBError m) =>
