@@ -27,7 +27,7 @@ type API
 type UsersAPI
   = ( Get '[JSON] [UserId]
   :<|> ( ReqBody '[JSON] UserPrincipal :> PostCreated '[JSON] UserPrincipal )
-  :<|> ( Capture "email" UserId :> UserAPI )
+  :<|> ( Capture "user" UserId :> UserAPI )
     )
 
 type UserAPI

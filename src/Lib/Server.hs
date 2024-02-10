@@ -25,15 +25,15 @@ server db
   :<|> membershipsAPI db
 
 usersAPI :: DB db => db -> User -> Server UsersAPI
-usersAPI db user
-  = listUsersHandler db user
-  :<|> createUserHandler db user
-  :<|> userAPI db user
+usersAPI db caller
+  = listUsersHandler db caller
+  :<|> createUserHandler db caller
+  :<|> userAPI db caller
 
 userAPI :: DB db => db -> User -> UserId -> Server UserAPI
-userAPI db user uid
-  = getUserHandler db user uid
-  :<|> deleteUserHandler db user uid
+userAPI db caller uid
+  = getUserHandler db caller uid
+  :<|> deleteUserHandler db caller uid
 
 groupsAPI :: DB db => db -> Server GroupsAPI
 groupsAPI db
