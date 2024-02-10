@@ -1,17 +1,22 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Lib.IAM.Policy
-  ( policyAuthorizes
+  ( isAuthorized
+  , policyRules
   , resourceMatches
   ) where
 
-import Data.Text hiding (any)
+import Data.Text hiding (any, concatMap)
 
 import Lib.IAM
 
 
--- | policyAuthorizes returns whether a policy authorizes an action.
-policyAuthorizes :: Policy -> Action -> Text -> Bool
-policyAuthorizes p a r = any allow $ statements p where
+policyRules :: [Policy] -> [Rule]
+policyRules = concatMap statements
+
+
+-- | isAuthorized returns whether a set of rules authorizes an action.
+isAuthorized :: Action -> Text -> [Rule] -> Bool
+isAuthorized a r = any allow where
   allow :: Rule -> Bool
   allow rule
     = effect rule == Allow

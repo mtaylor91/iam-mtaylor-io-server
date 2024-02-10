@@ -89,8 +89,7 @@ authorize db req auth = do
   policiesResult <- liftIO $ runExceptT $ listPoliciesForUser db callerUserId
   case policiesResult of
     Right policies -> do
-      let authorized = any (isAuthorized req) policies
-      if authorized
+      if authorized req policies
         then return auth
         else throwError err403
     Left _ -> throwError err500
@@ -98,8 +97,8 @@ authorize db req auth = do
     callerUserId = authRequestUserId $ authRequest auth
 
 
-isAuthorized :: Request ->  Policy -> Bool
-isAuthorized req policy = policyAuthorizes policy reqAction reqResource
+authorized :: Request ->  [Policy] -> Bool
+authorized req policies = isAuthorized reqAction reqResource $ policyRules policies
   where
     reqResource = decodeUtf8 $ rawPathInfo req
     reqAction = case parseMethod $ requestMethod req of
