@@ -25,12 +25,12 @@ import Lib.IAM.DB
 
 dbError :: DBError -> ServerError
 dbError AlreadyExists = err409
-dbError NotFound       = err404
-dbError InternalError  = err500
+dbError NotFound      = err404
+dbError InternalError = err500
 
-getUserHandler :: DB db => db -> UserId -> Handler User
-getUserHandler db user = do
-  result <- liftIO $ runExceptT $ getUser db user
+getUserHandler :: DB db => db -> User -> UserId -> Handler User
+getUserHandler db _ uid = do
+  result <- liftIO $ runExceptT $ getUser db uid
   case result of
     Right user' -> return user'
     Left err    -> throwError $ dbError err
@@ -42,23 +42,23 @@ listUsersHandler db _ = do
     Right users' -> return users'
     Left err     -> throwError $ dbError err
 
-createUserHandler :: DB db => db -> UserPrincipal -> Handler UserPrincipal
-createUserHandler db user = do
-  result <- liftIO $ runExceptT $ createUser db user
+createUserHandler :: DB db => db -> User -> UserPrincipal -> Handler UserPrincipal
+createUserHandler db _ userPrincipal = do
+  result <- liftIO $ runExceptT $ createUser db userPrincipal
   case result of
     Right user' -> return user'
     Left err    -> throwError $ dbError err
 
-deleteUserHandler :: DB db => db -> UserId -> Handler UserId
-deleteUserHandler db user = do
-  result <- liftIO $ runExceptT $ deleteUser db user
+deleteUserHandler :: DB db => db -> User -> UserId -> Handler UserId
+deleteUserHandler db _ uid = do
+  result <- liftIO $ runExceptT $ deleteUser db uid
   case result of
     Right user' -> return user'
     Left err    -> throwError $ dbError err
 
 getGroupHandler :: DB db => db -> GroupId -> Handler Group
-getGroupHandler db group = do
-  result <- liftIO $ runExceptT $ getGroup db group
+getGroupHandler db gid = do
+  result <- liftIO $ runExceptT $ getGroup db gid
   case result of
     Right group' -> return group'
     Left err     -> throwError $ dbError err
@@ -78,10 +78,10 @@ createGroupHandler db group = do
     Left err -> throwError $ dbError err
 
 deleteGroupHandler :: DB db => db -> GroupId -> Handler GroupId
-deleteGroupHandler db group = do
-  result <- liftIO $ runExceptT $ deleteGroup db group
+deleteGroupHandler db gid = do
+  result <- liftIO $ runExceptT $ deleteGroup db gid
   case result of
-    Right () -> return group
+    Right () -> return gid
     Left err -> throwError $ dbError err
 
 getPolicyHandler :: DB db => db -> UUID -> Handler Policy
@@ -113,15 +113,15 @@ deletePolicyHandler db policy = do
     Left err      -> throwError $ dbError err
 
 createMembershipHandler :: DB db => db -> Membership -> Handler Membership
-createMembershipHandler db (Membership user group) = do
-  result <- liftIO $ runExceptT $ createMembership db user group
+createMembershipHandler db (Membership uid gid) = do
+  result <- liftIO $ runExceptT $ createMembership db uid gid
   case result of
     Right membership -> return membership
     Left err         -> throwError $ dbError err
 
 deleteMembershipHandler :: DB db => db -> GroupId -> UserId -> Handler Membership
-deleteMembershipHandler db group user = do
-  result <- liftIO $ runExceptT $ deleteMembership db user group
+deleteMembershipHandler db gid uid = do
+  result <- liftIO $ runExceptT $ deleteMembership db uid gid
   case result of
     Right membership -> return membership
     Left err         -> throwError $ dbError err

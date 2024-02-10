@@ -18,14 +18,14 @@ import Servant
 import Lib.IAM
 
 type API
-  = ( "users" :> UsersAPI
+  = ( "users" :> AuthProtect "signature-auth" :> UsersAPI
   :<|> ( "groups" :> GroupsAPI )
   :<|> ( "policies" :> PoliciesAPI )
   :<|> ( "memberships" :> MembershipsAPI )
     )
 
 type UsersAPI
-  = ( AuthProtect "signature-auth" :> Get '[JSON] [UserId]
+  = ( Get '[JSON] [UserId]
   :<|> ( ReqBody '[JSON] UserPrincipal :> PostCreated '[JSON] UserPrincipal )
   :<|> ( Capture "email" UserId :> UserAPI )
     )

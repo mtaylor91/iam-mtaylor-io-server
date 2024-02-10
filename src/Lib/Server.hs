@@ -24,16 +24,16 @@ server db
   :<|> policiesAPI db
   :<|> membershipsAPI db
 
-usersAPI :: DB db => db -> Server UsersAPI
-usersAPI db
-  = listUsersHandler db
-  :<|> createUserHandler db
-  :<|> userAPI db
+usersAPI :: DB db => db -> User -> Server UsersAPI
+usersAPI db user
+  = listUsersHandler db user
+  :<|> createUserHandler db user
+  :<|> userAPI db user
 
-userAPI :: DB db => db -> UserId -> Server UserAPI
-userAPI db user
-  = getUserHandler db user
-  :<|> deleteUserHandler db user
+userAPI :: DB db => db -> User -> UserId -> Server UserAPI
+userAPI db user uid
+  = getUserHandler db user uid
+  :<|> deleteUserHandler db user uid
 
 groupsAPI :: DB db => db -> Server GroupsAPI
 groupsAPI db
