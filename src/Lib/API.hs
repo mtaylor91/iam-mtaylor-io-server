@@ -10,6 +10,7 @@ module Lib.API
   , PolicyAPI
   , PoliciesAPI
   , MembershipsAPI
+  , UserPolicyAPI
   ) where
 
 import Data.UUID
@@ -33,6 +34,12 @@ type UsersAPI
 type UserAPI
   = ( Get '[JSON] User
   :<|> Delete '[JSON] UserId
+  :<|> "policies" :> Capture "policy" UUID :> UserPolicyAPI
+    )
+
+type UserPolicyAPI
+  = ( PostCreated '[JSON] UserPolicyAttachment
+  :<|> Delete '[JSON] UserPolicyAttachment
     )
 
 type GroupsAPI

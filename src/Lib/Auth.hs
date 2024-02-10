@@ -98,16 +98,16 @@ authenticate db req =
 
 
 authorize :: DB db => db -> Request -> Authentication -> Handler Auth
-authorize db req auth = do
+authorize db req authN = do
   policiesResult <- liftIO $ runExceptT $ listPoliciesForUser db callerUserId
   case policiesResult of
     Right policies -> do
       if authorized req policies
-        then return $ Auth auth $ Authorization policies
+        then let authZ = Authorization policies in return $ Auth authN authZ
         else throwError err403
     Left _ -> throwError err500
   where
-    callerUserId = authRequestUserId $ authRequest auth
+    callerUserId = authRequestUserId $ authRequest authN
 
 
 authorized :: Request ->  [Policy] -> Bool

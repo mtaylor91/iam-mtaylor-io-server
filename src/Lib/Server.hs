@@ -34,6 +34,12 @@ userAPI :: DB db => db -> Auth -> UserId -> Server UserAPI
 userAPI db caller uid
   = getUserHandler db caller uid
   :<|> deleteUserHandler db caller uid
+  :<|> userPolicyAPI db caller uid
+
+userPolicyAPI :: DB db => db -> Auth -> UserId -> UUID -> Server UserPolicyAPI
+userPolicyAPI db caller uid pid
+  = createUserPolicyAttachmentHandler db caller uid pid
+  :<|> deleteUserPolicyAttachmentHandler db caller uid pid
 
 groupsAPI :: DB db => db -> Auth -> Server GroupsAPI
 groupsAPI db caller
