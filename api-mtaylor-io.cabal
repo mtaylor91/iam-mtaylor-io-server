@@ -28,12 +28,14 @@ library
       Lib
       Lib.API
       Lib.Auth
+      Lib.GenerateKeypair
       Lib.Handlers
       Lib.IAM
       Lib.IAM.DB
       Lib.IAM.DB.InMemory
       Lib.IAM.DB.Postgres
       Lib.IAM.Policy
+      Lib.Init
       Lib.Opts
       Lib.Server
   other-modules:

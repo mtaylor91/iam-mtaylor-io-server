@@ -3,7 +3,7 @@ module Lib
     , options
     , startApp
     , run
-    , Options(..)
+    , ServerOptions(..)
     ) where
 
 import Lib.Opts

@@ -1,17 +1,31 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lib.Opts ( options, run, Options(..) ) where
+module Lib.Opts ( options, run, ServerOptions(..) ) where
 
 import Data.ByteString (ByteString)
+import Data.Text
 import Data.Word (Word16)
 import Options.Applicative
 
+import Lib.GenerateKeypair
 import Lib.IAM.DB.InMemory
 import Lib.IAM.DB.Postgres
+import Lib.Init
 import Lib.Server
 
 
-data Options = Options
-  { port :: !Int
+data Command
+  = GenerateKeypair
+  | Server !ServerOptions
+  deriving (Show)
+
+
+newtype Options = Options Command
+
+
+data ServerOptions = ServerOptions
+  { adminEmail :: !Text
+  , adminPublicKey :: !Text
+  , port :: !Int
   , postgres :: !Bool
   , postgresHost :: !ByteString
   , postgresPort :: !Word16
@@ -22,8 +36,27 @@ data Options = Options
 
 
 options :: Parser Options
-options = Options
-  <$> option auto
+options = Options <$> hsubparser
+  ( command "server"
+    (info (Server <$> serverOptions) (progDesc "Start the server"))
+  <> command "generate-keypair"
+    (info (pure GenerateKeypair) (progDesc "Generate a keypair"))
+  )
+
+
+serverOptions :: Parser ServerOptions
+serverOptions = ServerOptions
+  <$> strOption
+      ( long "admin-email"
+     <> metavar "EMAIL"
+     <> help "Admin email"
+      )
+  <*> strOption
+      ( long "admin-public-key"
+     <> metavar "PUBLIC_KEY"
+     <> help "Admin public key"
+      )
+  <*> option auto
       ( long "port"
      <> short 'p'
      <> metavar "PORT"
@@ -69,14 +102,26 @@ options = Options
 
 runOptions :: Options -> IO ()
 runOptions opts =
+  case opts of
+    Options GenerateKeypair -> generateKeypair
+    Options (Server opts') -> runServer opts'
+
+
+runServer :: ServerOptions -> IO ()
+runServer opts =
   if postgres opts
-    then flip startApp (port opts) =<< connectToDatabase
+    then flip startApp (port opts) =<< initDB adminEmail' adminPublicKey' =<<
+      connectToDatabase
       (postgresHost opts)
       (postgresPort opts)
       (postgresDatabase opts)
       (postgresUserName opts)
       (postgresPassword opts)
-    else flip startApp (port opts) =<< inMemory
+    else flip startApp (port opts) =<< initDB adminEmail' adminPublicKey' =<< inMemory
+  where
+    adminEmail' = adminEmail opts
+    adminPublicKey' = adminPublicKey opts
+
 
 
 run :: IO ()
@@ -84,6 +129,5 @@ run = execParser opts >>= runOptions
   where
     opts = info (options <**> helper)
       ( fullDesc
-     <> progDesc "Start the server"
      <> header "api-mtaylor-io - API server for api.mtaylor.io service."
       )
