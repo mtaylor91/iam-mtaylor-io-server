@@ -8,7 +8,7 @@ import Data.Text
 import Data.Text.Encoding
 import Data.UUID.V4
 
-import Lib.Server.IAM
+import Lib.IAM
 import Lib.Server.IAM.DB
 
 

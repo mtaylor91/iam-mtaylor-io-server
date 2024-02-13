@@ -26,12 +26,13 @@ source-repository head
 library
   exposed-modules:
       Lib
+      Lib.API
+      Lib.IAM
       Lib.Keypair
       Lib.Opts
       Lib.Server.API
       Lib.Server.Auth
       Lib.Server.Handlers
-      Lib.Server.IAM
       Lib.Server.IAM.DB
       Lib.Server.IAM.DB.InMemory
       Lib.Server.IAM.DB.Postgres
@@ -56,6 +57,7 @@ library
     , http-types
     , mtl
     , optparse-applicative
+    , servant-client
     , servant-server
     , stm
     , text
@@ -87,6 +89,7 @@ executable api-mtaylor-io
     , http-types
     , mtl
     , optparse-applicative
+    , servant-client
     , servant-server
     , stm
     , text
@@ -122,6 +125,7 @@ test-suite api-mtaylor-io-test
     , http-types
     , mtl
     , optparse-applicative
+    , servant-client
     , servant-server
     , stm
     , text

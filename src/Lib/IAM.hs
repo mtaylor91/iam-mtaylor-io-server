@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Lib.Server.IAM
+module Lib.IAM
   ( User(..)
   , UserId(..)
   , UserPrincipal(..)

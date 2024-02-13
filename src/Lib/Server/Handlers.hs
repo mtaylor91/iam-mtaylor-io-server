@@ -24,8 +24,8 @@ import Control.Monad.Except
 import Data.UUID
 import Servant
 
+import Lib.IAM
 import Lib.Server.Auth
-import Lib.Server.IAM
 import Lib.Server.IAM.DB
 import Lib.Server.IAM.Policy
 

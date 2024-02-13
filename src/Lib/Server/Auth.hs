@@ -23,7 +23,7 @@ import Network.Wai
 import Servant
 import Servant.Server.Experimental.Auth
 
-import Lib.Server.IAM
+import Lib.IAM
 import Lib.Server.IAM.DB
 import Lib.Server.IAM.Policy
 
