@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Lib.Auth
+module Lib.Server.Auth
   ( authContext
   , authHandler
   , authStringToSign
@@ -23,9 +23,9 @@ import Network.Wai
 import Servant
 import Servant.Server.Experimental.Auth
 
-import Lib.IAM
-import Lib.IAM.DB
-import Lib.IAM.Policy
+import Lib.Server.IAM
+import Lib.Server.IAM.DB
+import Lib.Server.IAM.Policy
 
 
 data Auth = Auth

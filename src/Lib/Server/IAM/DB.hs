@@ -1,11 +1,11 @@
 {-# LANGUAGE FlexibleContexts #-}
-module Lib.IAM.DB ( DB(..), DBError(..) ) where
+module Lib.Server.IAM.DB ( DB(..), DBError(..) ) where
 
 import Control.Monad.IO.Class
 import Control.Monad.Except
 import Data.UUID
 
-import Lib.IAM
+import Lib.Server.IAM
 
 
 data DBError

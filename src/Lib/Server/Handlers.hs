@@ -1,4 +1,4 @@
-module Lib.Handlers
+module Lib.Server.Handlers
   ( getUserHandler
   , listUsersHandler
   , createUserHandler
@@ -24,10 +24,10 @@ import Control.Monad.Except
 import Data.UUID
 import Servant
 
-import Lib.Auth
-import Lib.IAM
-import Lib.IAM.DB
-import Lib.IAM.Policy
+import Lib.Server.Auth
+import Lib.Server.IAM
+import Lib.Server.IAM.DB
+import Lib.Server.IAM.Policy
 
 dbError :: DBError -> ServerError
 dbError AlreadyExists  = err409
@@ -168,8 +168,8 @@ deleteUserPolicyAttachmentHandler db _ uid pid = do
 createGroupPolicyAttachmentHandler :: DB db =>
   db -> Auth -> GroupId -> UUID -> Handler GroupPolicyAttachment
 createGroupPolicyAttachmentHandler db auth gid pid = do
-  result0 <- liftIO $ runExceptT $ getPolicy db pid
-  case result0 of
+  result <- liftIO $ runExceptT $ getPolicy db pid
+  case result of
     Right policy -> do
       if policy `isAllowedBy` policyRules callerPolicies
         then createGroupPolicyAttachment'

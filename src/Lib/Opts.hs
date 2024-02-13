@@ -6,15 +6,15 @@ import Data.Text
 import Data.Word (Word16)
 import Options.Applicative
 
-import Lib.GenerateKeypair
-import Lib.IAM.DB.InMemory
-import Lib.IAM.DB.Postgres
-import Lib.Init
-import Lib.Server
+import Lib.Keypair
+import Lib.Server.API
+import Lib.Server.Init
+import Lib.Server.IAM.DB.InMemory
+import Lib.Server.IAM.DB.Postgres
 
 
 data Command
-  = GenerateKeypair
+  = Keypair
   | Server !ServerOptions
   deriving (Show)
 
@@ -39,8 +39,8 @@ options :: Parser Options
 options = Options <$> hsubparser
   ( command "server"
     (info (Server <$> serverOptions) (progDesc "Start the server"))
-  <> command "generate-keypair"
-    (info (pure GenerateKeypair) (progDesc "Generate a keypair"))
+  <> command "keypair"
+    (info (pure Keypair) (progDesc "Generate a keypair"))
   )
 
 
@@ -103,7 +103,7 @@ serverOptions = ServerOptions
 runOptions :: Options -> IO ()
 runOptions opts =
   case opts of
-    Options GenerateKeypair -> generateKeypair
+    Options Keypair -> generateKeypair
     Options (Server opts') -> runServer opts'
 
 
@@ -121,7 +121,6 @@ runServer opts =
   where
     adminEmail' = adminEmail opts
     adminPublicKey' = adminPublicKey opts
-
 
 
 run :: IO ()

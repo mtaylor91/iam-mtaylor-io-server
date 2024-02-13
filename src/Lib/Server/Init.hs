@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lib.Init (initDB) where
+module Lib.Server.Init (initDB) where
 
 import Control.Monad.Except
 import Crypto.Sign.Ed25519
@@ -8,8 +8,8 @@ import Data.Text
 import Data.Text.Encoding
 import Data.UUID.V4
 
-import Lib.IAM
-import Lib.IAM.DB
+import Lib.Server.IAM
+import Lib.Server.IAM.DB
 
 
 initDB :: DB db => Text -> Text -> db -> IO db
@@ -30,9 +30,9 @@ createAdmin adminEmail adminPublicKeyBase64 db = do
         Left e -> error $ "Error creating admin: " ++ show e
         Right (UserPrincipal adminUserId _) -> do
           adminPolicyId <- nextRandom
-          let adminPolicy = Policy adminPolicyId [allowReads, allowWrites]
-              allowReads = Rule Allow Read "*"
+          let allowReads = Rule Allow Read "*"
               allowWrites = Rule Allow Write "*"
+              adminPolicy = Policy adminPolicyId [allowReads, allowWrites]
           r1 <- runExceptT $ createPolicy db adminPolicy
           case r1 of
             Left AlreadyExists -> return ()

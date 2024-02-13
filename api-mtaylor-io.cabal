@@ -26,18 +26,17 @@ source-repository head
 library
   exposed-modules:
       Lib
-      Lib.API
-      Lib.Auth
-      Lib.GenerateKeypair
-      Lib.Handlers
-      Lib.IAM
-      Lib.IAM.DB
-      Lib.IAM.DB.InMemory
-      Lib.IAM.DB.Postgres
-      Lib.IAM.Policy
-      Lib.Init
+      Lib.Keypair
       Lib.Opts
-      Lib.Server
+      Lib.Server.API
+      Lib.Server.Auth
+      Lib.Server.Handlers
+      Lib.Server.IAM
+      Lib.Server.IAM.DB
+      Lib.Server.IAM.DB.InMemory
+      Lib.Server.IAM.DB.Postgres
+      Lib.Server.IAM.Policy
+      Lib.Server.Init
   other-modules:
       Paths_api_mtaylor_io
   autogen-modules:

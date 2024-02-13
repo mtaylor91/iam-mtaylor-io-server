@@ -1,10 +1,3 @@
-module Lib
-    ( app
-    , options
-    , startApp
-    , run
-    , ServerOptions(..)
-    ) where
+module Lib (run) where
 
 import Lib.Opts
-import Lib.Server

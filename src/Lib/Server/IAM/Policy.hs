@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lib.IAM.Policy
+module Lib.Server.IAM.Policy
   ( isAllowedBy
   , isAuthorized
   , policyRules
@@ -8,7 +8,7 @@ module Lib.IAM.Policy
 
 import Data.Text hiding (any, all, concatMap)
 
-import Lib.IAM
+import Lib.Server.IAM
 
 
 -- | isAllowedBy returns whether a policy is allowed by a set of rules.

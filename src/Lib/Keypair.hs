@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lib.GenerateKeypair (generateKeypair) where
+module Lib.Keypair (generateKeypair) where
 
 import Crypto.Sign.Ed25519
 import Data.ByteString.Base64 (encodeBase64)

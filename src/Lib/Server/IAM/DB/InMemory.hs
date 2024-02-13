@@ -1,14 +1,14 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE TupleSections #-}
-module Lib.IAM.DB.InMemory ( inMemory, InMemory(..) ) where
+module Lib.Server.IAM.DB.InMemory ( inMemory, InMemory(..) ) where
 
 import Control.Concurrent.STM
 import Control.Monad.IO.Class
 import Control.Monad.Except
 import Data.UUID
 
-import Lib.IAM
-import Lib.IAM.DB
+import Lib.Server.IAM
+import Lib.Server.IAM.DB
 
 
 data InMemoryState = InMemoryState

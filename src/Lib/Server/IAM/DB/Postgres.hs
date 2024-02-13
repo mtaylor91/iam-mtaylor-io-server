@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE QuasiQuotes #-}
-module Lib.IAM.DB.Postgres ( connectToDatabase, PostgresDB(..) ) where
+module Lib.Server.IAM.DB.Postgres ( connectToDatabase, PostgresDB(..) ) where
 
 import Control.Monad.IO.Class
 import Control.Monad.Except
@@ -18,8 +18,8 @@ import Hasql.TH (maybeStatement, resultlessStatement, vectorStatement)
 import qualified Hasql.Connection as Connection
 import qualified Hasql.Pool as Pool
 
-import Lib.IAM
-import Lib.IAM.DB
+import Lib.Server.IAM
+import Lib.Server.IAM.DB
 
 
 newtype PostgresDB = PostgresDB Pool
