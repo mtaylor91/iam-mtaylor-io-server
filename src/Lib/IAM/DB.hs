@@ -12,6 +12,7 @@ data DBError
   = AlreadyExists
   | NotFound
   | InternalError
+  | NotImplemented
   deriving (Show, Eq)
 
 

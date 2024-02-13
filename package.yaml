@@ -25,6 +25,9 @@ dependencies:
 - bytestring
 - aeson
 - ed25519
+- hasql
+- hasql-pool
+- hasql-th
 - http-types
 - mtl
 - optparse-applicative
@@ -32,6 +35,7 @@ dependencies:
 - stm
 - text
 - uuid
+- vector
 - wai
 - warp
 

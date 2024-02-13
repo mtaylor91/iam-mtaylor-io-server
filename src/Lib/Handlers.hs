@@ -30,9 +30,10 @@ import Lib.IAM.DB
 import Lib.IAM.Policy
 
 dbError :: DBError -> ServerError
-dbError AlreadyExists = err409
-dbError NotFound      = err404
-dbError InternalError = err500
+dbError AlreadyExists  = err409
+dbError NotFound       = err404
+dbError InternalError  = err500
+dbError NotImplemented = err501
 
 getUserHandler :: DB db => db -> Auth -> UserId -> Handler User
 getUserHandler db _ uid = do

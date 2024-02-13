@@ -32,6 +32,7 @@ library
       Lib.IAM
       Lib.IAM.DB
       Lib.IAM.DB.InMemory
+      Lib.IAM.DB.Postgres
       Lib.IAM.Policy
       Lib.Opts
       Lib.Server
@@ -48,6 +49,9 @@ library
     , base64
     , bytestring
     , ed25519
+    , hasql
+    , hasql-pool
+    , hasql-th
     , http-types
     , mtl
     , optparse-applicative
@@ -55,6 +59,7 @@ library
     , stm
     , text
     , uuid
+    , vector
     , wai
     , warp
   default-language: Haskell2010
@@ -75,6 +80,9 @@ executable api-mtaylor-io
     , base64
     , bytestring
     , ed25519
+    , hasql
+    , hasql-pool
+    , hasql-th
     , http-types
     , mtl
     , optparse-applicative
@@ -82,6 +90,7 @@ executable api-mtaylor-io
     , stm
     , text
     , uuid
+    , vector
     , wai
     , warp
   default-language: Haskell2010
@@ -103,6 +112,9 @@ test-suite api-mtaylor-io-test
     , base64
     , bytestring
     , ed25519
+    , hasql
+    , hasql-pool
+    , hasql-th
     , hspec
     , hspec-wai
     , hspec-wai-json
@@ -113,6 +125,7 @@ test-suite api-mtaylor-io-test
     , stm
     , text
     , uuid
+    , vector
     , wai
     , warp
   default-language: Haskell2010

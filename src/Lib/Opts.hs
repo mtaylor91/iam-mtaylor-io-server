@@ -1,14 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Lib.Opts ( options, run, Options(..) ) where
 
+import Data.ByteString (ByteString)
+import Data.Word (Word16)
 import Options.Applicative
 
 import Lib.IAM.DB.InMemory
+import Lib.IAM.DB.Postgres
 import Lib.Server
 
 
-newtype Options = Options
-  { port :: Int
+data Options = Options
+  { port :: !Int
+  , postgres :: !Bool
+  , postgresHost :: !ByteString
+  , postgresPort :: !Word16
+  , postgresDatabase :: !ByteString
+  , postgresUserName :: !ByteString
+  , postgresPassword :: !ByteString
   } deriving (Show)
 
 
@@ -22,13 +31,52 @@ options = Options
      <> value 8080
      <> showDefault
       )
+  <*> switch ( long "postgres"
+      <> help "Use Postgres database"
+      )
+  <*> strOption ( long "postgres-host"
+     <> metavar "HOST"
+     <> help "Postgres host"
+     <> value "localhost"
+     <> showDefault
+      )
+  <*> option auto
+      ( long "postgres-port"
+      <> metavar "PORT"
+      <> help "Postgres port"
+      <> value 5432
+      <> showDefault
+      )
+  <*> strOption ( long "postgres-database"
+      <> metavar "DATABASE"
+      <> help "Postgres database"
+      <> value "iam"
+      <> showDefault
+      )
+  <*> strOption ( long "postgres-username"
+      <> metavar "USERNAME"
+      <> help "Postgres username"
+      <> value "iam"
+      <> showDefault
+      )
+  <*> strOption ( long "postgres-password"
+      <> metavar "PASSWORD"
+      <> help "Postgres password"
+      <> value "iam"
+      <> showDefault
+      )
 
 
 runOptions :: Options -> IO ()
-runOptions opts = do
-  db <- inMemory
-  putStrLn "Starting server..."
-  startApp db (port opts)
+runOptions opts =
+  if postgres opts
+    then flip startApp (port opts) =<< connectToDatabase
+      (postgresHost opts)
+      (postgresPort opts)
+      (postgresDatabase opts)
+      (postgresUserName opts)
+      (postgresPassword opts)
+    else flip startApp (port opts) =<< inMemory
 
 
 run :: IO ()
