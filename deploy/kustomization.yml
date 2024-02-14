@@ -1,0 +1,10 @@
+
+configMapGenerator:
+- name: api-mtaylor-io
+
+commonLabels:
+  app: api-mtaylor-io
+
+resources:
+- deployment.yml
+- service.yml

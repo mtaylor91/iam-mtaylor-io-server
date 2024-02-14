@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-mtaylor-io
+spec:
+  template:
+    spec:
+      containers:
+      - name: api
+        image: images.home.mtaylor.io/api-mtaylor-io
+        env:
+        - name: ADMIN_EMAIL
+          valueFrom:
+            configMapKeyRef:
+              name: api-mtaylor-io
+              key: email
+        - name: ADMIN_PUBLIC_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: api-mtaylor-io
+              key: public-key
+        ports:
+        - name: http
+          protocol: TCP
+          containerPort: 8080

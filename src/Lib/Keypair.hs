@@ -9,30 +9,33 @@ import Data.Text.Encoding
 import qualified Data.Text as T
 
 
-data Keypair = Keypair
-  { publicKey :: !PublicKey
-  , secretKey :: !SecretKey
+data UserKeypair = UserKeypair
+  { userKeypairEmail :: !T.Text
+  , userKeypairPublicKey :: !PublicKey
+  , userKeypairSecretKey :: !SecretKey
   } deriving (Eq, Show)
 
-instance FromJSON Keypair where
+instance FromJSON UserKeypair where
   parseJSON (Object obj) = do
+    email <- obj .: "email"
     pkBase64 <- obj .: "publicKey"
     skBase64 <- obj .: "secretKey"
     case (decodeBase64 $ encodeUtf8 pkBase64, decodeBase64 $ encodeUtf8 skBase64) of
-      (Right pk, Right sk) -> return $ Keypair (PublicKey pk) (SecretKey sk)
+      (Right pk, Right sk) -> return $ UserKeypair email (PublicKey pk) (SecretKey sk)
       (_, _) -> fail "Invalid base64 encoding"
   parseJSON _ = fail "Invalid JSON object"
 
-instance ToJSON Keypair where
-  toJSON (Keypair pk sk) = object
-    [ "publicKey" .= encodeBase64 (unPublicKey pk)
+instance ToJSON UserKeypair where
+  toJSON (UserKeypair email pk sk) = object
+    [ "email" .= email
+    , "publicKey" .= encodeBase64 (unPublicKey pk)
     , "secretKey" .= encodeBase64 (unSecretKey sk)
     ]
 
 
-generateKeypair :: IO ()
-generateKeypair = do
+generateKeypair :: T.Text -> IO ()
+generateKeypair email = do
   (pk, sk) <- createKeypair
-  let keypair = Keypair pk sk
+  let keypair = UserKeypair email pk sk
   putStrLn $ T.unpack $ decodeUtf8 $ toStrict $ encode $ toJSON keypair
   return ()

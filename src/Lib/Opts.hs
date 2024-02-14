@@ -14,12 +14,15 @@ import Lib.Server.IAM.DB.Postgres
 
 
 data Command
-  = Keypair
-  | Server !ServerOptions
+  = Server !ServerOptions
+  | Keypair !KeypairOptions
   deriving (Show)
 
 
-newtype Options = Options Command
+newtype Options = Options Command deriving (Show)
+
+
+newtype KeypairOptions = KeypairOptions Text deriving (Show)
 
 
 data ServerOptions = ServerOptions
@@ -40,7 +43,7 @@ options = Options <$> hsubparser
   ( command "server"
     (info (Server <$> serverOptions) (progDesc "Start the server"))
   <> command "keypair"
-    (info (pure Keypair) (progDesc "Generate a keypair"))
+    (info (Keypair <$> keypairOptions) (progDesc "Generate a keypair"))
   )
 
 
@@ -100,11 +103,20 @@ serverOptions = ServerOptions
       )
 
 
+keypairOptions :: Parser KeypairOptions
+keypairOptions = KeypairOptions
+  <$> strOption
+      ( long "email"
+     <> metavar "EMAIL"
+     <> help "Email for keypair"
+      )
+
+
 runOptions :: Options -> IO ()
 runOptions opts =
   case opts of
-    Options Keypair -> generateKeypair
     Options (Server opts') -> runServer opts'
+    Options (Keypair (KeypairOptions email)) -> generateKeypair email
 
 
 runServer :: ServerOptions -> IO ()
