@@ -1,19 +1,17 @@
 ---
 kind: pipeline
 type: kubernetes
-clone:
-  disable: true
 name: build
 steps:
-# - name: image
-#   image: images.home.mtaylor.io/drone-kaniko:latest
-#   settings:
-#     repo: images.home.mtaylor.io/api-mtaylor-io
-#     auto_tag: true
-#     enable_cache: true
-#     username: anonymous
-#     password: anonymous
-#     registry: images.home.mtaylor.io
+- name: image
+  image: images.home.mtaylor.io/drone-kaniko:latest
+  settings:
+    repo: images.home.mtaylor.io/api-mtaylor-io
+    auto_tag: true
+    enable_cache: true
+    username: anonymous
+    password: anonymous
+    registry: images.home.mtaylor.io
 - name: deploy
   image: images.home.mtaylor.io/deployer:latest
   commands:
@@ -25,11 +23,16 @@ steps:
   - chmod 0600 ~/.ssh/id_ed25519
   - ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
   - git clone git@github.com:mtaylor91/argocd-deployment.git
-  - cd argocd-deployment
-  - env | sort
+  - cd argocd-deployment/home/namespaced/mtaylor-io
+  - yq -Y ".resources |= map(if . | contains(\"api-mtaylor-io\") then sub(\"ref=[^/]+\"; "ref=$DRONE_TAG") else . end)" kustomization.yml
+  - git commit -a -m "Update api-mtaylor-io to $DRONE_TAG"
+  - git push origin main
   environment:
     SSH_KEY_BASE64:
       from_secret: ssh_key_base64
+  when:
+    event:
+    - tag
 trigger:
   event:
   - push
