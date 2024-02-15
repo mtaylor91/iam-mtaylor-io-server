@@ -122,14 +122,14 @@ runOptions opts =
 runServer :: ServerOptions -> IO ()
 runServer opts =
   if postgres opts
-    then flip startApp (port opts) =<< initDB adminEmail' adminPublicKey' =<<
+    then startApp (port opts) =<< initDB adminEmail' adminPublicKey' =<<
       connectToDatabase
       (postgresHost opts)
       (postgresPort opts)
       (postgresDatabase opts)
       (postgresUserName opts)
       (postgresPassword opts)
-    else flip startApp (port opts) =<< initDB adminEmail' adminPublicKey' =<< inMemory
+    else startApp (port opts) =<< initDB adminEmail' adminPublicKey' =<< inMemory
   where
     adminEmail' = adminEmail opts
     adminPublicKey' = adminPublicKey opts

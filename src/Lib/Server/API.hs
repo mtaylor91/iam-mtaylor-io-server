@@ -27,8 +27,8 @@ import Lib.Server.IAM.DB
 app :: DB db => db -> Application
 app db = serveWithContext api (authContext db) $ server db
 
-startApp :: DB db => db -> Int -> IO ()
-startApp db port = run port $ app db
+startApp :: DB db => Int -> db -> IO ()
+startApp port db = run port $ app db
 
 server :: DB db => db -> Server API
 server db
