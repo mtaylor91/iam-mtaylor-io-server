@@ -20,6 +20,7 @@ steps:
   - whoami
   - mkdir -p ~/.ssh
   - ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+  - sleep 1000
   - git clone git@github.com:mtaylor91/argocd-deployment.git
   - cd argocd-deployment
   - env | sort
