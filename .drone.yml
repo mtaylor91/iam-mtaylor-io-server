@@ -16,6 +16,7 @@ steps:
   image: images.home.mtaylor.io/deployer:latest
   commands:
   - set -u
+  - ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
   - git clone git@github.com:mtaylor91/argocd-deployment.git
   - cd argocd-deployment
   - env | sort

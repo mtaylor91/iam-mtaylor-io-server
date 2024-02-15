@@ -1,2 +1,4 @@
+/.dockerignore
+/.gitignore
 /.git
 /.stack-work
