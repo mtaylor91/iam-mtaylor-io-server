@@ -3,19 +3,21 @@ kind: pipeline
 type: kubernetes
 name: build
 steps:
-- name: image
-  image: images.home.mtaylor.io/drone-kaniko:latest
-  settings:
-    repo: images.home.mtaylor.io/api-mtaylor-io
-    auto_tag: true
-    enable_cache: true
-    username: anonymous
-    password: anonymous
-    registry: images.home.mtaylor.io
+# - name: image
+#   image: images.home.mtaylor.io/drone-kaniko:latest
+#   settings:
+#     repo: images.home.mtaylor.io/api-mtaylor-io
+#     auto_tag: true
+#     enable_cache: true
+#     username: anonymous
+#     password: anonymous
+#     registry: images.home.mtaylor.io
 - name: deploy
   image: images.home.mtaylor.io/deployer:latest
   commands:
   - set -u
+  - pwd
+  - whoami
   - mkdir -p ~/.ssh
   - ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
   - git clone git@github.com:mtaylor91/argocd-deployment.git
