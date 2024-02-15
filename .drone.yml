@@ -21,7 +21,7 @@ steps:
   - pwd
   - whoami
   - mkdir -p ~/.ssh
-  - echo -n "${SSH_KEY}" > ~/.ssh/id_ed25519
+  - echo -n "$SSH_KEY" > ~/.ssh/id_ed25519
   - chmod 0600 ~/.ssh/id_ed25519
   - sleep 300
   - ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
@@ -29,8 +29,7 @@ steps:
   - cd argocd-deployment
   - env | sort
   environment:
-    SSH_KEY:
-      from_secret: ssh_key
+    SSH_KEY: ${SSH_KEY}
 trigger:
   event:
   - push
