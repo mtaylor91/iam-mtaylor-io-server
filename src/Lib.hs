@@ -1,4 +1,4 @@
 module Lib (app, run) where
 
-import Lib.Opts
-import Lib.Server.API
+import Lib.Opts (run)
+import Lib.Server.API (app)
