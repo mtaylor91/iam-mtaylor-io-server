@@ -17,10 +17,10 @@ import Test.Hspec
 import Test.Hspec.Wai
 
 import Lib (app)
-import Lib.Auth (authStringToSign)
 import Lib.IAM
-import Lib.IAM.DB
-import Lib.IAM.DB.InMemory
+import Lib.Server.Auth (authStringToSign)
+import Lib.Server.IAM.DB
+import Lib.Server.IAM.DB.InMemory
 
 main :: IO ()
 main = do
