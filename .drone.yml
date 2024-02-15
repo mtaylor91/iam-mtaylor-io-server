@@ -16,6 +16,7 @@ steps:
   image: images.home.mtaylor.io/deployer:latest
   commands:
   - set -u
+  - mkdir -p ~/.ssh
   - ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
   - git clone git@github.com:mtaylor91/argocd-deployment.git
   - cd argocd-deployment
