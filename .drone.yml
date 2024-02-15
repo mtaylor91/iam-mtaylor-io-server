@@ -1,6 +1,8 @@
 ---
 kind: pipeline
 type: kubernetes
+clone:
+  disable: true
 name: build
 steps:
 # - name: image
