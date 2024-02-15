@@ -12,6 +12,13 @@ steps:
     username: anonymous
     password: anonymous
     registry: images.home.mtaylor.io
+- name: deploy
+  image: images.home.mtaylor.io/deployer:latest
+  commands:
+  - set -u
+  - git clone git@github.com:mtaylor91/argocd-deployment.git
+  - cd argocd-deployment
+  - env | sort
 trigger:
   event:
   - push
