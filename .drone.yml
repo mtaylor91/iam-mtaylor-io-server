@@ -21,15 +21,15 @@ steps:
   - pwd
   - whoami
   - mkdir -p ~/.ssh
-  - echo -n "$SSH_KEY" > ~/.ssh/id_ed25519
+  - echo -n "$SSH_KEY_BASE64" | base64 --decode > ~/.ssh/id_ed25519
   - chmod 0600 ~/.ssh/id_ed25519
-  - sleep 300
   - ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
   - git clone git@github.com:mtaylor91/argocd-deployment.git
   - cd argocd-deployment
   - env | sort
   environment:
-    SSH_KEY: ${SSH_KEY}
+    SSH_KEY:
+      from_secret: ssh_key
 trigger:
   event:
   - push
