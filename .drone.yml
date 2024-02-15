@@ -23,8 +23,8 @@ steps:
   - chmod 0600 ~/.ssh/id_ed25519
   - ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
   - git clone git@github.com:mtaylor91/argocd-deployment.git
-  - cd argocd-deployment/home/namespaced/mtaylor-io
-  - yq -Y ".resources |= map(if . | contains(\"api-mtaylor-io\") then sub(\"ref=[^/]+\"; "ref=$DRONE_TAG") else . end)" kustomization.yml
+  - cd argocd-deployment
+  - ./bin/update-repo-tag.sh home/namespaced/mtaylor-io api-mtaylor-io $DRONE_TAG
   - git commit -a -m "Update api-mtaylor-io to $DRONE_TAG"
   - git push origin main
   environment:
