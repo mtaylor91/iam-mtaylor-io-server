@@ -27,8 +27,10 @@ library
   exposed-modules:
       Lib
       Lib.API
+      Lib.Client
+      Lib.Command.Create.User
+      Lib.Command.Keypair
       Lib.IAM
-      Lib.Keypair
       Lib.Opts
       Lib.Server.API
       Lib.Server.Auth
@@ -54,6 +56,7 @@ library
     , hasql
     , hasql-pool
     , hasql-th
+    , http-client
     , http-types
     , mtl
     , optparse-applicative
@@ -86,6 +89,7 @@ executable api-mtaylor-io
     , hasql
     , hasql-pool
     , hasql-th
+    , http-client
     , http-types
     , mtl
     , optparse-applicative
@@ -122,6 +126,7 @@ test-suite api-mtaylor-io-test
     , hspec
     , hspec-wai
     , hspec-wai-json
+    , http-client
     , http-types
     , mtl
     , optparse-applicative

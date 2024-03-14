@@ -6,7 +6,8 @@ import Data.Text
 import Data.Word (Word16)
 import Options.Applicative
 
-import Lib.Keypair
+import Lib.Command.Keypair
+import Lib.Command.Create.User
 import Lib.Server.API
 import Lib.Server.Init
 import Lib.Server.IAM.DB.InMemory
@@ -14,12 +15,24 @@ import Lib.Server.IAM.DB.Postgres
 
 
 data Command
-  = Server !ServerOptions
+  = Create !CreateCommand
   | Keypair !KeypairOptions
+  | Server !ServerOptions
   deriving (Show)
 
 
 newtype Options = Options Command deriving (Show)
+
+
+newtype CreateCommand
+  = User UserCreateOptions
+  deriving (Show)
+
+
+data UserCreateOptions = UserCreateOptions
+  { email :: !Text
+  , publicKey :: !(Maybe Text)
+  } deriving (Show)
 
 
 newtype KeypairOptions = KeypairOptions Text deriving (Show)
@@ -40,11 +53,42 @@ data ServerOptions = ServerOptions
 
 options :: Parser Options
 options = Options <$> hsubparser
-  ( command "server"
-    (info (Server <$> serverOptions) (progDesc "Start the server"))
+  ( command "create"
+    (info (Create <$> createCommand) (progDesc "Create a user"))
   <> command "keypair"
     (info (Keypair <$> keypairOptions) (progDesc "Generate a keypair"))
+  <> command "server"
+    (info (Server <$> serverOptions) (progDesc "Start the server"))
   )
+
+
+createCommand :: Parser CreateCommand
+createCommand = subparser
+  ( command "user"
+    (info (User <$> userCreateOptions) (progDesc "Create a user"))
+  )
+
+
+userCreateOptions :: Parser UserCreateOptions
+userCreateOptions = UserCreateOptions
+  <$> argument str
+      ( metavar "EMAIL"
+     <> help "Email for user"
+      )
+  <*> optional ( strOption
+      ( long "public-key"
+     <> metavar "PUBLIC_KEY"
+     <> help "Public key for user"
+      ) )
+
+
+keypairOptions :: Parser KeypairOptions
+keypairOptions = KeypairOptions
+  <$> strOption
+      ( long "email"
+     <> metavar "EMAIL"
+     <> help "Email for keypair"
+      )
 
 
 serverOptions :: Parser ServerOptions
@@ -103,20 +147,15 @@ serverOptions = ServerOptions
       )
 
 
-keypairOptions :: Parser KeypairOptions
-keypairOptions = KeypairOptions
-  <$> strOption
-      ( long "email"
-     <> metavar "EMAIL"
-     <> help "Email for keypair"
-      )
-
-
 runOptions :: Options -> IO ()
 runOptions opts =
   case opts of
-    Options (Server opts') -> runServer opts'
-    Options (Keypair (KeypairOptions email)) -> generateKeypair email
+    Options (Create (User (UserCreateOptions email' publicKey'))) ->
+      createUser email' publicKey'
+    Options (Keypair (KeypairOptions email')) ->
+      generateKeypair email'
+    Options (Server opts') ->
+      runServer opts'
 
 
 runServer :: ServerOptions -> IO ()

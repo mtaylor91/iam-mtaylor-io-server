@@ -28,6 +28,7 @@ dependencies:
 - hasql
 - hasql-pool
 - hasql-th
+- http-client
 - http-types
 - mtl
 - optparse-applicative

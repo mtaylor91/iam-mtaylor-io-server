@@ -35,6 +35,10 @@ $(deriveJSON defaultOptions { sumEncoding = UntaggedValue } ''UserId)
 instance FromHttpApiData UserId where
   parseUrlPiece = Right . UserEmail
 
+instance ToHttpApiData UserId where
+  toUrlPiece (UserEmail email) = email
+  toUrlPiece (UserUUID uuid) = toText uuid
+
 
 data GroupId
   = GroupUUID !UUID
@@ -45,6 +49,10 @@ $(deriveJSON defaultOptions { sumEncoding = UntaggedValue } ''GroupId)
 
 instance FromHttpApiData GroupId where
   parseUrlPiece = Right . GroupName
+
+instance ToHttpApiData GroupId where
+  toUrlPiece (GroupName name) = name
+  toUrlPiece (GroupUUID uuid) = toText uuid
 
 
 data User = User

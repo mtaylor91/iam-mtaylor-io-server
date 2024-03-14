@@ -12,6 +12,7 @@ module Lib.API
   , PolicyAPI
   , PoliciesAPI
   , api
+  , iamAPI
   ) where
 
 import Data.UUID
@@ -19,11 +20,15 @@ import Servant
 
 import Lib.IAM
 
-type API
-  = ( "users" :> AuthProtect "signature-auth" :> UsersAPI
-  :<|> ( "groups" :> AuthProtect "signature-auth" :> GroupsAPI )
-  :<|> ( "policies" :> AuthProtect "signature-auth" :> PoliciesAPI )
-  :<|> ( "memberships" :> AuthProtect "signature-auth" :> MembershipsAPI )
+
+type API = AuthProtect "signature-auth" :> IAMAPI
+
+
+type IAMAPI
+  = ( "users" :> UsersAPI
+  :<|> ( "groups" :> GroupsAPI )
+  :<|> ( "policies" :> PoliciesAPI )
+  :<|> ( "memberships" :> MembershipsAPI )
     )
 
 type UsersAPI
@@ -77,3 +82,7 @@ type PolicyAPI
 
 api :: Proxy API
 api = Proxy
+
+
+iamAPI :: Proxy IAMAPI
+iamAPI = Proxy

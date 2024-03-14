@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lib.Keypair (generateKeypair) where
+module Lib.Command.Keypair (generateKeypair) where
 
 import Crypto.Sign.Ed25519
 import Data.Aeson

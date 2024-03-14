@@ -31,11 +31,11 @@ startApp :: DB db => Int -> db -> IO ()
 startApp port db = run port $ app db
 
 server :: DB db => db -> Server API
-server db
-  = usersAPI db
-  :<|> groupsAPI db
-  :<|> policiesAPI db
-  :<|> membershipsAPI db
+server db caller
+  = usersAPI db caller
+  :<|> groupsAPI db caller
+  :<|> policiesAPI db caller
+  :<|> membershipsAPI db caller
 
 usersAPI :: DB db => db -> Auth -> Server UsersAPI
 usersAPI db caller
