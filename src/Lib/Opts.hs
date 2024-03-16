@@ -151,7 +151,7 @@ runOptions :: Options -> IO ()
 runOptions opts =
   case opts of
     Options (Create (User (UserCreateOptions email' publicKey'))) ->
-      createUser email' publicKey'
+      createUser $ CreateUser email' publicKey'
     Options (Keypair (KeypairOptions email')) ->
       generateKeypair email'
     Options (Server opts') ->

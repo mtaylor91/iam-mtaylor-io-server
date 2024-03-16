@@ -28,6 +28,7 @@ library
       Lib
       Lib.API
       Lib.Client
+      Lib.Client.Auth
       Lib.Command.Create.User
       Lib.Command.Keypair
       Lib.IAM

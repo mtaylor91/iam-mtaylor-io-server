@@ -67,7 +67,7 @@ authHandler db = mkAuthHandler $ \req -> do
 
 
 authenticate :: DB db => db -> Request -> Handler (AuthRequest, User)
-authenticate db req =
+authenticate db req = do
   let maybeAuth = do
         userIdString <- lookup "X-User-Id" (requestHeaders req)
         authHeader <- lookup "Authorization" (requestHeaders req)

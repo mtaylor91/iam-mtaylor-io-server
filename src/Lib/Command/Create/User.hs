@@ -1,31 +1,43 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lib.Command.Create.User (createUser) where
+module Lib.Command.Create.User
+  ( createUser
+  , CreateUser(..)
+  ) where
 
 import Crypto.Sign.Ed25519
 import Data.ByteString.Base64
 import Data.Text
 import Data.Text.Encoding
 import qualified Lib.Client
+import Lib.Client.Auth
 import Lib.IAM (UserId(..), UserPrincipal(..))
-import Network.HTTP.Client (newManager, defaultManagerSettings)
+import Network.HTTP.Client
 import Servant.Client
 
 
-createUser :: Text -> Maybe Text -> IO ()
-createUser email maybePublicKey = do
+data CreateUser = CreateUser
+  { createUserEmail :: !Text
+  , createUserPublicKey :: !(Maybe Text)
+  } deriving (Show)
+
+
+createUser :: CreateUser -> IO ()
+createUser createUserInfo = do
   url <- serverUrl
-  case maybePublicKey of
+  case createUserPublicKey createUserInfo of
     Just pk -> do
-      createUser' url email pk
+      createUser' url (createUserEmail createUserInfo) pk
     Nothing -> do
       (pk, sk) <- createKeypair
-      createUser' url email (encodeBase64 (unPublicKey pk))
+      createUser' url (createUserEmail createUserInfo) $ encodeBase64 (unPublicKey pk)
+      putStrLn $ "Public key: " ++ unpack (encodeBase64 (unPublicKey pk))
       putStrLn $ "Secret key: " ++ unpack (encodeBase64 (unSecretKey sk))
 
 
 createUser' :: BaseUrl -> Text -> Text -> IO ()
 createUser' url email pk = do
-  mgr <- newManager defaultManagerSettings
+  auth <- clientAuthInfo
+  mgr <- newManager $ defaultManagerSettings { managerModifyRequest = clientAuth auth }
   case decodeBase64 (encodeUtf8 pk) of
     Left _ ->
       putStrLn "Invalid public key: base64 decoding failed"
@@ -37,7 +49,6 @@ createUser' url email pk = do
         Left err -> putStrLn $ "Error: " ++ show err
         Right _ -> do
           putStrLn $ "Created user " ++ unpack email
-          putStrLn $ "Public key " ++ unpack pk
 
 
 serverUrl :: IO BaseUrl
