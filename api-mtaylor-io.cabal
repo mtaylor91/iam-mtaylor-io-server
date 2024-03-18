@@ -30,6 +30,7 @@ library
       Lib.Client
       Lib.Client.Auth
       Lib.Command.Create.User
+      Lib.Command.Get.User
       Lib.Command.Keypair
       Lib.IAM
       Lib.Opts

@@ -21,13 +21,13 @@ newtype ClientAuth = ClientAuth { clientAuth :: Request -> IO Request }
 
 clientAuthInfo :: IO ClientAuth
 clientAuthInfo = do
-  maybeEmail <- lookupEnv "EMAIL"
-  maybeSecretKey <- lookupEnv "SECRET_KEY"
+  maybeEmail <- lookupEnv "API_MTAYLOR_IO_EMAIL"
+  maybeSecretKey <- lookupEnv "API_MTAYLOR_IO_SECRET_KEY"
   case (maybeEmail, maybeSecretKey) of
     (Nothing, _) ->
-      throw $ userError "EMAIL environment variable not set"
+      throw $ userError "API_MTAYLOR_IO_EMAIL environment variable not set"
     (_, Nothing) ->
-      throw $ userError "SECRET_KEY environment variable not set"
+      throw $ userError "API_MTAYLOR_IO_SECRET_KEY environment variable not set"
     (Just email, Just secretKey) ->
       case decodeSecretKey $ pack secretKey of
         Nothing ->

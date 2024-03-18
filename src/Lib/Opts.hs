@@ -5,9 +5,11 @@ import Data.ByteString (ByteString)
 import Data.Text
 import Data.Word (Word16)
 import Options.Applicative
+import System.Environment
 
 import Lib.Command.Keypair
 import Lib.Command.Create.User
+import Lib.Command.Get.User
 import Lib.Server.API
 import Lib.Server.Init
 import Lib.Server.IAM.DB.InMemory
@@ -16,6 +18,7 @@ import Lib.Server.IAM.DB.Postgres
 
 data Command
   = Create !CreateCommand
+  | Get !GetCommand
   | Keypair !KeypairOptions
   | Server !ServerOptions
   deriving (Show)
@@ -25,7 +28,7 @@ newtype Options = Options Command deriving (Show)
 
 
 newtype CreateCommand
-  = User UserCreateOptions
+  = UserCreate UserCreateOptions
   deriving (Show)
 
 
@@ -35,13 +38,19 @@ data UserCreateOptions = UserCreateOptions
   } deriving (Show)
 
 
-newtype KeypairOptions = KeypairOptions Text deriving (Show)
+newtype GetCommand
+  = UserGet Text
+  deriving (Show)
+
+
+data KeypairOptions = KeypairOptions
+  { keypairEmail :: !Text
+  , keypairShell :: !Bool
+  } deriving (Show)
 
 
 data ServerOptions = ServerOptions
-  { adminEmail :: !Text
-  , adminPublicKey :: !Text
-  , port :: !Int
+  { port :: !Int
   , postgres :: !Bool
   , postgresHost :: !ByteString
   , postgresPort :: !Word16
@@ -54,7 +63,9 @@ data ServerOptions = ServerOptions
 options :: Parser Options
 options = Options <$> hsubparser
   ( command "create"
-    (info (Create <$> createCommand) (progDesc "Create a user"))
+    (info (Create <$> createCommand) (progDesc "Create resources"))
+  <> command "get"
+    (info (Get <$> getCommand) (progDesc "Get resources"))
   <> command "keypair"
     (info (Keypair <$> keypairOptions) (progDesc "Generate a keypair"))
   <> command "server"
@@ -65,7 +76,14 @@ options = Options <$> hsubparser
 createCommand :: Parser CreateCommand
 createCommand = subparser
   ( command "user"
-    (info (User <$> userCreateOptions) (progDesc "Create a user"))
+    (info (UserCreate <$> userCreateOptions) (progDesc "Create a user"))
+  )
+
+
+getCommand :: Parser GetCommand
+getCommand = subparser
+  ( command "user"
+    (info (UserGet <$> argument str (metavar "EMAIL")) (progDesc "Get a user"))
   )
 
 
@@ -84,26 +102,20 @@ userCreateOptions = UserCreateOptions
 
 keypairOptions :: Parser KeypairOptions
 keypairOptions = KeypairOptions
-  <$> strOption
-      ( long "email"
-     <> metavar "EMAIL"
+  <$> argument str
+      ( metavar "EMAIL"
      <> help "Email for keypair"
+      )
+  <*> switch
+      ( long "shell"
+     <> short 's'
+     <> help "Format output for shell"
       )
 
 
 serverOptions :: Parser ServerOptions
 serverOptions = ServerOptions
-  <$> strOption
-      ( long "admin-email"
-     <> metavar "EMAIL"
-     <> help "Admin email"
-      )
-  <*> strOption
-      ( long "admin-public-key"
-     <> metavar "PUBLIC_KEY"
-     <> help "Admin public key"
-      )
-  <*> option auto
+  <$> option auto
       ( long "port"
      <> short 'p'
      <> metavar "PORT"
@@ -150,28 +162,37 @@ serverOptions = ServerOptions
 runOptions :: Options -> IO ()
 runOptions opts =
   case opts of
-    Options (Create (User (UserCreateOptions email' publicKey'))) ->
+    Options (Create (UserCreate (UserCreateOptions email' publicKey'))) ->
       createUser $ CreateUser email' publicKey'
-    Options (Keypair (KeypairOptions email')) ->
-      generateKeypair email'
+    Options (Get (UserGet email')) ->
+      getUser email'
+    Options (Keypair (KeypairOptions email' formatShell)) ->
+      generateKeypair email' formatShell
     Options (Server opts') ->
       runServer opts'
 
 
 runServer :: ServerOptions -> IO ()
-runServer opts =
+runServer opts = do
+  adminEmail <- getEnvVar "EMAIL"
+  adminPublicKey <- getEnvVar "PUBLIC_KEY"
   if postgres opts
-    then startApp (port opts) =<< initDB adminEmail' adminPublicKey' =<<
+    then startApp (port opts) =<< initDB adminEmail adminPublicKey =<<
       connectToDatabase
       (postgresHost opts)
       (postgresPort opts)
       (postgresDatabase opts)
       (postgresUserName opts)
       (postgresPassword opts)
-    else startApp (port opts) =<< initDB adminEmail' adminPublicKey' =<< inMemory
+    else startApp (port opts) =<< initDB adminEmail adminPublicKey =<< inMemory
   where
-    adminEmail' = adminEmail opts
-    adminPublicKey' = adminPublicKey opts
+    getEnvVar :: String -> IO Text
+    getEnvVar name = do
+      let name' = "API_MTAYLOR_IO_" ++ name
+      maybeVal <- lookupEnv name'
+      case maybeVal of
+        Nothing -> error $ name' ++ " environment variable not set"
+        Just val -> return $ pack val
 
 
 run :: IO ()

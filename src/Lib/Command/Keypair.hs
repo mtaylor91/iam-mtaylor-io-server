@@ -33,9 +33,22 @@ instance ToJSON UserKeypair where
     ]
 
 
-generateKeypair :: T.Text -> IO ()
-generateKeypair email = do
+generateKeypair :: T.Text -> Bool -> IO ()
+generateKeypair email formatShell = do
   (pk, sk) <- createKeypair
   let keypair = UserKeypair email pk sk
-  putStrLn $ T.unpack $ decodeUtf8 $ toStrict $ encode $ toJSON keypair
+  if formatShell
+    then do
+      putStrLn $ "export API_MTAYLOR_IO_EMAIL=" ++ T.unpack email
+      putStrLn $ "export API_MTAYLOR_IO_PUBLIC_KEY=" ++ T.unpack (encodePublicKey pk)
+      putStrLn $ "export API_MTAYLOR_IO_SECRET_KEY=" ++ T.unpack (encodeSecretKey sk)
+    else putStrLn $ T.unpack $ decodeUtf8 $ toStrict $ encode $ toJSON keypair
   return ()
+
+
+encodePublicKey :: PublicKey -> T.Text
+encodePublicKey = encodeBase64 . unPublicKey
+
+
+encodeSecretKey :: SecretKey -> T.Text
+encodeSecretKey = encodeBase64 . unSecretKey
