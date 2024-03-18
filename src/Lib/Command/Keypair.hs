@@ -8,6 +8,8 @@ import Data.ByteString.Lazy (toStrict)
 import Data.Text.Encoding
 import qualified Data.Text as T
 
+import Lib.Config
+
 
 data UserKeypair = UserKeypair
   { userKeypairEmail :: !T.Text
@@ -39,9 +41,10 @@ generateKeypair email formatShell = do
   let keypair = UserKeypair email pk sk
   if formatShell
     then do
-      putStrLn $ "export API_MTAYLOR_IO_EMAIL=" ++ T.unpack email
-      putStrLn $ "export API_MTAYLOR_IO_PUBLIC_KEY=" ++ T.unpack (encodePublicKey pk)
-      putStrLn $ "export API_MTAYLOR_IO_SECRET_KEY=" ++ T.unpack (encodeSecretKey sk)
+      let prefix = "export " ++ envPrefix ++ "_"
+      putStrLn $ prefix ++ "EMAIL=\"" ++ T.unpack email ++ "\""
+      putStrLn $ prefix ++ "PUBLIC_KEY=\"" ++ T.unpack (encodePublicKey pk) ++ "\""
+      putStrLn $ prefix ++ "SECRET_KEY=\"" ++ T.unpack (encodeSecretKey sk) ++ "\""
     else putStrLn $ T.unpack $ decodeUtf8 $ toStrict $ encode $ toJSON keypair
   return ()
 

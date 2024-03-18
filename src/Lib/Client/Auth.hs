@@ -13,7 +13,8 @@ import Data.Text.Encoding
 import Data.UUID
 import Data.UUID.V4
 import Network.HTTP.Client
-import System.Environment
+
+import Lib.Config (configEmail, configSecretKey)
 
 
 newtype ClientAuth = ClientAuth { clientAuth :: Request -> IO Request }
@@ -21,19 +22,13 @@ newtype ClientAuth = ClientAuth { clientAuth :: Request -> IO Request }
 
 clientAuthInfo :: IO ClientAuth
 clientAuthInfo = do
-  maybeEmail <- lookupEnv "API_MTAYLOR_IO_EMAIL"
-  maybeSecretKey <- lookupEnv "API_MTAYLOR_IO_SECRET_KEY"
-  case (maybeEmail, maybeSecretKey) of
-    (Nothing, _) ->
-      throw $ userError "API_MTAYLOR_IO_EMAIL environment variable not set"
-    (_, Nothing) ->
-      throw $ userError "API_MTAYLOR_IO_SECRET_KEY environment variable not set"
-    (Just email, Just secretKey) ->
-      case decodeSecretKey $ pack secretKey of
-        Nothing ->
-          throw $ userError "Invalid secret key"
-        Just secretKey' ->
-          return $ mkClientAuth email secretKey'
+  email <- configEmail
+  secretKey <- configSecretKey
+  case decodeSecretKey $ pack secretKey of
+    Nothing ->
+      throw $ userError "Invalid secret key"
+    Just secretKey' ->
+      return $ mkClientAuth email secretKey'
 
 
 mkClientAuth :: String -> SecretKey -> ClientAuth

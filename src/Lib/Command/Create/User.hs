@@ -8,11 +8,14 @@ import Crypto.Sign.Ed25519
 import Data.ByteString.Base64
 import Data.Text
 import Data.Text.Encoding
-import qualified Lib.Client
-import Lib.Client.Auth
-import Lib.IAM (UserId(..), UserPrincipal(..))
 import Network.HTTP.Client
+import Network.HTTP.Client.TLS
 import Servant.Client
+
+import Lib.Client.Auth
+import Lib.Config
+import Lib.IAM (UserId(..), UserPrincipal(..))
+import qualified Lib.Client
 
 
 data CreateUser = CreateUser
@@ -37,7 +40,7 @@ createUser createUserInfo = do
 createUser' :: BaseUrl -> Text -> Text -> IO ()
 createUser' url email pk = do
   auth <- clientAuthInfo
-  mgr <- newManager $ defaultManagerSettings { managerModifyRequest = clientAuth auth }
+  mgr <- newManager $ tlsManagerSettings { managerModifyRequest = clientAuth auth }
   case decodeBase64 (encodeUtf8 pk) of
     Left _ ->
       putStrLn "Invalid public key: base64 decoding failed"
@@ -52,4 +55,4 @@ createUser' url email pk = do
 
 
 serverUrl :: IO BaseUrl
-serverUrl = parseBaseUrl "http://localhost:8080"
+serverUrl = parseBaseUrl =<< configURL

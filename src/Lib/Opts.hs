@@ -2,14 +2,14 @@
 module Lib.Opts ( options, run, ServerOptions(..) ) where
 
 import Data.ByteString (ByteString)
-import Data.Text
+import Data.Text as T
 import Data.Word (Word16)
 import Options.Applicative
-import System.Environment
 
 import Lib.Command.Keypair
 import Lib.Command.Create.User
 import Lib.Command.Get.User
+import Lib.Config
 import Lib.Server.API
 import Lib.Server.Init
 import Lib.Server.IAM.DB.InMemory
@@ -174,8 +174,8 @@ runOptions opts =
 
 runServer :: ServerOptions -> IO ()
 runServer opts = do
-  adminEmail <- getEnvVar "EMAIL"
-  adminPublicKey <- getEnvVar "PUBLIC_KEY"
+  adminEmail <- T.pack <$> configEmail
+  adminPublicKey <- T.pack <$> configPublicKey
   if postgres opts
     then startApp (port opts) =<< initDB adminEmail adminPublicKey =<<
       connectToDatabase
@@ -185,14 +185,6 @@ runServer opts = do
       (postgresUserName opts)
       (postgresPassword opts)
     else startApp (port opts) =<< initDB adminEmail adminPublicKey =<< inMemory
-  where
-    getEnvVar :: String -> IO Text
-    getEnvVar name = do
-      let name' = "API_MTAYLOR_IO_" ++ name
-      maybeVal <- lookupEnv name'
-      case maybeVal of
-        Nothing -> error $ name' ++ " environment variable not set"
-        Just val -> return $ pack val
 
 
 run :: IO ()
