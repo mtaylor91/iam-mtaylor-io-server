@@ -31,9 +31,7 @@ RUN apt-get update && apt-get install -y libpq5 zlib1g \
   && adduser --system --no-create-home --uid 1000 api
 # Copy the built executables
 COPY --from=build /build/.local/bin/api-mtaylor-io /usr/local/bin/api-mtaylor-io
-# Add the entrypoint
-ADD --chown=1000:1000 entrypoint.sh /usr/local/bin/entrypoint.sh
 # Set the user
 USER api
 # Set the entrypoint
-ENTRYPOINT ["entrypoint.sh"]
+ENTRYPOINT ["api-mtaylor-io", "server"]
