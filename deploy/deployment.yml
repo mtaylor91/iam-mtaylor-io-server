@@ -9,16 +9,21 @@ spec:
       - name: api
         image: images.home.mtaylor.io/api-mtaylor-io
         env:
-        - name: ADMIN_EMAIL
+        - name: API_MTAYLOR_IO_EMAIL
           valueFrom:
             configMapKeyRef:
               name: api-mtaylor-io
               key: email
-        - name: ADMIN_PUBLIC_KEY
+        - name: API_MTAYLOR_IO_PUBLIC_KEY
           valueFrom:
             configMapKeyRef:
               name: api-mtaylor-io
               key: public-key
+        - name: API_MTAYLOR_IO_SECRET_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: api-mtaylor-io
+              key: secret-key
         ports:
         - name: http
           protocol: TCP
