@@ -19,11 +19,6 @@ spec:
             configMapKeyRef:
               name: api-mtaylor-io
               key: public-key
-        - name: API_MTAYLOR_IO_SECRET_KEY
-          valueFrom:
-            configMapKeyRef:
-              name: api-mtaylor-io
-              key: secret-key
         ports:
         - name: http
           protocol: TCP
