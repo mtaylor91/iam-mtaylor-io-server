@@ -23,7 +23,6 @@ import Network.HTTP.Types
 import Network.Wai
 import Servant
 import Servant.Server.Experimental.Auth
-import System.IO
 
 import Lib.Config (headerPrefix)
 import Lib.IAM
@@ -92,8 +91,6 @@ authenticate db req = do
               stringToSign = authStringToSign method path query requestId
               requestId = authRequestId authReq
               pk = authRequestPublicKey authReq
-          liftIO $ putStrLn $ "Request string to sign: " <> unpack (decodeUtf8 stringToSign)
-          liftIO $ hFlush stdout
           if verifySignature user pk authHeader stringToSign
             then return (authReq, user)
             else throwError $ err401 { errBody = "Invalid signature" }
