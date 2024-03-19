@@ -91,10 +91,11 @@ authenticate db req = do
               pk = authRequestPublicKey authReq
           if verifySignature user pk authHeader stringToSign
             then return (authReq, user)
-            else throwError err401
-        Left NotFound -> throwError err401
+            else throwError $ err401 { errBody = "Invalid signature" }
+        Left NotFound -> throwError $ err401 { errBody = "User not found" }
         Left _ -> throwError err500
-    Nothing -> throwError err401
+    Nothing -> do
+      throwError $ err401 { errBody = "Missing or invalid authentication headers" }
 
 
 authorize :: DB db => db -> Request -> Authentication -> Handler Auth
