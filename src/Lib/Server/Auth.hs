@@ -15,7 +15,8 @@ import Control.Monad.Except
 import Crypto.Sign.Ed25519
 import Data.ByteString (ByteString, splitAt)
 import Data.ByteString.Base64
-import Data.Text (Text, unpack)
+import Data.CaseInsensitive
+import Data.Text (Text, pack, unpack)
 import Data.Text.Encoding
 import Data.UUID
 import Network.HTTP.Types
@@ -24,6 +25,7 @@ import Servant
 import Servant.Server.Experimental.Auth
 import System.IO
 
+import Lib.Config (headerPrefix)
 import Lib.IAM
 import Lib.Server.IAM.DB
 import Lib.Server.IAM.Policy
@@ -70,10 +72,10 @@ authHandler db = mkAuthHandler $ \req -> do
 authenticate :: DB db => db -> Request -> Handler (AuthRequest, User)
 authenticate db req = do
   let maybeAuth = do
-        userIdString <- lookup "X-User-Id" (requestHeaders req)
+        userIdString <- lookupHeader req "User-Id"
         authHeader <- lookup "Authorization" (requestHeaders req)
-        publicKeyBase64 <- lookup "X-Public-Key" (requestHeaders req)
-        requestIdString <- lookup "X-Request-Id" (requestHeaders req)
+        publicKeyBase64 <- lookupHeader req "Public-Key"
+        requestIdString <- lookupHeader req "Request-Id"
         uid <- parseUserId $ decodeUtf8 userIdString
         pk <- parsePublicKey publicKeyBase64
         requestId <- fromString $ unpack $ decodeUtf8 requestIdString
@@ -176,3 +178,9 @@ decodeSignature s =
 authStringToSign :: Method -> ByteString -> ByteString -> UUID -> ByteString
 authStringToSign method path query requestId =
   method <> "\n" <> path <> "\n" <> query <> "\n" <> encodeUtf8 (toText requestId)
+
+
+-- | Lookup a given header in the request
+lookupHeader :: Request -> HeaderName -> Maybe ByteString
+lookupHeader req header = lookup header' (requestHeaders req) where
+  header' = mk (encodeUtf8 $ pack headerPrefix) <> "-" <> header

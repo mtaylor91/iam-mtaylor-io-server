@@ -55,6 +55,7 @@ library
     , base >=4.7 && <5
     , base64
     , bytestring
+    , case-insensitive
     , ed25519
     , hasql
     , hasql-pool
@@ -89,6 +90,7 @@ executable api-mtaylor-io
     , base
     , base64
     , bytestring
+    , case-insensitive
     , ed25519
     , hasql
     , hasql-pool
@@ -124,6 +126,7 @@ test-suite api-mtaylor-io-test
     , base
     , base64
     , bytestring
+    , case-insensitive
     , ed25519
     , hasql
     , hasql-pool

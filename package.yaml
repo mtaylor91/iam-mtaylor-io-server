@@ -20,10 +20,11 @@ extra-source-files:
 description:         Please see the README on GitHub at <https://github.com/mtaylor91/api-mtaylor-io#readme>
 
 dependencies:
+- aeson
 - base >= 4.7 && < 5
 - base64
 - bytestring
-- aeson
+- case-insensitive
 - ed25519
 - hasql
 - hasql-pool

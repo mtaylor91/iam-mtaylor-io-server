@@ -4,6 +4,7 @@ module Lib.Config
   , configSecretKey
   , configURL
   , envPrefix
+  , headerPrefix
   ) where
 
 import Control.Exception
@@ -12,6 +13,10 @@ import System.Environment
 
 envPrefix :: String
 envPrefix = "API_MTAYLOR_IO"
+
+
+headerPrefix :: String
+headerPrefix = "X-MTaylor-IO"
 
 
 configEmail :: IO String

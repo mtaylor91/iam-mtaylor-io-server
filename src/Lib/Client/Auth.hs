@@ -8,13 +8,14 @@ import Control.Exception
 import Crypto.Sign.Ed25519
 import Data.ByteString hiding (pack, unpack)
 import Data.ByteString.Base64
+import Data.CaseInsensitive
 import Data.Text
 import Data.Text.Encoding
 import Data.UUID
 import Data.UUID.V4
 import Network.HTTP.Client
 
-import Lib.Config (configEmail, configSecretKey)
+import Lib.Config (configEmail, configSecretKey, headerPrefix)
 
 
 newtype ClientAuth = ClientAuth { clientAuth :: Request -> IO Request }
@@ -44,11 +45,12 @@ mkClientAuth email secretKey = ClientAuth $ \req -> do
       return $ req
         { requestHeaders = requestHeaders req
           ++ [ ("Authorization", authorization)
-             , ("X-User-Id", encodeUtf8 $ pack email)
-             , ("X-Public-Key", encodeUtf8 publicKey)
-             , ("X-Request-Id", encodeUtf8 $ pack $ toString requestId)
+             , (headerPrefix' <> "-User-Id", encodeUtf8 $ pack email)
+             , (headerPrefix' <> "-Public-Key", encodeUtf8 publicKey)
+             , (headerPrefix' <> "-Request-Id", encodeUtf8 $ pack $ toString requestId)
              ]
         }
+  where headerPrefix' = mk (encodeUtf8 $ pack headerPrefix)
 
 
 encodePublicKey :: SecretKey -> Text
