@@ -89,6 +89,7 @@ authenticate db req = do
               stringToSign = authStringToSign method path query requestId
               requestId = authRequestId authReq
               pk = authRequestPublicKey authReq
+          liftIO $ putStrLn $ "Request string to sign: " <> unpack (decodeUtf8 stringToSign)
           if verifySignature user pk authHeader stringToSign
             then return (authReq, user)
             else throwError $ err401 { errBody = "Invalid signature" }

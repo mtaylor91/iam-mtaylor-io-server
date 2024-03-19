@@ -40,6 +40,7 @@ mkClientAuth email secretKey = ClientAuth $ \req -> do
       let publicKey = encodePublicKey secretKey
           authorization = authHeader reqStringToSign secretKey
           reqStringToSign = authStringToSign req requestId
+      putStrLn $ "Request string to sign: " <> unpack reqStringToSign
       return $ req
         { requestHeaders = requestHeaders req
           ++ [ ("Authorization", authorization)
