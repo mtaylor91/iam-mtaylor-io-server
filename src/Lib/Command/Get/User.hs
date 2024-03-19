@@ -8,6 +8,7 @@ import Data.Text (Text)
 import Data.Text.Encoding
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
+import Network.HTTP.Types.Status
 import Servant.Client
 import qualified Data.Text as T
 
@@ -27,6 +28,16 @@ getUser email = do
   case result of
     Right user ->
       putStrLn $ T.unpack (decodeUtf8 $ toStrict $ encode $ toJSON user)
+    Left (FailureResponse _ response) ->
+      case responseStatusCode response of
+        s | s == status401 ->
+          putStrLn "Unauthorized"
+        s | s == status403 ->
+          putStrLn "Forbidden"
+        s | s == status404 ->
+          putStrLn $ "User not found: " ++ T.unpack email
+        _anyOtherStatus ->
+          putStrLn "Unknown failure"
     Left err ->
       putStrLn $ "Error: " ++ show err
 

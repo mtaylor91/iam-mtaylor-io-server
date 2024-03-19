@@ -5,10 +5,15 @@ module Lib.Config
   , configURL
   , envPrefix
   , headerPrefix
+  , printUserShellVars
   ) where
 
 import Control.Exception
+import Crypto.Sign.Ed25519
 import System.Environment
+import qualified Data.Text as T
+
+import Lib.Util
 
 
 envPrefix :: String
@@ -52,3 +57,15 @@ lookupEnvConfig :: String -> IO (Maybe String)
 lookupEnvConfig key = do
   let key' = envPrefix ++ "_" ++ key
   lookupEnv key'
+
+
+printUserShellVars :: T.Text -> PublicKey -> SecretKey -> IO ()
+printUserShellVars email pk sk = do
+  let email' = T.unpack email
+  let pk' = T.unpack (encodePublicKey pk)
+  let sk' = T.unpack (encodeSecretKey sk)
+  let prefix = "export " ++ envPrefix ++ "_"
+  putStrLn $ prefix ++ "EMAIL=\"" ++ email' ++ "\""
+  putStrLn $ prefix ++ "PUBLIC_KEY=\"" ++ pk' ++ "\""
+  putStrLn $ prefix ++ "SECRET_KEY=\"" ++ sk' ++ "\""
+  return ()

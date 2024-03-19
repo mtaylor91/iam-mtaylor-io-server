@@ -40,18 +40,6 @@ generateKeypair email formatShell = do
   (pk, sk) <- createKeypair
   let keypair = UserKeypair email pk sk
   if formatShell
-    then do
-      let prefix = "export " ++ envPrefix ++ "_"
-      putStrLn $ prefix ++ "EMAIL=\"" ++ T.unpack email ++ "\""
-      putStrLn $ prefix ++ "PUBLIC_KEY=\"" ++ T.unpack (encodePublicKey pk) ++ "\""
-      putStrLn $ prefix ++ "SECRET_KEY=\"" ++ T.unpack (encodeSecretKey sk) ++ "\""
+    then printUserShellVars email pk sk
     else putStrLn $ T.unpack $ decodeUtf8 $ toStrict $ encode $ toJSON keypair
   return ()
-
-
-encodePublicKey :: PublicKey -> T.Text
-encodePublicKey = encodeBase64 . unPublicKey
-
-
-encodeSecretKey :: SecretKey -> T.Text
-encodeSecretKey = encodeBase64 . unSecretKey

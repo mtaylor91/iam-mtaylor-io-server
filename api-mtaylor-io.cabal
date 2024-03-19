@@ -43,6 +43,7 @@ library
       Lib.Server.IAM.DB.Postgres
       Lib.Server.IAM.Policy
       Lib.Server.Init
+      Lib.Util
   other-modules:
       Paths_api_mtaylor_io
   autogen-modules:

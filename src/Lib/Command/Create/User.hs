@@ -6,7 +6,7 @@ module Lib.Command.Create.User
 
 import Crypto.Sign.Ed25519
 import Data.ByteString.Base64
-import Data.Text
+import Data.Text as T
 import Data.Text.Encoding
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
@@ -33,8 +33,7 @@ createUser createUserInfo = do
     Nothing -> do
       (pk, sk) <- createKeypair
       createUser' url (createUserEmail createUserInfo) $ encodeBase64 (unPublicKey pk)
-      putStrLn $ "Public key: " ++ unpack (encodeBase64 (unPublicKey pk))
-      putStrLn $ "Secret key: " ++ unpack (encodeBase64 (unSecretKey sk))
+      printUserShellVars (createUserEmail createUserInfo) pk sk
 
 
 createUser' :: BaseUrl -> Text -> Text -> IO ()
@@ -50,8 +49,7 @@ createUser' url email pk = do
       result <- runClientM clientCommand $ mkClientEnv mgr url
       case result of
         Left err -> putStrLn $ "Error: " ++ show err
-        Right _ -> do
-          putStrLn $ "Created user " ++ unpack email
+        Right _ -> return ()
 
 
 serverUrl :: IO BaseUrl
