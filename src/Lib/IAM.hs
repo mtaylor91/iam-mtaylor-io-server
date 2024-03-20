@@ -58,6 +58,7 @@ instance ToHttpApiData GroupId where
 data User = User
   { userId :: !UserId
   , userGroups :: ![GroupId]
+  , userPolicies :: ![UUID]
   , userPublicKeys :: ![PublicKey]
   } deriving (Eq, Show)
 
@@ -66,10 +67,11 @@ instance FromJSON User where
     email <- obj .:? "email"
     uuid <- obj .:? "uuid"
     groups <- obj .: "groups"
+    policies <- obj .: "policies"
     publicKeys <- obj .: "publicKeys"
     case (email, uuid, decodePublicKeys publicKeys) of
-      (Just e, Nothing, Just pks) -> return $ User (UserEmail e) groups pks
-      (Nothing, Just u, Just pks) -> return $ User (UserUUID u) groups pks
+      (Just e, Nothing, Just pks) -> return $ User (UserEmail e) groups policies pks
+      (Nothing, Just u, Just pks) -> return $ User (UserUUID u) groups policies pks
       (_, _, _) -> fail "Invalid JSON"
     where
       decodePublicKeys :: [Text] -> Maybe [PublicKey]
@@ -83,14 +85,16 @@ instance FromJSON User where
   parseJSON _ = fail "Invalid JSON"
 
 instance ToJSON User where
-  toJSON (User (UserEmail email) groups pks) = object
+  toJSON (User (UserEmail email) groups policies pks) = object
     [ "email" .= email
     , "groups" .= groups
+    , "policies" .= policies
     , "publicKeys" .= fmap (encodeBase64 . unPublicKey) pks
     ]
-  toJSON (User (UserUUID uuid) groups pks) = object
+  toJSON (User (UserUUID uuid) groups policies pks) = object
     [ "uuid" .= uuid
     , "groups" .= groups
+    , "policies" .= policies
     , "publicKeys" .= fmap (encodeBase64 . unPublicKey) pks
     ]
 

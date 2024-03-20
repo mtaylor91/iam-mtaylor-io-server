@@ -44,6 +44,7 @@ instance DB InMemory where
       user s = User
         { userId = uid
         , userGroups = map snd $ filter ((== uid) . fst) $ memberships s
+        , userPolicies = map snd $ filter ((== uid) . fst) $ userPolicyAttachments s
         , userPublicKeys = map publicKey $ filter ((== uid) . principal) $ principals s
         }
 

@@ -52,21 +52,25 @@ instance DB PostgresDB where
         r1 <- useDB db $ statement email selectUserEmailGroupNames
         r2 <- useDB db $ statement email selectUserEmailGroupUUIDs
         r3 <- useDB db $ statement email selectUserEmailPublicKeys
+        r4 <- useDB db $ statement email selectUserEmailPolicyIds
         let gs = namedGroups ++ uuidGroups
             pks = map PublicKey $ toList r3
+            policies = toList r4
             uuidGroups = map GroupUUID $ toList r2
             namedGroups = map GroupName $ toList r1
-        return $ User (UserEmail email) gs pks
+        return $ User (UserEmail email) gs policies pks
       Nothing -> throwError NotFound
   getUser db (UserUUID uuid) = do
     r0 <- useDB db $ statement uuid selectUserUUIDGroupNames
     r1 <- useDB db $ statement uuid selectUserUUIDGroupUUIDs
     r2 <- useDB db $ statement uuid selectUserUUIDPublicKeys
+    r3 <- useDB db $ statement uuid selectUserUUIDPolicyIds
     let gs = namedGroups ++ uuidGroups
         pks = map PublicKey $ toList r2
+        policies = toList r3
         uuidGroups = map GroupUUID $ toList r1
         namedGroups = map GroupName $ toList r0
-    return $ User (UserUUID uuid) gs pks
+    return $ User (UserUUID uuid) gs policies pks
 
   listUsers db = do
     r0 <- useDB db $ statement () selectUserEmails
@@ -227,8 +231,8 @@ instance DB PostgresDB where
         let groupPolicies = namedGroupPolicies' ++ uuidGroupPolicies'
             namedGroupPolicies' = toList namedGroupPolicies
             uuidGroupPolicies' = toList uuidGroupPolicies
-        userPolicies <- useDB db $ statement email selectUserEmailPolicies
-        case mapM fromJSON $ concat groupPolicies ++ toList userPolicies of
+        userPolicies' <- useDB db $ statement email selectUserEmailPolicies
+        case mapM fromJSON $ concat groupPolicies ++ toList userPolicies' of
           Success policies' -> return policies'
           Error _ -> throwError InternalError
       Nothing -> throwError NotFound
@@ -247,8 +251,8 @@ instance DB PostgresDB where
         let groupPolicies = namedGroupPolicies' ++ uuidGroupPolicies'
             namedGroupPolicies' = toList namedGroupPolicies
             uuidGroupPolicies' = toList uuidGroupPolicies
-        userPolicies <- useDB db $ statement uuid selectUserUUIDPolicies
-        case mapM fromJSON $ concat groupPolicies ++ toList userPolicies of
+        userPolicies' <- useDB db $ statement uuid selectUserUUIDPolicies
+        case mapM fromJSON $ concat groupPolicies ++ toList userPolicies' of
           Success policies' -> return policies'
           Error _ -> throwError InternalError
       Nothing -> throwError NotFound
@@ -953,11 +957,43 @@ selectUserEmailPolicies =
   |]
 
 
+selectUserEmailPolicyIds :: Statement Text (Vector UUID)
+selectUserEmailPolicyIds =
+  [vectorStatement|
+    SELECT
+      policies.policy_uuid :: uuid
+    FROM
+      policies
+    INNER JOIN
+      user_email_policies
+    ON
+      policies.policy_uuid = user_email_policies.policy_uuid
+    WHERE
+      user_email_policies.user_email = $1 :: text
+  |]
+
+
 selectUserUUIDPolicies :: Statement UUID (Vector Value)
 selectUserUUIDPolicies =
   [vectorStatement|
     SELECT
       policies.policy :: json
+    FROM
+      policies
+    INNER JOIN
+      user_uuid_policies
+    ON
+      policies.policy_uuid = user_uuid_policies.policy_uuid
+    WHERE
+      user_uuid_policies.user_uuid = $1 :: uuid
+  |]
+
+
+selectUserUUIDPolicyIds :: Statement UUID (Vector UUID)
+selectUserUUIDPolicyIds =
+  [vectorStatement|
+    SELECT
+      policies.policy_uuid :: uuid
     FROM
       policies
     INNER JOIN
