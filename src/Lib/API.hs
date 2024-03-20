@@ -25,7 +25,8 @@ type API = AuthProtect "signature-auth" :> IAMAPI
 
 
 type IAMAPI
-  = ( "users" :> UsersAPI
+  = ( "user" :> UserAPI
+  :<|> ("users" :> UsersAPI)
   :<|> ( "groups" :> GroupsAPI )
   :<|> ( "policies" :> PoliciesAPI )
   :<|> ( "memberships" :> MembershipsAPI )

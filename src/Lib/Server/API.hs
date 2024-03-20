@@ -32,10 +32,17 @@ startApp port db = run port $ app db
 
 server :: DB db => db -> Server API
 server db caller
-  = usersAPI db caller
+  = callerAPI db caller
+  :<|> usersAPI db caller
   :<|> groupsAPI db caller
   :<|> policiesAPI db caller
   :<|> membershipsAPI db caller
+
+callerAPI :: DB db => db -> Auth -> Server UserAPI
+callerAPI db caller
+  = getUserHandler db caller (userId $ authUser $ authentication caller)
+  :<|> deleteUserHandler db caller (userId $ authUser $ authentication caller)
+  :<|> userPolicyAPI db caller (userId $ authUser $ authentication caller)
 
 usersAPI :: DB db => db -> Auth -> Server UsersAPI
 usersAPI db caller

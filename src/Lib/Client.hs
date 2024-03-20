@@ -2,7 +2,10 @@
 {-# LANGUAGE TypeOperators #-}
 
 module Lib.Client
-  ( listUsers
+  ( getCaller
+  , deleteCaller
+  , mkCallerPolicyClient
+  , listUsers
   , createUser
   , mkUserClient
   , listGroups
@@ -106,13 +109,33 @@ data PolicyClient = PolicyClient
   }
 
 
+callerClient :: UserClientM
 usersClient :: UsersClientM
 groupsClient :: GroupsClientM
 policiesClient :: PoliciesClientM
 membershipsClient :: MembershipsClientM
 
 
-usersClient :<|> groupsClient :<|> policiesClient :<|> membershipsClient = client iamAPI
+callerClient
+  :<|> usersClient
+  :<|> groupsClient
+  :<|> policiesClient
+  :<|> membershipsClient
+  = client iamAPI
+
+
+getCaller :: ClientM User
+deleteCaller :: ClientM UserId
+callerPolicyClient :: UUID -> UserPolicyClientM
+
+
+(getCaller :<|> deleteCaller :<|> callerPolicyClient) = callerClient
+
+
+mkCallerPolicyClient :: UUID -> UserPolicyClient
+mkCallerPolicyClient pid =
+  let (attachUserPolicy' :<|> detachUserPolicy') = callerPolicyClient pid
+  in UserPolicyClient attachUserPolicy' detachUserPolicy'
 
 
 listUsers :: ClientM [UserId]
