@@ -18,8 +18,25 @@ import Lib.Config
 import Lib.IAM (UserId(..))
 
 
-getUser :: Text -> IO ()
-getUser email = do
+getUser :: Maybe Text -> IO ()
+getUser = maybe getCurrentUser getUser'
+
+
+getCurrentUser :: IO ()
+getCurrentUser = do
+  auth <- clientAuthInfo
+  mgr <- newManager tlsManagerSettings { managerModifyRequest = clientAuth auth }
+  url <- serverUrl
+  result <- runClientM Lib.Client.getCaller $ mkClientEnv mgr url
+  case result of
+    Right user ->
+      putStrLn $ T.unpack (decodeUtf8 $ toStrict $ encode $ toJSON user)
+    Left err ->
+      putStrLn $ "Error: " ++ show err
+
+
+getUser' :: Text -> IO ()
+getUser' email = do
   auth <- clientAuthInfo
   mgr <- newManager tlsManagerSettings { managerModifyRequest = clientAuth auth }
   url <- serverUrl

@@ -39,7 +39,7 @@ data UserCreateOptions = UserCreateOptions
 
 
 newtype GetCommand
-  = UserGet Text
+  = UserGet (Maybe Text)
   deriving (Show)
 
 
@@ -83,7 +83,11 @@ createCommand = subparser
 getCommand :: Parser GetCommand
 getCommand = subparser
   ( command "user"
-    (info (UserGet <$> argument str (metavar "EMAIL")) (progDesc "Get a user"))
+    ( info
+      ( UserGet
+        <$> optional ( argument str (metavar "EMAIL") )
+      ) (progDesc "Get a user")
+    )
   )
 
 
