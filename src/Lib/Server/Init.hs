@@ -24,11 +24,11 @@ createAdmin adminEmail adminPublicKeyBase64 db = do
     Left _ -> error "Invalid base64 public key"
     Right adminPublicKey -> do
       let pk = PublicKey adminPublicKey
-      r0 <- runExceptT $ createUser db $ UserPrincipal (UserEmail adminEmail) pk
+      r0 <- runExceptT $ createUser db $ User (UserEmail adminEmail) [] [] [pk]
       case r0 of
         Left AlreadyExists -> return ()
         Left e -> error $ "Error creating admin: " ++ show e
-        Right (UserPrincipal adminUserId _) -> do
+        Right (User adminUserId _ _ _) -> do
           adminPolicyId <- nextRandom
           let allowReads = Rule Allow Read "*"
               allowWrites = Rule Allow Write "*"

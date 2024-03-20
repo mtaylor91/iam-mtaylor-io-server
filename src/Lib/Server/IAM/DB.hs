@@ -28,7 +28,7 @@ class DB db where
 
   -- | createUser adds a new user to the database.
   createUser :: (MonadIO m, MonadError DBError m) =>
-    db -> UserPrincipal -> m UserPrincipal
+    db -> User -> m User
 
   -- | deleteUser removes a user from the database by its email.
   deleteUser :: (MonadIO m, MonadError DBError m) =>

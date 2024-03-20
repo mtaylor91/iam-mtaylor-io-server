@@ -32,7 +32,7 @@ import Lib.IAM
 
 type UsersClientM
   = ClientM [UserId]
-  :<|> (UserPrincipal -> ClientM UserPrincipal)
+  :<|> (User -> ClientM User)
   :<|> (UserId -> UserClientM)
 
 
@@ -139,7 +139,7 @@ mkCallerPolicyClient pid =
 
 
 listUsers :: ClientM [UserId]
-createUser :: UserPrincipal -> ClientM UserPrincipal
+createUser :: User -> ClientM User
 userClient :: UserId -> UserClientM
 
 

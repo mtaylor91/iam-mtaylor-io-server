@@ -15,7 +15,7 @@ import Servant.Client
 import Lib.Client.Auth
 import Lib.Client.Util
 import Lib.Config
-import Lib.IAM (UserId(..), UserPrincipal(..))
+import Lib.IAM (UserId(..), User(..))
 import qualified Lib.Client
 
 
@@ -45,8 +45,8 @@ createUser' url email pk = do
     Left _ ->
       putStrLn "Invalid public key: base64 decoding failed"
     Right pk' -> do
-      let userPrincipal = UserPrincipal (UserEmail email) (PublicKey pk')
-      let clientCommand = Lib.Client.createUser userPrincipal
+      let user = User (UserEmail email) [] [] [PublicKey pk']
+      let clientCommand = Lib.Client.createUser user
       result <- runClientM clientCommand $ mkClientEnv mgr url
       case result of
         Left err -> handleClientError err

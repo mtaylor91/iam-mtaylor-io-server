@@ -5,6 +5,7 @@ module Lib.Server.IAM.DB.InMemory ( inMemory, InMemory(..) ) where
 import Control.Concurrent.STM
 import Control.Monad.IO.Class
 import Control.Monad.Except
+import Crypto.Sign.Ed25519
 import Data.UUID
 
 import Lib.IAM
@@ -15,10 +16,10 @@ data InMemoryState = InMemoryState
   { users :: ![UserId]
   , groups :: ![GroupId]
   , policies :: ![Policy]
-  , principals :: ![UserPrincipal]
   , memberships :: ![(UserId, GroupId)]
   , userPolicyAttachments :: ![(UserId, UUID)]
   , groupPolicyAttachments :: ![(GroupId, UUID)]
+  , usersPublicKeys :: ![(UserId, PublicKey)]
   }
 
 
@@ -45,26 +46,28 @@ instance DB InMemory where
         { userId = uid
         , userGroups = map snd $ filter ((== uid) . fst) $ memberships s
         , userPolicies = map snd $ filter ((== uid) . fst) $ userPolicyAttachments s
-        , userPublicKeys = map publicKey $ filter ((== uid) . principal) $ principals s
+        , userPublicKeys = map snd $ filter ((== uid) . fst) $ usersPublicKeys s
         }
 
   listUsers (InMemory tvar) =
     liftIO $ atomically $ users <$> readTVar tvar
 
-  createUser (InMemory tvar) up = do
-    let uid = principal up
+  createUser (InMemory tvar) u = do
+    let uid = userId u
     result <- liftIO $ atomically $ do
       s <- readTVar tvar
       if uid `elem` users s
         then return $ Left AlreadyExists
         else do
           modifyTVar' tvar addUser
-          return $ Right up
+          return $ Right u
     either throwError return result
     where
       addUser s = s
-        { users = principal up : users s
-        , principals = up : principals s
+        { users = userId u : users s
+        , memberships = memberships s ++ ((userId u, ) <$> userGroups u)
+        , userPolicyAttachments = userPolicyAttachments s ++ ((userId u, ) <$> userPolicies u)
+        , usersPublicKeys = usersPublicKeys s ++ ((userId u, ) <$> userPublicKeys u)
         }
 
   deleteUser (InMemory tvar) uid = do
@@ -79,9 +82,9 @@ instance DB InMemory where
     where
       delUser s = s
         { users = filter (/= uid) $ users s
-        , principals = filter ((/= uid) . principal) $ principals s
         , memberships = filter ((/= uid) . fst) $ memberships s
         , userPolicyAttachments = filter ((/= uid) . fst) $ userPolicyAttachments s
+        , usersPublicKeys = filter ((/= uid) . fst) $ usersPublicKeys s
         }
 
   getGroup (InMemory tvar) gid = do

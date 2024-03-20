@@ -3,7 +3,6 @@
 module Lib.IAM
   ( User(..)
   , UserId(..)
-  , UserPrincipal(..)
   , Group(..)
   , GroupId(..)
   , Effect(..)
@@ -130,35 +129,6 @@ instance ToJSON Group where
     [ "uuid" .= uuid
     , "users" .= users
     , "policies" .= policies
-    ]
-
-
-data UserPrincipal = UserPrincipal
-  { principal :: !UserId
-  , publicKey :: !PublicKey
-  } deriving (Eq, Show)
-
-instance FromJSON UserPrincipal where
-  parseJSON (Object obj) = do
-    email <- obj .:? "email"
-    uuid <- obj .:? "uuid"
-    publicKeyBase64 <- obj .: "publicKey"
-    case decodeBase64 $ encodeUtf8 publicKeyBase64 of
-      Left _ -> fail "Invalid public key"
-      Right bs -> case (email, uuid) of
-        (Just e, Nothing) -> return $ UserPrincipal (UserEmail e) $ PublicKey bs
-        (Nothing, Just u) -> return $ UserPrincipal (UserUUID u) $ PublicKey bs
-        (_, _) -> fail "Invalid JSON"
-  parseJSON _ = fail "Invalid JSON"
-
-instance ToJSON UserPrincipal where
-  toJSON (UserPrincipal (UserEmail email) (PublicKey bs)) = object
-    [ "email" .= email
-    , "publicKey" .= encodeBase64 bs
-    ]
-  toJSON (UserPrincipal (UserUUID uuid) (PublicKey bs)) = object
-    [ "uuid" .= uuid
-    , "publicKey" .= encodeBase64 bs
     ]
 
 

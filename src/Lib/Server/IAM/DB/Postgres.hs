@@ -79,22 +79,58 @@ instance DB PostgresDB where
         userUUIDs = map UserUUID $ toList r1
     return $ userEmails ++ userUUIDs
 
-  createUser db (UserPrincipal (UserEmail email) pk) = do
+  createUser db (User (UserEmail email) groups policies pks) = do
     r0 <- useDB db $ statement email selectUserEmail
     case r0 of
       Just _ -> throwError AlreadyExists
       Nothing -> do
         useDB db $ statement email insertUserEmail
-        useDB db $ statement (email, unPublicKey pk) insertUserEmailPublicKey
-        return $ UserPrincipal (UserEmail email) pk
-  createUser db (UserPrincipal (UserUUID uuid) pk) = do
+        forM_ groups $ \group -> do
+          case group of
+            GroupName name -> do
+              r1 <- useDB db $ statement name selectGroupName
+              case r1 of
+                Just _ -> useDB db $ statement (email, name) insertUserEmailGroupName
+                Nothing -> throwError NotFound
+            GroupUUID uuid -> do
+              r1 <- useDB db $ statement uuid selectGroupUUID
+              case r1 of
+                Just _ -> useDB db $ statement (email, uuid) insertUserEmailGroupUUID
+                Nothing -> throwError NotFound
+        forM_ policies $ \policy -> do
+          r2 <- useDB db $ statement policy selectPolicy
+          case r2 of
+            Just _ -> useDB db $ statement (email, policy) insertUserEmailPolicy
+            Nothing -> throwError NotFound
+        forM_ pks $ \pk -> do
+          useDB db $ statement (email, unPublicKey pk) insertUserEmailPublicKey
+        return $ User (UserEmail email) groups policies pks
+  createUser db (User (UserUUID uuid) groups policies pks) = do
     r0 <- useDB db $ statement uuid selectUserUUID
     case r0 of
       Just _ -> throwError AlreadyExists
       Nothing -> do
         useDB db $ statement uuid insertUserUUID
-        useDB db $ statement (uuid, unPublicKey pk) insertUserUUIDPublicKey
-        return $ UserPrincipal (UserUUID uuid) pk
+        forM_ groups $ \group -> do
+          case group of
+            GroupName name -> do
+              r1 <- useDB db $ statement name selectGroupName
+              case r1 of
+                Just _ -> useDB db $ statement (uuid, name) insertUserUUIDGroupName
+                Nothing -> throwError NotFound
+            GroupUUID uuid' -> do
+              r1 <- useDB db $ statement uuid' selectGroupUUID
+              case r1 of
+                Just _ -> useDB db $ statement (uuid, uuid') insertUserUUIDGroupUUID
+                Nothing -> throwError NotFound
+        forM_ policies $ \policy -> do
+          r2 <- useDB db $ statement policy selectPolicy
+          case r2 of
+            Just _ -> useDB db $ statement (uuid, policy) insertUserUUIDPolicy
+            Nothing -> throwError NotFound
+        forM_ pks $ \pk -> do
+          useDB db $ statement (uuid, unPublicKey pk) insertUserUUIDPublicKey
+        return $ User (UserUUID uuid) groups policies pks
 
   deleteUser db (UserEmail email) = do
     r0 <- useDB db $ statement email selectUserEmail

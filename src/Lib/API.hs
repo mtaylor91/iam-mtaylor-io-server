@@ -34,7 +34,7 @@ type IAMAPI
 
 type UsersAPI
   = ( Get '[JSON] [UserId]
-  :<|> ( ReqBody '[JSON] UserPrincipal :> PostCreated '[JSON] UserPrincipal )
+  :<|> ( ReqBody '[JSON] User :> PostCreated '[JSON] User )
   :<|> ( Capture "user" UserId :> UserAPI )
     )
 

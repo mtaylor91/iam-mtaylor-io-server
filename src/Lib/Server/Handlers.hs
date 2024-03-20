@@ -49,7 +49,7 @@ listUsersHandler db _ = do
     Right users' -> return users'
     Left err     -> throwError $ dbError err
 
-createUserHandler :: DB db => db -> Auth -> UserPrincipal -> Handler UserPrincipal
+createUserHandler :: DB db => db -> Auth -> User -> Handler User
 createUserHandler db _ userPrincipal = do
   result <- liftIO $ runExceptT $ createUser db userPrincipal
   case result of
