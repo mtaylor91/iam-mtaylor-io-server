@@ -123,9 +123,10 @@ instance DB PostgresDB where
       Just _ -> do
         r1 <- useDB db $ statement name selectGroupNameUserEmails
         r2 <- useDB db $ statement name selectGroupNameUserUUIDs
+        r3 <- useDB db $ statement name selectGroupNamePolicyIds
         let userEmails = map UserEmail $ toList r1
             userUUIDs = map UserUUID $ toList r2
-        return $ Group (GroupName name) (userEmails ++ userUUIDs)
+        return $ Group (GroupName name) (userEmails ++ userUUIDs) (toList r3)
       Nothing -> throwError NotFound
   getGroup db (GroupUUID uuid) = do
     r0 <- useDB db $ statement uuid selectGroupUUID
@@ -133,9 +134,10 @@ instance DB PostgresDB where
       Just _ -> do
         r1 <- useDB db $ statement uuid selectGroupUUIDUserEmails
         r2 <- useDB db $ statement uuid selectGroupUUIDUserUUIDs
+        r3 <- useDB db $ statement uuid selectGroupUUIDPolicyIds
         let userEmails = map UserEmail $ toList r1
             userUUIDs = map UserUUID $ toList r2
-        return $ Group (GroupUUID uuid) (userEmails ++ userUUIDs)
+        return $ Group (GroupUUID uuid) (userEmails ++ userUUIDs) (toList r3)
       Nothing -> throwError NotFound
 
   listGroups db = do
@@ -145,7 +147,7 @@ instance DB PostgresDB where
         groupUUIDs = map GroupUUID $ toList r1
     return $ groupNames ++ groupUUIDs
 
-  createGroup db (Group (GroupName name) users) = do
+  createGroup db (Group (GroupName name) users policies) = do
     r0 <- useDB db $ statement name selectGroupName
     case r0 of
       Just _ -> throwError AlreadyExists
@@ -163,8 +165,13 @@ instance DB PostgresDB where
               case r1 of
                 Just _ -> useDB db $ statement (uuid, name) insertUserUUIDGroupName
                 Nothing -> throwError NotFound
-        return $ Group (GroupName name) users
-  createGroup db (Group (GroupUUID uuid) users) = do
+        forM_ policies $ \policy -> do
+          r2 <- useDB db $ statement policy selectPolicy
+          case r2 of
+            Just _ -> useDB db $ statement (name, policy) insertGroupNamePolicy
+            Nothing -> throwError NotFound
+        return $ Group (GroupName name) users policies
+  createGroup db (Group (GroupUUID uuid) users policies) = do
     r0 <- useDB db $ statement uuid selectGroupUUID
     case r0 of
       Just _ -> throwError AlreadyExists
@@ -182,7 +189,12 @@ instance DB PostgresDB where
               case r1 of
                 Just _ -> useDB db $ statement (uuid', uuid) insertUserUUIDGroupUUID
                 Nothing -> throwError NotFound
-        return $ Group (GroupUUID uuid) users
+        forM_ policies $ \policy -> do
+          r2 <- useDB db $ statement policy selectPolicy
+          case r2 of
+            Just _ -> useDB db $ statement (uuid, policy) insertGroupUUIDPolicy
+            Nothing -> throwError NotFound
+        return $ Group (GroupUUID uuid) users policies
 
   deleteGroup db (GroupName name) = do
     r0 <- useDB db $ statement name selectGroupName
@@ -228,11 +240,11 @@ instance DB PostgresDB where
         uuidGroupPolicies <- forM groupUUIDs $ \groupUUID -> do
           r <- useDB db $ statement groupUUID selectGroupUUIDPolicies
           return $ toList r
-        let groupPolicies = namedGroupPolicies' ++ uuidGroupPolicies'
+        let groupPolicies' = namedGroupPolicies' ++ uuidGroupPolicies'
             namedGroupPolicies' = toList namedGroupPolicies
             uuidGroupPolicies' = toList uuidGroupPolicies
         userPolicies' <- useDB db $ statement email selectUserEmailPolicies
-        case mapM fromJSON $ concat groupPolicies ++ toList userPolicies' of
+        case mapM fromJSON $ concat groupPolicies' ++ toList userPolicies' of
           Success policies' -> return policies'
           Error _ -> throwError InternalError
       Nothing -> throwError NotFound
@@ -248,11 +260,11 @@ instance DB PostgresDB where
         uuidGroupPolicies <- forM groupUUIDs $ \groupUUID -> do
           r <- useDB db $ statement groupUUID selectGroupUUIDPolicies
           return $ toList r
-        let groupPolicies = namedGroupPolicies' ++ uuidGroupPolicies'
+        let groupPolicies' = namedGroupPolicies' ++ uuidGroupPolicies'
             namedGroupPolicies' = toList namedGroupPolicies
             uuidGroupPolicies' = toList uuidGroupPolicies
         userPolicies' <- useDB db $ statement uuid selectUserUUIDPolicies
-        case mapM fromJSON $ concat groupPolicies ++ toList userPolicies' of
+        case mapM fromJSON $ concat groupPolicies' ++ toList userPolicies' of
           Success policies' -> return policies'
           Error _ -> throwError InternalError
       Nothing -> throwError NotFound
@@ -1026,6 +1038,38 @@ selectGroupUUIDPolicies =
   [vectorStatement|
     SELECT
       policies.policy :: json
+    FROM
+      policies
+    INNER JOIN
+      group_uuid_policies
+    ON
+      policies.policy_uuid = group_uuid_policies.policy_uuid
+    WHERE
+      group_uuid_policies.group_uuid = $1 :: uuid
+  |]
+
+
+selectGroupNamePolicyIds :: Statement Text (Vector UUID)
+selectGroupNamePolicyIds =
+  [vectorStatement|
+    SELECT
+      policies.policy_uuid :: uuid
+    FROM
+      policies
+    INNER JOIN
+      group_name_policies
+    ON
+      policies.policy_uuid = group_name_policies.policy_uuid
+    WHERE
+      group_name_policies.group_name = $1 :: text
+  |]
+
+
+selectGroupUUIDPolicyIds :: Statement UUID (Vector UUID)
+selectGroupUUIDPolicyIds =
+  [vectorStatement|
+    SELECT
+      policies.policy_uuid :: uuid
     FROM
       policies
     INNER JOIN

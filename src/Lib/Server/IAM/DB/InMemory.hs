@@ -92,7 +92,11 @@ instance DB InMemory where
         else return Nothing
     maybe (throwError NotFound) return maybeGroup
     where
-      group s = Group gid $ map fst $ filter ((== gid) . snd) $ memberships s
+      group s = Group
+        { groupId = gid
+        , groupUsers = map fst $ filter ((== gid) . snd) $ memberships s
+        , groupPolicies = map snd $ filter ((== gid) . fst) $ groupPolicyAttachments s
+        }
 
   listGroups (InMemory tvar) =
     liftIO $ atomically $ groups <$> readTVar tvar
@@ -110,6 +114,8 @@ instance DB InMemory where
       addGroup s = s
         { groups = groupId group : groups s
         , memberships = memberships s ++ ((, groupId group) <$> groupUsers group)
+        , groupPolicyAttachments =
+          groupPolicyAttachments s ++ ((groupId group, ) <$> groupPolicies group)
         }
 
   deleteGroup (InMemory tvar) gid = do

@@ -19,6 +19,7 @@ import Crypto.Sign.Ed25519
 import Data.Aeson
 import Data.Aeson.TH
 import Data.ByteString.Base64
+import Data.Maybe
 import Data.Text
 import Data.Text.Encoding
 import Data.UUID
@@ -102,27 +103,33 @@ instance ToJSON User where
 data Group = Group
   { groupId :: !GroupId
   , groupUsers :: ![UserId]
+  , groupPolicies :: ![UUID]
   } deriving (Eq, Show)
 
 instance FromJSON Group where
   parseJSON (Object obj) = do
     name <- obj .:? "name"
     uuid <- obj .:? "uuid"
-    users <- obj .: "users"
+    maybeUsers <- obj .:? "users"
+    maybePolicies <- obj .:? "policies"
+    let users = fromMaybe [] maybeUsers
+    let policies = fromMaybe [] maybePolicies
     case (name, uuid) of
-      (Just n, Nothing) -> return $ Group (GroupName n) users
-      (Nothing, Just u) -> return $ Group (GroupUUID u) users
+      (Just n, Nothing) -> return $ Group (GroupName n) users policies
+      (Nothing, Just u) -> return $ Group (GroupUUID u) users policies
       (_, _) -> fail "Invalid JSON"
   parseJSON _ = fail "Invalid JSON"
 
 instance ToJSON Group where
-  toJSON (Group (GroupName name) users) = object
+  toJSON (Group (GroupName name) users policies) = object
     [ "name" .= name
     , "users" .= users
+    , "policies" .= policies
     ]
-  toJSON (Group (GroupUUID uuid) users) = object
+  toJSON (Group (GroupUUID uuid) users policies) = object
     [ "uuid" .= uuid
     , "users" .= users
+    , "policies" .= policies
     ]
 
 
