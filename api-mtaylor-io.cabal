@@ -29,6 +29,7 @@ library
       Lib.API
       Lib.Client
       Lib.Client.Auth
+      Lib.Client.Util
       Lib.Command.Create.User
       Lib.Command.Get.User
       Lib.Command.Keypair

@@ -13,6 +13,7 @@ import Network.HTTP.Client.TLS
 import Servant.Client
 
 import Lib.Client.Auth
+import Lib.Client.Util
 import Lib.Config
 import Lib.IAM (UserId(..), UserPrincipal(..))
 import qualified Lib.Client
@@ -48,7 +49,7 @@ createUser' url email pk = do
       let clientCommand = Lib.Client.createUser userPrincipal
       result <- runClientM clientCommand $ mkClientEnv mgr url
       case result of
-        Left err -> putStrLn $ "Error: " ++ show err
+        Left err -> handleClientError err
         Right _ -> return ()
 
 
