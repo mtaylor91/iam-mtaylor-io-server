@@ -14,7 +14,6 @@ import qualified Data.Text as T
 import Lib.Client
 import Lib.Client.Auth
 import Lib.Client.Util
-import Lib.Config
 import Lib.IAM (UserId(..))
 
 
@@ -47,7 +46,3 @@ getUser' email = do
       putStrLn $ T.unpack (decodeUtf8 $ toStrict $ encode $ toJSON user)
     Left err ->
       handleClientError err
-
-
-serverUrl :: IO BaseUrl
-serverUrl = parseBaseUrl =<< configURL

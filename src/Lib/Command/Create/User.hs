@@ -55,10 +55,6 @@ createUser' url email pk = do
         Right _ -> return ()
 
 
-serverUrl :: IO BaseUrl
-serverUrl = parseBaseUrl =<< configURL
-
-
 createUserOptions :: Parser CreateUser
 createUserOptions = CreateUser
   <$> argument str

@@ -1,11 +1,14 @@
 module Lib.Client.Util
   ( printClientError
   , handleClientError
+  , serverUrl
   ) where
 
 import Network.HTTP.Types.Status
 import Servant.Client
 import System.Exit
+
+import Lib.Config
 
 
 handleClientError :: ClientError -> IO ()
@@ -33,3 +36,7 @@ printClientError (InvalidContentTypeHeader _) =
   putStrLn "Invalid content type header"
 printClientError (ConnectionError _) =
   putStrLn "Connection error"
+
+
+serverUrl :: IO BaseUrl
+serverUrl = parseBaseUrl =<< configURL

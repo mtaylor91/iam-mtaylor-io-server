@@ -15,7 +15,6 @@ import Text.Read
 import Lib.Client
 import Lib.Client.Auth
 import Lib.Client.Util
-import Lib.Config
 import Lib.IAM
 
 
@@ -48,7 +47,3 @@ getGroupById gid = do
       putStrLn $ T.unpack (decodeUtf8 $ toStrict $ encode $ toJSON group')
     Left err ->
       handleClientError err
-
-
-serverUrl :: IO BaseUrl
-serverUrl = parseBaseUrl =<< configURL
