@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Lib.Command.Create.User
   ( createUser
+  , createUserOptions
   , CreateUser(..)
   ) where
 
@@ -10,6 +11,7 @@ import Data.Text as T
 import Data.Text.Encoding
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
+import Options.Applicative
 import Servant.Client
 
 import Lib.Client.Auth
@@ -55,3 +57,16 @@ createUser' url email pk = do
 
 serverUrl :: IO BaseUrl
 serverUrl = parseBaseUrl =<< configURL
+
+
+createUserOptions :: Parser CreateUser
+createUserOptions = CreateUser
+  <$> argument str
+      ( metavar "EMAIL"
+     <> help "Email for user"
+      )
+  <*> optional ( strOption
+      ( long "public-key"
+     <> metavar "PUBLIC_KEY"
+     <> help "Public key for user"
+      ) )

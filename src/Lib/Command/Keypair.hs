@@ -1,14 +1,25 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Lib.Command.Keypair (generateKeypair) where
+module Lib.Command.Keypair
+  ( keypair
+  , keypairOptions
+  , KeypairOptions(..)
+  ) where
 
 import Crypto.Sign.Ed25519
 import Data.Aeson
 import Data.ByteString.Base64
 import Data.ByteString.Lazy (toStrict)
 import Data.Text.Encoding
+import Options.Applicative
 import qualified Data.Text as T
 
 import Lib.Config
+
+
+data KeypairOptions = KeypairOptions
+  { keypairEmail :: !T.Text
+  , keypairShell :: !Bool
+  } deriving (Show)
 
 
 data UserKeypair = UserKeypair
@@ -16,6 +27,7 @@ data UserKeypair = UserKeypair
   , userKeypairPublicKey :: !PublicKey
   , userKeypairSecretKey :: !SecretKey
   } deriving (Eq, Show)
+
 
 instance FromJSON UserKeypair where
   parseJSON (Object obj) = do
@@ -27,6 +39,7 @@ instance FromJSON UserKeypair where
       (_, _) -> fail "Invalid base64 encoding"
   parseJSON _ = fail "Invalid JSON object"
 
+
 instance ToJSON UserKeypair where
   toJSON (UserKeypair email pk sk) = object
     [ "email" .= email
@@ -35,11 +48,24 @@ instance ToJSON UserKeypair where
     ]
 
 
-generateKeypair :: T.Text -> Bool -> IO ()
-generateKeypair email formatShell = do
+keypair :: KeypairOptions -> IO ()
+keypair (KeypairOptions email formatShell) = do
   (pk, sk) <- createKeypair
-  let keypair = UserKeypair email pk sk
+  let keypair' = UserKeypair email pk sk
   if formatShell
     then printUserShellVars email pk sk
-    else putStrLn $ T.unpack $ decodeUtf8 $ toStrict $ encode $ toJSON keypair
+    else putStrLn $ T.unpack $ decodeUtf8 $ toStrict $ encode $ toJSON keypair'
   return ()
+
+
+keypairOptions :: Parser KeypairOptions
+keypairOptions = KeypairOptions
+  <$> argument str
+      ( metavar "EMAIL"
+     <> help "Email for keypair"
+      )
+  <*> switch
+      ( long "shell"
+     <> short 's'
+     <> help "Format output for shell"
+      )
