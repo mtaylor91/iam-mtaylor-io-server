@@ -8,18 +8,21 @@ import Data.Text
 import Options.Applicative
 
 import Lib.Command.Get.Group
+import Lib.Command.Get.Policy
 import Lib.Command.Get.User
 
 
 data GetCommand
-  = GetUser !(Maybe Text)
-  | GetGroup !Text
+  = GetGroup !Text
+  | GetPolicy !Text
+  | GetUser !(Maybe Text)
   deriving (Show)
 
 
 get :: GetCommand -> IO ()
-get (GetUser email') = getUser email'
 get (GetGroup group') = getGroup group'
+get (GetPolicy policy') = getPolicy policy'
+get (GetUser email') = getUser email'
 
 
 getCommand :: Parser GetCommand
@@ -28,6 +31,11 @@ getCommand = subparser
     ( info
       ( GetGroup <$> argument str (metavar "GROUP")
       ) (progDesc "Get a group")
+    )
+  <> command "policy"
+    ( info
+      ( GetPolicy <$> argument str (metavar "POLICY")
+      ) (progDesc "Get a policy")
     )
   <> command "user"
     ( info
