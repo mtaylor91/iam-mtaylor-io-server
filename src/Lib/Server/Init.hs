@@ -20,27 +20,35 @@ initDB adminEmail adminPublicKeyBase64 db = do
 
 createAdmin :: DB db => Text -> Text -> db -> IO ()
 createAdmin adminEmail adminPublicKeyBase64 db = do
+  adminPolicyId <- nextRandom
+
+  -- Create the admin policy
+  let allowReads = Rule Allow Read "*"
+      allowWrites = Rule Allow Write "*"
+      adminPolicy = Policy adminPolicyId [allowReads, allowWrites]
+  r0 <- runExceptT $ createPolicy db adminPolicy
+  case r0 of
+    Left AlreadyExists -> return ()
+    Left e -> error $ "Error creating admin policy: " ++ show e
+    Right _ -> return ()
+
+  -- Create the admins group
+  let adminsGroupId = GroupName "admins"
+      adminsGroup = Group adminsGroupId [] [adminPolicyId]
+  r1 <- runExceptT $ createGroup db adminsGroup
+  case r1 of
+    Left AlreadyExists -> return ()
+    Left e -> error $ "Error creating admins group: " ++ show e
+    Right _ -> return ()
+
+  -- Create the admin user
   case decodeBase64 $ encodeUtf8 adminPublicKeyBase64 of
     Left _ -> error "Invalid base64 public key"
     Right adminPublicKey -> do
       let pk = PublicKey adminPublicKey
-      r0 <- runExceptT $ createUser db $ User (UserEmail adminEmail) [] [] [pk]
-      case r0 of
+      let user = User (UserEmail adminEmail) [adminsGroupId] [] [pk]
+      r2 <- runExceptT $ createUser db user
+      case r2 of
         Left AlreadyExists -> return ()
         Left e -> error $ "Error creating admin: " ++ show e
-        Right (User adminUserId _ _ _) -> do
-          adminPolicyId <- nextRandom
-          let allowReads = Rule Allow Read "*"
-              allowWrites = Rule Allow Write "*"
-              adminPolicy = Policy adminPolicyId [allowReads, allowWrites]
-          r1 <- runExceptT $ createPolicy db adminPolicy
-          case r1 of
-            Left AlreadyExists -> return ()
-            Left e -> error $ "Error creating admin policy: " ++ show e
-            Right _ -> do
-              r2 <- runExceptT $ createUserPolicyAttachment db adminUserId adminPolicyId
-              case r2 of
-                Left AlreadyExists -> return ()
-                Left e -> error $ "Error attaching admin policy: " ++ show e
-                Right _ ->
-                  return ()
+        Right _ -> return ()
