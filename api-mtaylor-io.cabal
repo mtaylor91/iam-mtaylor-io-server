@@ -33,6 +33,7 @@ library
       Lib.Command.Create
       Lib.Command.Create.User
       Lib.Command.Get
+      Lib.Command.Get.Group
       Lib.Command.Get.User
       Lib.Command.Keypair
       Lib.Command.Server
