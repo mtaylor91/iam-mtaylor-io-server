@@ -28,10 +28,10 @@ FROM images.home.mtaylor.io/base:latest AS runtime
 USER root
 RUN apt-get update && apt-get install -y libpq5 zlib1g \
   && apt-get clean && rm -rf /var/lib/apt/lists/* \
-  && adduser --system --no-create-home --uid 1000 api
+  && adduser --system --no-create-home --uid 1000 iam
 # Copy the built executables
-COPY --from=build /build/.local/bin/api-mtaylor-io /usr/local/bin/api-mtaylor-io
+COPY --from=build /build/.local/bin/iam-mtaylor-io /usr/local/bin/iam-mtaylor-io
 # Set the user
-USER api
+USER iam
 # Set the entrypoint
-ENTRYPOINT ["api-mtaylor-io", "server"]
+ENTRYPOINT ["iam-mtaylor-io", "server"]

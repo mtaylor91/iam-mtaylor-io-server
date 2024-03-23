@@ -1,4 +1,4 @@
-# Changelog for `api-mtaylor-io`
+# Changelog for `iam-mtaylor-io`
 
 All notable changes to this project will be documented in this file.
 

@@ -1,6 +1,6 @@
-name:                api-mtaylor-io
+name:                iam-mtaylor-io
 version:             0.1.0.0
-github:              "mtaylor91/api-mtaylor-io"
+github:              "mtaylor91/iam-mtaylor-io"
 license:             BSD-3-Clause
 author:              "Mike Taylor"
 maintainer:          "mike.charles.taylor@gmail.com"
@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/mtaylor91/api-mtaylor-io#readme>
+description:         Please see the README on GitHub at <https://github.com/mtaylor91/iam-mtaylor-io#readme>
 
 dependencies:
 - aeson
@@ -58,7 +58,7 @@ library:
   source-dirs: src
 
 executables:
-  api-mtaylor-io:
+  iam-mtaylor-io:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -67,10 +67,10 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - base
-    - api-mtaylor-io
+    - iam-mtaylor-io
 
 tests:
-  api-mtaylor-io-test:
+  iam-mtaylor-io-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -79,7 +79,7 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - base
-    - api-mtaylor-io
+    - iam-mtaylor-io
     - hspec
     - hspec-wai
     - hspec-wai-json
