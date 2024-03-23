@@ -19,7 +19,7 @@ import Lib.Util
 
 
 envPrefix :: String
-envPrefix = "API_MTAYLOR_IO"
+envPrefix = "IAM_MTAYLOR_IO"
 
 
 headerPrefix :: String
@@ -42,7 +42,7 @@ configURL :: IO String
 configURL = do
   maybeValue <- lookupEnvConfig "URL"
   case maybeValue of
-    Nothing -> return "https://api.mtaylor.io"
+    Nothing -> return "https://iam.mtaylor.io"
     Just value -> return value
 
 
