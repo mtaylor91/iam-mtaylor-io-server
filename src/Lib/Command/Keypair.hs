@@ -53,7 +53,7 @@ keypair (KeypairOptions email formatShell) = do
   (pk, sk) <- createKeypair
   let keypair' = UserKeypair email pk sk
   if formatShell
-    then printUserShellVars email pk sk
+    then printUserEmailShellVars email pk sk
     else putStrLn $ T.unpack $ decodeUtf8 $ toStrict $ encode $ toJSON keypair'
   return ()
 

@@ -5,11 +5,13 @@ module Lib.Config
   , configURL
   , envPrefix
   , headerPrefix
-  , printUserShellVars
+  , printUserEmailShellVars
+  , printUserUUIDShellVars
   ) where
 
 import Control.Exception
 import Crypto.Sign.Ed25519
+import Data.UUID
 import System.Environment
 import qualified Data.Text as T
 
@@ -59,13 +61,25 @@ lookupEnvConfig key = do
   lookupEnv key'
 
 
-printUserShellVars :: T.Text -> PublicKey -> SecretKey -> IO ()
-printUserShellVars email pk sk = do
+printUserEmailShellVars :: T.Text -> PublicKey -> SecretKey -> IO ()
+printUserEmailShellVars email pk sk = do
   let email' = T.unpack email
   let pk' = T.unpack (encodePublicKey pk)
   let sk' = T.unpack (encodeSecretKey sk)
   let prefix = "export " ++ envPrefix ++ "_"
   putStrLn $ prefix ++ "EMAIL=\"" ++ email' ++ "\""
+  putStrLn $ prefix ++ "PUBLIC_KEY=\"" ++ pk' ++ "\""
+  putStrLn $ prefix ++ "SECRET_KEY=\"" ++ sk' ++ "\""
+  return ()
+
+
+printUserUUIDShellVars :: UUID -> PublicKey -> SecretKey -> IO ()
+printUserUUIDShellVars uuid pk sk = do
+  let uuid' = toString uuid
+  let pk' = T.unpack (encodePublicKey pk)
+  let sk' = T.unpack (encodeSecretKey sk)
+  let prefix = "export " ++ envPrefix ++ "_"
+  putStrLn $ prefix ++ "UUID=\"" ++ uuid' ++ "\""
   putStrLn $ prefix ++ "PUBLIC_KEY=\"" ++ pk' ++ "\""
   putStrLn $ prefix ++ "SECRET_KEY=\"" ++ sk' ++ "\""
   return ()
