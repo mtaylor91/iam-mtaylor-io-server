@@ -1,9 +1,9 @@
 
 configMapGenerator:
-- name: api-mtaylor-io
+- name: iam-mtaylor-io
 
 commonLabels:
-  app: api-mtaylor-io
+  app: iam-mtaylor-io
 
 resources:
 - deployment.yml

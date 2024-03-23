@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: api-mtaylor-io
+  name: iam-mtaylor-io
 spec:
   template:
     spec:
       containers:
-      - name: api
-        image: images.home.mtaylor.io/api-mtaylor-io
+      - name: iam
+        image: images.home.mtaylor.io/iam-mtaylor-io
         env:
         - name: API_MTAYLOR_IO_EMAIL
           valueFrom:
             configMapKeyRef:
-              name: api-mtaylor-io
+              name: iam-mtaylor-io
               key: email
         - name: API_MTAYLOR_IO_PUBLIC_KEY
           valueFrom:
             configMapKeyRef:
-              name: api-mtaylor-io
+              name: iam-mtaylor-io
               key: public-key
         ports:
         - name: http

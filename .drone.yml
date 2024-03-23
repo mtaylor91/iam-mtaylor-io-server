@@ -6,7 +6,7 @@ steps:
 - name: image
   image: images.home.mtaylor.io/drone-kaniko:latest
   settings:
-    repo: images.home.mtaylor.io/api-mtaylor-io
+    repo: images.home.mtaylor.io/iam-mtaylor-io
     auto_tag: true
     enable_cache: true
     username: anonymous
@@ -24,8 +24,8 @@ steps:
   - ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
   - git clone git@github.com:mtaylor91/argocd-deployment.git
   - cd argocd-deployment
-  - ./bin/update-repo-tag.sh home/namespaced/mtaylor-io api-mtaylor-io $DRONE_TAG
-  - git commit -a -m "Update api-mtaylor-io to $DRONE_TAG"
+  - ./bin/update-repo-tag.sh home/namespaced/mtaylor-io iam-mtaylor-io $DRONE_TAG
+  - git commit -a -m "Update iam-mtaylor-io to $DRONE_TAG"
   - git push origin main
   environment:
     SSH_KEY_BASE64:
@@ -51,7 +51,7 @@ steps:
   - git fetch origin $${DRONE_BRANCH}
   - export tag=$(get-release-tag)
   - cd deploy
-  - kustomize edit set image images.home.mtaylor.io/api-mtaylor-io:$${tag}
+  - kustomize edit set image images.home.mtaylor.io/iam-mtaylor-io:$${tag}
   - cd ../
   - git commit -a -m v$${tag}
   - git tag $${tag}
