@@ -3,15 +3,17 @@ module Lib.Opts ( options, run, ServerOptions(..) ) where
 
 import Options.Applicative
 
-import Lib.Command.Keypair
 import Lib.Command.Create
 import Lib.Command.Get
+import Lib.Command.List
+import Lib.Command.Keypair
 import Lib.Command.Server
 
 
 data Command
   = Create !CreateCommand
   | Get !GetCommand
+  | List !ListCommand
   | Keypair !KeypairOptions
   | Server !ServerOptions
   deriving (Show)
@@ -26,6 +28,8 @@ options = Options <$> hsubparser
     (info (Create <$> createCommand) (progDesc "Create resources"))
   <> command "get"
     (info (Get <$> getCommand) (progDesc "Get resources"))
+  <> command "list"
+    (info (List <$> listCommand) (progDesc "List resources"))
   <> command "keypair"
     (info (Keypair <$> keypairOptions) (progDesc "Generate a keypair"))
   <> command "server"
@@ -40,6 +44,8 @@ runOptions opts =
       create cmd
     Options (Get cmd) ->
       get cmd
+    Options (List cmd) ->
+      list cmd
     Options (Keypair opts') ->
       keypair opts'
     Options (Server opts') ->

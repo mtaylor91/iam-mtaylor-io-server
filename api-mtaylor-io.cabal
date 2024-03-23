@@ -39,6 +39,10 @@ library
       Lib.Command.Get.Policy
       Lib.Command.Get.User
       Lib.Command.Keypair
+      Lib.Command.List
+      Lib.Command.List.Groups
+      Lib.Command.List.Policies
+      Lib.Command.List.Users
       Lib.Command.Server
       Lib.Config
       Lib.IAM
