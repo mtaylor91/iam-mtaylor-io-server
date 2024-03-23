@@ -71,7 +71,7 @@ type MembershipsAPI
   :<|> ( Capture "group" GroupId :> Capture "user" UserId :> Delete '[JSON] Membership )
 
 type PoliciesAPI
-  = ( Get '[JSON] [Policy]
+  = ( Get '[JSON] [UUID]
   :<|> ( ReqBody '[JSON] Policy :> PostCreated '[JSON] Policy )
   :<|> ( Capture "policy" UUID :> PolicyAPI )
     )

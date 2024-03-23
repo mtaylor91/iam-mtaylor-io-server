@@ -260,9 +260,7 @@ instance DB PostgresDB where
 
   listPolicies db = do
     r <- useDB db $ statement () selectPolicies
-    case mapM fromJSON $ toList r of
-      Success policies -> return policies
-      Error _ -> throwError InternalError
+    return $ toList r
 
   listPoliciesForUser db (UserEmail email) = do
     r0 <- useDB db $ statement email selectUserEmail
@@ -676,11 +674,11 @@ selectGroupUUIDs =
   |]
 
 
-selectPolicies :: Statement () (Vector Value)
+selectPolicies :: Statement () (Vector UUID)
 selectPolicies =
   [vectorStatement|
     SELECT
-      policies.policy :: json
+      policies.policy_uuid :: uuid
     FROM
       policies
   |]

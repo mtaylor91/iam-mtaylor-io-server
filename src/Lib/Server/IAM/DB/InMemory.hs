@@ -146,7 +146,7 @@ instance DB InMemory where
     maybe (throwError NotFound) return maybePolicy
 
   listPolicies (InMemory tvar) =
-    liftIO $ atomically $ policies <$> readTVar tvar
+    liftIO $ atomically $ fmap policyId . policies <$> readTVar tvar
 
   listPoliciesForUser (InMemory tvar) uid =
     liftIO $ atomically $ do
