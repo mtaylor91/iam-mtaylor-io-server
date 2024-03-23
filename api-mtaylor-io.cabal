@@ -31,6 +31,7 @@ library
       Lib.Client.Auth
       Lib.Client.Util
       Lib.Command.Create
+      Lib.Command.Create.Group
       Lib.Command.Create.Policy
       Lib.Command.Create.User
       Lib.Command.Get

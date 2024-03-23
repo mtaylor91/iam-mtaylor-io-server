@@ -13,8 +13,8 @@ import Data.UUID
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
 import Options.Applicative
-import Text.Read
 import Servant.Client
+import Text.Read
 
 import Lib.Client.Auth
 import Lib.Client.Util
