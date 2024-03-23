@@ -1,0 +1,6 @@
+{
+  "policyId": "cb342e87-b199-44f3-ac59-f5a9c0b8d44e",
+  "statements": [
+    {"action": "Read", "effect": "Allow", "resource": "*"}
+  ]
+}
