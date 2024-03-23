@@ -175,7 +175,18 @@ data Policy = Policy
   , statements :: ![Rule]
   } deriving (Eq, Show)
 
-$(deriveJSON defaultOptions ''Policy)
+instance FromJSON Policy where
+  parseJSON (Object obj) = do
+    id' <- obj .: "id"
+    statements' <- obj .: "statements"
+    return $ Policy id' statements'
+  parseJSON _ = fail "Invalid JSON"
+
+instance ToJSON Policy where
+  toJSON (Policy id' statements') = object
+    [ "id" .= id'
+    , "statements" .= statements'
+    ]
 
 
 data UserPolicyAttachment = UserPolicyAttachment

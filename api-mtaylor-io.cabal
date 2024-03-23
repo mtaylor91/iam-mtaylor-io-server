@@ -34,6 +34,10 @@ library
       Lib.Command.Create.Group
       Lib.Command.Create.Policy
       Lib.Command.Create.User
+      Lib.Command.Delete
+      Lib.Command.Delete.Group
+      Lib.Command.Delete.Policy
+      Lib.Command.Delete.User
       Lib.Command.Get
       Lib.Command.Get.Group
       Lib.Command.Get.Policy

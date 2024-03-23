@@ -4,6 +4,7 @@ module Lib.Opts ( options, run, ServerOptions(..) ) where
 import Options.Applicative
 
 import Lib.Command.Create
+import Lib.Command.Delete
 import Lib.Command.Get
 import Lib.Command.List
 import Lib.Command.Keypair
@@ -12,6 +13,7 @@ import Lib.Command.Server
 
 data Command
   = Create !CreateCommand
+  | Delete !DeleteCommand
   | Get !GetCommand
   | List !ListCommand
   | Keypair !KeypairOptions
@@ -26,6 +28,8 @@ options :: Parser Options
 options = Options <$> hsubparser
   ( command "create"
     (info (Create <$> createCommand) (progDesc "Create resources"))
+  <> command "delete"
+    (info (Delete <$> deleteCommand) (progDesc "Delete resources"))
   <> command "get"
     (info (Get <$> getCommand) (progDesc "Get resources"))
   <> command "list"
@@ -42,6 +46,8 @@ runOptions opts =
   case opts of
     Options (Create cmd) ->
       create cmd
+    Options (Delete cmd) ->
+      delete cmd
     Options (Get cmd) ->
       get cmd
     Options (List cmd) ->
