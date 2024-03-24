@@ -16,11 +16,11 @@ import Network.HTTP.Types
 import Test.Hspec
 import Test.Hspec.Wai
 
-import Lib (app)
-import Lib.IAM
-import Lib.Server.Auth (authStringToSign)
-import Lib.Server.IAM.DB
-import Lib.Server.IAM.DB.InMemory
+import IAM.IAM
+import IAM.Server.API (app)
+import IAM.Server.Auth (authStringToSign)
+import IAM.Server.IAM.DB
+import IAM.Server.IAM.DB.InMemory
 
 main :: IO ()
 main = do
@@ -32,7 +32,7 @@ main = do
       callerPolicy = Policy callerPolicyId callerPolicyRules
       callerPolicyRules = [allowReads, allowWrites]
       callerId = UserEmail "caller@example.com"
-      callerPrincipal = UserPrincipal callerId pk
+      callerPrincipal = User callerId [] [] [pk]
   result0 <- runExceptT $ createUser db callerPrincipal
   case result0 of
     Right _  -> do
@@ -54,9 +54,9 @@ spec db callerPK callerSK = with (return $ app db) $ do
       requestId <- liftIO nextRandom
       let headers =
             [ ("Authorization", "Signature " <> sig)
-            , ("X-User-Id", "caller@example.com")
-            , ("X-Public-Key", encodeUtf8 $ encodeBase64 $ unPublicKey callerPK)
-            , ("X-Request-Id", encodeUtf8 $ pack $ toString requestId)
+            , ("X-MTaylor-IO-User-Id", "caller@example.com")
+            , ("X-MTaylor-IO-Public-Key", encodeUtf8 $ encodeBase64 $ unPublicKey callerPK)
+            , ("X-MTaylor-IO-Request-Id", encodeUtf8 $ pack $ toString requestId)
             ]
           sig = encodeUtf8 $ encodeBase64 $ unSignature $ dsign callerSK stringToSign
           stringToSign = authStringToSign methodGet "/users" "" requestId
@@ -66,14 +66,14 @@ spec db callerPK callerSK = with (return $ app db) $ do
       (pk, _) <- liftIO createKeypair
       requestId <- liftIO nextRandom
       let uid = UserEmail "bob@example.com"
-          user = UserPrincipal uid pk
+          user = User uid [] [] [pk]
           userJSON = encode user
           headers =
             [ ("Authorization", "Signature " <> sig)
             , ("Content-Type", "application/json")
-            , ("X-User-Id", "caller@example.com")
-            , ("X-Public-Key", encodeUtf8 $ encodeBase64 $ unPublicKey callerPK)
-            , ("X-Request-Id", encodeUtf8 $ pack $ toString requestId)
+            , ("X-MTaylor-IO-User-Id", "caller@example.com")
+            , ("X-MTaylor-IO-Public-Key", encodeUtf8 $ encodeBase64 $ unPublicKey callerPK)
+            , ("X-MTaylor-IO-Request-Id", encodeUtf8 $ pack $ toString requestId)
             ]
           sig = encodeUtf8 $ encodeBase64 $ unSignature $ dsign callerSK stringToSign
           stringToSign = authStringToSign methodPost "/users" "" requestId
@@ -85,14 +85,14 @@ spec db callerPK callerSK = with (return $ app db) $ do
       uuid <- liftIO nextRandom
       (pk, _) <- liftIO createKeypair
       requestId <- liftIO nextRandom
-      let user = UserPrincipal (UserUUID uuid) pk
+      let user = User (UserUUID uuid) [] [] [pk]
           userJSON = encode user
           headers =
             [ ("Authorization", "Signature " <> sig)
             , ("Content-Type", "application/json")
-            , ("X-User-Id", "caller@example.com")
-            , ("X-Public-Key", encodeUtf8 $ encodeBase64 $ unPublicKey callerPK)
-            , ("X-Request-Id", encodeUtf8 $ pack $ toString requestId)
+            , ("X-MTaylor-IO-User-Id", "caller@example.com")
+            , ("X-MTaylor-IO-Public-Key", encodeUtf8 $ encodeBase64 $ unPublicKey callerPK)
+            , ("X-MTaylor-IO-Request-Id", encodeUtf8 $ pack $ toString requestId)
             ]
           sig = encodeUtf8 $ encodeBase64 $ unSignature $ dsign callerSK stringToSign
           stringToSign = authStringToSign methodPost "/users" "" requestId
@@ -104,9 +104,9 @@ spec db callerPK callerSK = with (return $ app db) $ do
       requestId <- liftIO nextRandom
       let headers =
             [ ("Authorization", "Signature " <> sig)
-            , ("X-User-Id", "caller@example.com")
-            , ("X-Public-Key", encodeUtf8 $ encodeBase64 $ unPublicKey callerPK)
-            , ("X-Request-Id", encodeUtf8 $ pack $ toString requestId)
+            , ("X-MTaylor-IO-User-Id", "caller@example.com")
+            , ("X-MTaylor-IO-Public-Key", encodeUtf8 $ encodeBase64 $ unPublicKey callerPK)
+            , ("X-MTaylor-IO-Request-Id", encodeUtf8 $ pack $ toString requestId)
             ]
           sig = encodeUtf8 $ encodeBase64 $ unSignature $ dsign callerSK stringToSign
           stringToSign = authStringToSign methodGet "/groups" "" requestId
@@ -117,11 +117,11 @@ spec db callerPK callerSK = with (return $ app db) $ do
       let headers =
             [ ("Authorization", "Signature " <> sig)
             , ("Content-Type", "application/json")
-            , ("X-User-Id", "caller@example.com")
-            , ("X-Public-Key", encodeUtf8 $ encodeBase64 $ unPublicKey callerPK)
-            , ("X-Request-Id", encodeUtf8 $ pack $ toString requestId)
+            , ("X-MTaylor-IO-User-Id", "caller@example.com")
+            , ("X-MTaylor-IO-Public-Key", encodeUtf8 $ encodeBase64 $ unPublicKey callerPK)
+            , ("X-MTaylor-IO-Request-Id", encodeUtf8 $ pack $ toString requestId)
             ]
-          groupJSON = encode $ Group (GroupName "admins") []
+          groupJSON = encode $ Group (GroupName "admins") [] []
           sig = encodeUtf8 $ encodeBase64 $ unSignature $ dsign callerSK stringToSign
           stringToSign = authStringToSign methodPost "/groups" "" requestId
       request methodPost "/groups" headers groupJSON `shouldRespondWith` 201
@@ -132,9 +132,9 @@ spec db callerPK callerSK = with (return $ app db) $ do
       requestId <- liftIO nextRandom
       let headers =
             [ ("Authorization", "Signature " <> sig)
-            , ("X-User-Id", "caller@example.com")
-            , ("X-Public-Key", encodeUtf8 $ encodeBase64 $ unPublicKey callerPK)
-            , ("X-Request-Id", encodeUtf8 requestIdString)
+            , ("X-MTaylor-IO-User-Id", "caller@example.com")
+            , ("X-MTaylor-IO-Public-Key", encodeUtf8 $ encodeBase64 $ unPublicKey callerPK)
+            , ("X-MTaylor-IO-Request-Id", encodeUtf8 requestIdString)
             ]
           requestIdString = pack $ toString requestId
           sig = encodeUtf8 $ encodeBase64 $ unSignature $ dsign callerSK stringToSign
@@ -147,9 +147,9 @@ spec db callerPK callerSK = with (return $ app db) $ do
       let headers =
             [ ("Authorization", "Signature " <> sig)
             , ("Content-Type", "application/json")
-            , ("X-User-Id", "caller@example.com")
-            , ("X-Public-Key", encodeUtf8 $ encodeBase64 $ unPublicKey callerPK)
-            , ("X-Request-Id", encodeUtf8 $ pack $ toString requestId)
+            , ("X-MTaylor-IO-User-Id", "caller@example.com")
+            , ("X-MTaylor-IO-Public-Key", encodeUtf8 $ encodeBase64 $ unPublicKey callerPK)
+            , ("X-MTaylor-IO-Request-Id", encodeUtf8 $ pack $ toString requestId)
             ]
           policy = Policy pid [Rule Allow Read "*", Rule Allow Write "*"]
           policyJSON = encode policy
