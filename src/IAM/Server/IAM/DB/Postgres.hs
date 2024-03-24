@@ -28,7 +28,7 @@ newtype PostgresDB = PostgresDB Pool
 connectToDatabase :: (MonadIO m) =>
   ByteString -> Word16 -> ByteString -> ByteString -> ByteString -> m PostgresDB
 connectToDatabase host port database username password = do
-  let settings = Connection.settings host port database username password
+  let settings = Connection.settings host port username password database
   pool <- liftIO $ Pool.acquire 3 1800 1800 settings
   return $ PostgresDB pool
 
