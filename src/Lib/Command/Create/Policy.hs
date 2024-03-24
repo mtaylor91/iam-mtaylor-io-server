@@ -6,55 +6,49 @@ module Lib.Command.Create.Policy
   ) where
 
 import Control.Exception
-import Data.Aeson
-import Data.ByteString.Lazy as LBS
 import Data.Text as T
+import Data.UUID
+import Data.UUID.V4
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
 import Options.Applicative
 import Servant.Client
-import System.IO
+import Text.Read
 
 import Lib.Client.Auth
 import Lib.Client.Util
-import Lib.IAM (Policy(..))
+import Lib.IAM
 import qualified Lib.Client
 
 
-newtype CreatePolicy
+data CreatePolicy
   = CreatePolicy
-    { policyDocumentSource :: Text
+    { createPolicyUUID :: !(Maybe Text)
+    , createPolicyAllowRead :: ![Text]
+    , createPolicyAllowWrite :: ![Text]
+    , createPolicyDenyRead :: ![Text]
+    , createPolicyDenyWrite :: ![Text]
     } deriving (Show)
 
 
 createPolicy :: CreatePolicy -> IO ()
 createPolicy createPolicyInfo =
-  case policyDocumentSource createPolicyInfo of
-    "-" -> createPolicyFromStdin createPolicyInfo
-    _ -> createPolicyFromFilePath createPolicyInfo
+  case createPolicyUUID createPolicyInfo of
+    Nothing -> nextRandom >>= createPolicyWithUUID createPolicyInfo
+    Just uuid -> case readMaybe $ unpack uuid of
+      Just uuid' -> createPolicyWithUUID createPolicyInfo uuid'
+      Nothing -> throw $ userError "Invalid UUID"
 
 
-createPolicyFromStdin :: CreatePolicy -> IO ()
-createPolicyFromStdin createPolicyInfo = createPolicyFromFile createPolicyInfo stdin
-
-
-createPolicyFromFilePath :: CreatePolicy -> IO ()
-createPolicyFromFilePath createPolicyInfo =
-  withFile (T.unpack $ policyDocumentSource createPolicyInfo) ReadMode $
-    createPolicyFromFile createPolicyInfo
-
-
-createPolicyFromFile :: CreatePolicy -> Handle -> IO ()
-createPolicyFromFile createPolicyInfo h = do
-  policyDocument <- LBS.hGetContents h
-  -- Decode the policy document
-  case decode policyDocument of
-    Just policy -> do
-      putStrLn $ "Creating policy with ID " ++ show createPolicyInfo
-      createPolicy' policy
-    Nothing -> do
-      putStrLn "Invalid policy document"
-      throwIO $ userError "Invalid policy document"
+createPolicyWithUUID :: CreatePolicy -> UUID -> IO ()
+createPolicyWithUUID createPolicyInfo uuid = createPolicy' $ Policy uuid stmts where
+  stmts = allowStmts ++ denyStmts
+  allowStmts = allowReadStmts ++ allowWriteStmts
+  allowReadStmts = Rule Allow Read <$> createPolicyAllowRead createPolicyInfo
+  allowWriteStmts = Rule Allow Write <$> createPolicyAllowWrite createPolicyInfo
+  denyStmts = denyReadStmts ++ denyWriteStmts
+  denyReadStmts = Rule Deny Read <$> createPolicyDenyRead createPolicyInfo
+  denyWriteStmts = Rule Deny Write <$> createPolicyDenyWrite createPolicyInfo
 
 
 createPolicy' :: Policy -> IO ()
@@ -65,14 +59,34 @@ createPolicy' policy = do
   result <- runClientM (Lib.Client.createPolicy policy) $ mkClientEnv mgr url
   case result of
     Right _ ->
-      putStrLn "Policy created"
+      putStrLn $ unpack $ toText $ policyId policy
     Left err ->
       handleClientError err
 
 
 createPolicyOptions :: Parser CreatePolicy
 createPolicyOptions = CreatePolicy
-  <$> argument str
-      ( metavar "DOCUMENT"
-     <> help "Policy document source"
-      )
+  <$> optional (argument str
+      ( metavar "UUID"
+     <> help "Policy UUID"
+      ))
+  <*> many (strOption
+      ( long "allow-read"
+     <> metavar "RESOURCE"
+     <> help "Allow read access to resource"
+      ))
+  <*> many (strOption
+      ( long "allow-write"
+     <> metavar "RESOURCE"
+     <> help "Allow write access to resource"
+      ))
+  <*> many (strOption
+      ( long "deny-read"
+     <> metavar "RESOURCE"
+     <> help "Deny read access to resource"
+      ))
+  <*> many (strOption
+      ( long "deny-write"
+     <> metavar "RESOURCE"
+     <> help "Deny write access to resource"
+      ))
