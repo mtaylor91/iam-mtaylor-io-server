@@ -3,6 +3,14 @@ kind: pipeline
 type: kubernetes
 name: build
 steps:
+- name: version
+  image: images.home.mtaylor.io/version:latest
+  commands:
+  - set -eux
+  - ./bin/version.sh $DRONE_TAG
+  when:
+    event:
+    - tag
 - name: image
   image: images.home.mtaylor.io/drone-kaniko:latest
   settings:

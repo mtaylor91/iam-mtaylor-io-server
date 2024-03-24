@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           iam-mtaylor-io
-version:        0.1.0.0
+version:        0.0.0.0
 description:    Please see the README on GitHub at <https://github.com/mtaylor91/iam-mtaylor-io#readme>
 homepage:       https://github.com/mtaylor91/iam-mtaylor-io#readme
 bug-reports:    https://github.com/mtaylor91/iam-mtaylor-io/issues
