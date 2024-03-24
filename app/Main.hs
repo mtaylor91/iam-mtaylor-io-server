@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Lib
+import IAM.Command (run)
 
 main :: IO ()
 main = run

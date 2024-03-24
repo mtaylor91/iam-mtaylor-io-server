@@ -25,41 +25,40 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
-      Lib.API
-      Lib.Client
-      Lib.Client.Auth
-      Lib.Client.Util
-      Lib.Command.Create
-      Lib.Command.Create.Group
-      Lib.Command.Create.Policy
-      Lib.Command.Create.User
-      Lib.Command.Delete
-      Lib.Command.Delete.Group
-      Lib.Command.Delete.Policy
-      Lib.Command.Delete.User
-      Lib.Command.Get
-      Lib.Command.Get.Group
-      Lib.Command.Get.Policy
-      Lib.Command.Get.User
-      Lib.Command.Keypair
-      Lib.Command.List
-      Lib.Command.List.Groups
-      Lib.Command.List.Policies
-      Lib.Command.List.Users
-      Lib.Command.Server
-      Lib.Config
-      Lib.IAM
-      Lib.Opts
-      Lib.Server.API
-      Lib.Server.Auth
-      Lib.Server.Handlers
-      Lib.Server.IAM.DB
-      Lib.Server.IAM.DB.InMemory
-      Lib.Server.IAM.DB.Postgres
-      Lib.Server.IAM.Policy
-      Lib.Server.Init
-      Lib.Util
+      IAM.API
+      IAM.Client
+      IAM.Client.Auth
+      IAM.Client.Util
+      IAM.Command
+      IAM.Command.Create
+      IAM.Command.Create.Group
+      IAM.Command.Create.Policy
+      IAM.Command.Create.User
+      IAM.Command.Delete
+      IAM.Command.Delete.Group
+      IAM.Command.Delete.Policy
+      IAM.Command.Delete.User
+      IAM.Command.Get
+      IAM.Command.Get.Group
+      IAM.Command.Get.Policy
+      IAM.Command.Get.User
+      IAM.Command.Keypair
+      IAM.Command.List
+      IAM.Command.List.Groups
+      IAM.Command.List.Policies
+      IAM.Command.List.Users
+      IAM.Command.Server
+      IAM.Config
+      IAM.IAM
+      IAM.Server.API
+      IAM.Server.Auth
+      IAM.Server.Handlers
+      IAM.Server.IAM.DB
+      IAM.Server.IAM.DB.InMemory
+      IAM.Server.IAM.DB.Postgres
+      IAM.Server.IAM.Policy
+      IAM.Server.Init
+      IAM.Util
   other-modules:
       Paths_iam_mtaylor_io
   autogen-modules:
