@@ -27,27 +27,27 @@ headerPrefix = "X-MTaylor-IO"
 
 
 configEmail :: IO String
-configEmail = loadEnvConfig "EMAIL"
+configEmail = loadNamespaceEnvConfig "EMAIL"
 
 
 configPublicKey :: IO String
-configPublicKey = loadEnvConfig "PUBLIC_KEY"
+configPublicKey = loadNamespaceEnvConfig "PUBLIC_KEY"
 
 
 configSecretKey :: IO String
-configSecretKey = loadEnvConfig "SECRET_KEY"
+configSecretKey = loadNamespaceEnvConfig "SECRET_KEY"
 
 
 configURL :: IO String
 configURL = do
-  maybeValue <- lookupEnvConfig "URL"
+  maybeValue <- lookupNamespaceEnvConfig "URL"
   case maybeValue of
     Nothing -> return "https://iam.mtaylor.io"
     Just value -> return value
 
 
-loadEnvConfig :: String -> IO String
-loadEnvConfig key = do
+loadNamespaceEnvConfig :: String -> IO String
+loadNamespaceEnvConfig key = do
   let key' = envPrefix ++ "_" ++ key
   maybeValue <- lookupEnv key'
   case maybeValue of
@@ -55,8 +55,8 @@ loadEnvConfig key = do
     Just value -> return value
 
 
-lookupEnvConfig :: String -> IO (Maybe String)
-lookupEnvConfig key = do
+lookupNamespaceEnvConfig :: String -> IO (Maybe String)
+lookupNamespaceEnvConfig key = do
   let key' = envPrefix ++ "_" ++ key
   lookupEnv key'
 

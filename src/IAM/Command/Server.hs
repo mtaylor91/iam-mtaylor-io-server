@@ -5,10 +5,13 @@ module IAM.Command.Server
   , ServerOptions(..)
   ) where
 
+import Control.Exception
 import Data.ByteString (ByteString)
 import Data.Text as T
-import Data.Word (Word16)
+import Data.Text.Encoding
 import Options.Applicative
+import System.Environment
+import Text.Read
 
 import IAM.Config
 import IAM.Server.API
@@ -20,11 +23,6 @@ import IAM.Server.IAM.DB.Postgres
 data ServerOptions = ServerOptions
   { port :: !Int
   , postgres :: !Bool
-  , postgresHost :: !ByteString
-  , postgresPort :: !Word16
-  , postgresDatabase :: !ByteString
-  , postgresUserName :: !ByteString
-  , postgresPassword :: !ByteString
   } deriving (Show)
 
 
@@ -33,14 +31,16 @@ server opts = do
   adminEmail <- T.pack <$> configEmail
   adminPublicKey <- T.pack <$> configPublicKey
   if postgres opts
-    then startApp (port opts) =<< initDB adminEmail adminPublicKey =<<
-      connectToDatabase
-      (postgresHost opts)
-      (postgresPort opts)
-      (postgresDatabase opts)
-      (postgresUserName opts)
-      (postgresPassword opts)
+    then startApp (port opts) =<< initDB adminEmail adminPublicKey =<< pgDB
     else startApp (port opts) =<< initDB adminEmail adminPublicKey =<< inMemory
+  where
+    pgDB = do
+      pgHost <- loadEnvConfig "POSTGRES_HOST"
+      pgPort <- readEnvConfig "POSTGRES_PORT"
+      pgDatabase <- loadEnvConfig "POSTGRES_DATABASE"
+      pgUserName <- loadEnvConfig "POSTGRES_USER"
+      pgPassword <- loadEnvConfig "POSTGRES_PASSWORD"
+      connectToDatabase pgHost pgPort pgDatabase pgUserName pgPassword
 
 
 serverOptions :: Parser ServerOptions
@@ -56,34 +56,21 @@ serverOptions = ServerOptions
   <*> switch ( long "postgres"
       <> help "Use Postgres database"
       )
-  <*> strOption ( long "postgres-host"
-     <> metavar "HOST"
-     <> help "Postgres host"
-     <> value "localhost"
-     <> showDefault
-      )
-  <*> option auto
-      ( long "postgres-port"
-      <> metavar "PORT"
-      <> help "Postgres port"
-      <> value 5432
-      <> showDefault
-      )
-  <*> strOption ( long "postgres-database"
-      <> metavar "DATABASE"
-      <> help "Postgres database"
-      <> value "iam"
-      <> showDefault
-      )
-  <*> strOption ( long "postgres-username"
-      <> metavar "USERNAME"
-      <> help "Postgres username"
-      <> value "iam"
-      <> showDefault
-      )
-  <*> strOption ( long "postgres-password"
-      <> metavar "PASSWORD"
-      <> help "Postgres password"
-      <> value "iam"
-      <> showDefault
-      )
+
+
+loadEnvConfig :: String -> IO ByteString
+loadEnvConfig key = do
+  maybeValue <- lookupEnv key
+  case maybeValue of
+    Nothing -> throw $ userError $ key ++ " environment variable not set"
+    Just val -> return $ encodeUtf8 $ T.pack val
+
+
+readEnvConfig :: Read t => String -> IO t
+readEnvConfig key = do
+  maybeValue <- lookupEnv key
+  case maybeValue of
+    Nothing -> throw $ userError $ key ++ " environment variable not set"
+    Just val -> case readMaybe val of
+      Nothing -> throw $ userError $ key ++ " environment variable not a valid value"
+      Just val' -> return val'
