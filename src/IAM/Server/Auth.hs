@@ -25,9 +25,9 @@ import Servant
 import Servant.Server.Experimental.Auth
 
 import IAM.Config (headerPrefix)
-import IAM.IAM
 import IAM.Server.IAM.DB
 import IAM.Server.IAM.Policy
+import IAM.Types
 
 
 data Auth = Auth

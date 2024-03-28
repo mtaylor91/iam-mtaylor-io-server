@@ -24,10 +24,10 @@ import Control.Monad.Except
 import Data.UUID
 import Servant
 
-import IAM.IAM
 import IAM.Server.Auth
 import IAM.Server.IAM.DB
 import IAM.Server.IAM.Policy
+import IAM.Types
 
 dbError :: DBError -> ServerError
 dbError AlreadyExists  = err409

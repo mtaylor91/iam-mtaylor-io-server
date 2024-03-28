@@ -18,7 +18,7 @@ module IAM.API
 import Data.UUID
 import Servant
 
-import IAM.IAM
+import IAM.Types
 
 
 type API = AuthProtect "signature-auth" :> IAMAPI

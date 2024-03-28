@@ -8,7 +8,7 @@ import Control.Monad.Except
 import Crypto.Sign.Ed25519
 import Data.UUID
 
-import IAM.IAM
+import IAM.Types
 import IAM.Server.IAM.DB
 
 

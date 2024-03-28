@@ -8,7 +8,7 @@ module IAM.Server.IAM.Policy
 
 import Data.Text hiding (any, all, concatMap)
 
-import IAM.IAM
+import IAM.Types
 
 
 -- | isAllowedBy returns whether a policy is allowed by a set of rules.

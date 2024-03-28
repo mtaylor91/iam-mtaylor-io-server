@@ -17,11 +17,11 @@ import Network.HTTP.Types
 import Test.Hspec
 import Test.Hspec.Wai
 
-import IAM.IAM
 import IAM.Server.API (app)
 import IAM.Server.Auth (stringToSign)
 import IAM.Server.IAM.DB
 import IAM.Server.IAM.DB.InMemory
+import IAM.Types
 
 
 main :: IO ()

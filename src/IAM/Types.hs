@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
-module IAM.IAM
+module IAM.Types
   ( User(..)
   , UserId(..)
   , Group(..)

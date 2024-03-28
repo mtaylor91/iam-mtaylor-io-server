@@ -15,7 +15,7 @@ import Text.Read
 import IAM.Client
 import IAM.Client.Auth
 import IAM.Client.Util
-import IAM.IAM
+import IAM.Types
 
 
 getGroup :: Text -> IO ()

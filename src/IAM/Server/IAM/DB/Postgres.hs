@@ -18,7 +18,7 @@ import Hasql.TH (maybeStatement, resultlessStatement, vectorStatement)
 import qualified Hasql.Connection as Connection
 import qualified Hasql.Pool as Pool
 
-import IAM.IAM
+import IAM.Types
 import IAM.Server.IAM.DB
 
 

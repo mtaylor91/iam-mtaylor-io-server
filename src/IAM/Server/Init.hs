@@ -8,8 +8,8 @@ import Data.Text
 import Data.Text.Encoding
 import Data.UUID.V4
 
-import IAM.IAM
 import IAM.Server.IAM.DB
+import IAM.Types
 
 
 initDB :: DB db => Text -> Text -> db -> IO db

@@ -27,7 +27,7 @@ import Servant
 import Servant.Client
 import Data.UUID (UUID)
 import IAM.API
-import IAM.IAM
+import IAM.Types
 
 
 type UsersClientM

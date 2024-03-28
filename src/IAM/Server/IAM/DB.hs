@@ -5,7 +5,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Except
 import Data.UUID
 
-import IAM.IAM
+import IAM.Types
 
 
 data DBError
