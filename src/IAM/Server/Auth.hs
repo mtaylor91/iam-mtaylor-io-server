@@ -5,7 +5,7 @@
 module IAM.Server.Auth
   ( authContext
   , authHandler
-  , authStringToSign
+  , stringToSign
   , Auth(..)
   , Authentication(..)
   , Authorization(..)
@@ -48,9 +48,10 @@ newtype Authorization = Authorization
 
 
 data AuthRequest = AuthRequest
-  { authRequestHeader :: !ByteString
-  , authRequestUserId :: !UserId
+  { authRequestAuthorization :: !ByteString
+  , authRequestHost :: !ByteString
   , authRequestPublicKey :: !PublicKey
+  , authRequestUserId :: !UserId
   , authRequestId :: !UUID
   } deriving (Eq, Show)
 
@@ -58,40 +59,41 @@ data AuthRequest = AuthRequest
 type instance AuthServerData (AuthProtect "signature-auth") = Auth
 
 
-authContext :: DB db => db -> Context (AuthHandler Request Auth ': '[])
-authContext db = authHandler db :. EmptyContext
+authContext :: DB db => ByteString -> db -> Context (AuthHandler Request Auth ': '[])
+authContext host db = authHandler host db :. EmptyContext
 
 
-authHandler :: DB db => db -> AuthHandler Request Auth
-authHandler db = mkAuthHandler $ \req -> do
-  (authReq, user) <- authenticate db req
+authHandler :: DB db => ByteString -> db -> AuthHandler Request Auth
+authHandler host db = mkAuthHandler $ \req -> do
+  (authReq, user) <- authenticate host db req
   authorize db req $ Authentication user authReq
 
 
-authenticate :: DB db => db -> Request -> Handler (AuthRequest, User)
-authenticate db req = do
+authenticate :: DB db => ByteString -> db -> Request -> Handler (AuthRequest, User)
+authenticate host db req = do
   let maybeAuth = do
-        userIdString <- lookupHeader req "User-Id"
         authHeader <- lookup "Authorization" (requestHeaders req)
+        hostHeader <- lookup "Host" (requestHeaders req)
+        userIdString <- lookupHeader req "User-Id"
         publicKeyBase64 <- lookupHeader req "Public-Key"
         requestIdString <- lookupHeader req "Request-Id"
         uid <- parseUserId $ decodeUtf8 userIdString
         pk <- parsePublicKey publicKeyBase64
         requestId <- fromString $ unpack $ decodeUtf8 requestIdString
-        return $ AuthRequest authHeader uid pk requestId
+        return $ AuthRequest authHeader hostHeader pk uid requestId
    in case maybeAuth of
     Just authReq -> do
       result <- liftIO $ runExceptT $ getUser db $ authRequestUserId authReq
       case result of
         Right user -> do
-          let authHeader = authRequestHeader authReq
+          let authHeader = authRequestAuthorization authReq
               method = requestMethod req
               path = rawPathInfo req
               query = rawQueryString req
-              stringToSign = authStringToSign method path query requestId
+              authStringToSign = stringToSign method host path query requestId
               requestId = authRequestId authReq
               pk = authRequestPublicKey authReq
-          if verifySignature user pk authHeader stringToSign
+          if verifySignature user pk authHeader authStringToSign
             then return (authReq, user)
             else throwError $ err401 { errBody = "Invalid signature" }
         Left NotFound -> throwError $ err401 { errBody = "User not found" }
@@ -146,12 +148,12 @@ parseUserId s =
 
 
 verifySignature :: User -> PublicKey -> ByteString -> ByteString -> Bool
-verifySignature user pk authHeader stringToSign =
+verifySignature user pk authHeader authStringToSign =
   pk `elem` userPublicKeys user
   && verifySignature' (decodeSignature =<< extractSignature authHeader)
     where
       verifySignature' :: Maybe Signature -> Bool
-      verifySignature' (Just sig) = dverify pk stringToSign sig
+      verifySignature' (Just sig) = dverify pk authStringToSign sig
       verifySignature' _ = False
 
 
@@ -171,13 +173,17 @@ decodeSignature s =
     Left _ -> Nothing
 
 
--- | Auth string to sign
-authStringToSign :: Method -> ByteString -> ByteString -> UUID -> ByteString
-authStringToSign method path query requestId =
-  method <> "\n" <> path <> "\n" <> query <> "\n" <> encodeUtf8 (toText requestId)
-
-
 -- | Lookup a given header in the request
 lookupHeader :: Request -> HeaderName -> Maybe ByteString
 lookupHeader req header = lookup header' (requestHeaders req) where
   header' = mk (encodeUtf8 $ pack headerPrefix) <> "-" <> header
+
+
+-- | String to sign to authenticate the request
+stringToSign :: Method -> ByteString -> ByteString -> ByteString -> UUID -> ByteString
+stringToSign method host path query requestId
+  = method <> "\n"
+  <> host <> "\n"
+  <> path <> "\n"
+  <> query <> "\n"
+  <> encodeUtf8 (toText requestId)

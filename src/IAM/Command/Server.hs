@@ -30,9 +30,10 @@ server :: ServerOptions -> IO ()
 server opts = do
   adminEmail <- T.pack <$> configEmail
   adminPublicKey <- T.pack <$> configPublicKey
+  host <- loadEnvConfig "HOST"
   if postgres opts
-    then startApp (port opts) =<< initDB adminEmail adminPublicKey =<< pgDB
-    else startApp (port opts) =<< initDB adminEmail adminPublicKey =<< inMemory
+    then startApp (port opts) host =<< initDB adminEmail adminPublicKey =<< pgDB
+    else startApp (port opts) host =<< initDB adminEmail adminPublicKey =<< inMemory
   where
     pgDB = do
       pgHost <- loadEnvConfig "POSTGRES_HOST"
