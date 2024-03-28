@@ -71,6 +71,7 @@ authHeader reqStringToSign secretKey = "Signature " <> encodeUtf8 (encodeBase64 
 authStringToSign :: Request -> UUID -> Text
 authStringToSign req reqId
   = decodeUtf8 (method req) <> "\n"
+  <> decodeUtf8 (host req) <> "\n"
   <> decodeUtf8 (path req) <> "\n"
   <> decodeUtf8 (queryString req) <> "\n"
   <> pack (toString reqId)
