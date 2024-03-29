@@ -26,6 +26,12 @@ printClientError (FailureResponse _ response) =
       putStrLn "Forbidden"
     s | s == status404 ->
       putStrLn "Not found"
+    s | s == status500 ->
+      putStrLn "Internal server error"
+    s | s == status502 ->
+      putStrLn "Bad gateway"
+    s | s == status503 ->
+      putStrLn "Service unavailable"
     _anyOtherStatus ->
       putStrLn "Unknown failure"
 printClientError (DecodeFailure _ _) =
