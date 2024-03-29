@@ -24,6 +24,7 @@ import Data.Text
 import Data.Text.Encoding
 import Data.UUID
 import Servant
+import Text.Read
 
 
 data UserId
@@ -34,7 +35,9 @@ data UserId
 $(deriveJSON defaultOptions { sumEncoding = UntaggedValue } ''UserId)
 
 instance FromHttpApiData UserId where
-  parseUrlPiece = Right . UserEmail
+  parseUrlPiece s = case readMaybe $ unpack s of
+    Just uuid -> Right $ UserUUID uuid
+    Nothing -> Right $ UserEmail s
 
 instance ToHttpApiData UserId where
   toUrlPiece (UserEmail email) = email
@@ -49,7 +52,9 @@ data GroupId
 $(deriveJSON defaultOptions { sumEncoding = UntaggedValue } ''GroupId)
 
 instance FromHttpApiData GroupId where
-  parseUrlPiece = Right . GroupName
+  parseUrlPiece s = case readMaybe $ unpack s of
+    Just uuid -> Right $ GroupUUID uuid
+    Nothing -> Right $ GroupName s
 
 instance ToHttpApiData GroupId where
   toUrlPiece (GroupName name) = name
