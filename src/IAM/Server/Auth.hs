@@ -149,7 +149,7 @@ parseUserId s =
 
 verifySignature :: User -> PublicKey -> ByteString -> ByteString -> Bool
 verifySignature user pk authHeader authStringToSign =
-  pk `elem` userPublicKeys user
+  pk `elem` fmap userPublicKey (userPublicKeys user)
   && verifySignature' (decodeSignature =<< extractSignature authHeader)
     where
       verifySignature' :: Maybe Signature -> Bool

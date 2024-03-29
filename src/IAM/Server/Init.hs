@@ -45,7 +45,7 @@ createAdmin adminEmail adminPublicKeyBase64 db = do
   case decodeBase64 $ encodeUtf8 adminPublicKeyBase64 of
     Left _ -> error "Invalid base64 public key"
     Right adminPublicKey -> do
-      let pk = PublicKey adminPublicKey
+      let pk = UserPublicKey (PublicKey adminPublicKey) "Admin public key"
       let user = User (UserEmail adminEmail) [adminsGroupId] [] [pk]
       r2 <- runExceptT $ createUser db user
       case r2 of

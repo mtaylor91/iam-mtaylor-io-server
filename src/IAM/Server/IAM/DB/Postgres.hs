@@ -54,23 +54,25 @@ instance DB PostgresDB where
         r3 <- useDB db $ statement email selectUserEmailPublicKeys
         r4 <- useDB db $ statement email selectUserEmailPolicyIds
         let gs = namedGroups ++ uuidGroups
-            pks = map PublicKey $ toList r3
+            pks = map pk $ toList r3
             policies = toList r4
             uuidGroups = map GroupUUID $ toList r2
             namedGroups = map GroupName $ toList r1
         return $ User (UserEmail email) gs policies pks
       Nothing -> throwError NotFound
+    where pk (pk', desc) = UserPublicKey (PublicKey pk') desc
   getUser db (UserUUID uuid) = do
     r0 <- useDB db $ statement uuid selectUserUUIDGroupNames
     r1 <- useDB db $ statement uuid selectUserUUIDGroupUUIDs
     r2 <- useDB db $ statement uuid selectUserUUIDPublicKeys
     r3 <- useDB db $ statement uuid selectUserUUIDPolicyIds
     let gs = namedGroups ++ uuidGroups
-        pks = map PublicKey $ toList r2
+        pks = map pk $ toList r2
         policies = toList r3
         uuidGroups = map GroupUUID $ toList r1
         namedGroups = map GroupName $ toList r0
     return $ User (UserUUID uuid) gs policies pks
+    where pk (pk', desc) = UserPublicKey (PublicKey pk') desc
 
   listUsers db = do
     r0 <- useDB db $ statement () selectUserEmails
@@ -102,8 +104,8 @@ instance DB PostgresDB where
           case r2 of
             Just _ -> useDB db $ statement (email, policy) insertUserEmailPolicy
             Nothing -> throwError NotFound
-        forM_ pks $ \pk -> do
-          useDB db $ statement (email, unPublicKey pk) insertUserEmailPublicKey
+        forM_ pks $ \(UserPublicKey pk desc) -> do
+          useDB db $ statement (email, unPublicKey pk, desc) insertUserEmailPublicKey
         return $ User (UserEmail email) groups policies pks
   createUser db (User (UserUUID uuid) groups policies pks) = do
     r0 <- useDB db $ statement uuid selectUserUUID
@@ -128,8 +130,8 @@ instance DB PostgresDB where
           case r2 of
             Just _ -> useDB db $ statement (uuid, policy) insertUserUUIDPolicy
             Nothing -> throwError NotFound
-        forM_ pks $ \pk -> do
-          useDB db $ statement (uuid, unPublicKey pk) insertUserUUIDPublicKey
+        forM_ pks $ \(UserPublicKey pk desc) -> do
+          useDB db $ statement (uuid, unPublicKey pk, desc) insertUserUUIDPublicKey
         return $ User (UserUUID uuid) groups policies pks
 
   deleteUser db (UserEmail email) = do
@@ -574,23 +576,23 @@ insertUserUUIDGroupUUID =
   |]
 
 
-insertUserEmailPublicKey :: Statement (Text, ByteString) ()
+insertUserEmailPublicKey :: Statement (Text, ByteString, Text) ()
 insertUserEmailPublicKey =
   [resultlessStatement|
     INSERT INTO
-      user_email_public_keys (user_email, public_key)
+      user_email_public_keys (user_email, public_key, description)
     VALUES
-      ($1 :: text, $2 :: bytea)
+      ($1 :: text, $2 :: bytea, $3 :: text)
   |]
 
 
-insertUserUUIDPublicKey :: Statement (UUID, ByteString) ()
+insertUserUUIDPublicKey :: Statement (UUID, ByteString, Text) ()
 insertUserUUIDPublicKey =
   [resultlessStatement|
     INSERT INTO
-      user_uuid_public_keys (user_uuid, public_key)
+      user_uuid_public_keys (user_uuid, public_key, description)
     VALUES
-      ($1 :: uuid, $2 :: bytea)
+      ($1 :: uuid, $2 :: bytea, $3 :: text)
   |]
 
 
@@ -851,11 +853,12 @@ selectUserUUIDGroupUUIDs =
   |]
 
 
-selectUserEmailPublicKeys :: Statement Text (Vector ByteString)
+selectUserEmailPublicKeys :: Statement Text (Vector (ByteString, Text))
 selectUserEmailPublicKeys =
   [vectorStatement|
     SELECT
-      user_email_public_keys.public_key :: bytea
+      user_email_public_keys.public_key :: bytea,
+      user_email_public_keys.description :: text
     FROM
       user_email_public_keys
     WHERE
@@ -863,11 +866,12 @@ selectUserEmailPublicKeys =
   |]
 
 
-selectUserUUIDPublicKeys :: Statement UUID (Vector ByteString)
+selectUserUUIDPublicKeys :: Statement UUID (Vector (ByteString, Text))
 selectUserUUIDPublicKeys =
   [vectorStatement|
     SELECT
-      user_uuid_public_keys.public_key :: bytea
+      user_uuid_public_keys.public_key :: bytea,
+      user_uuid_public_keys.description :: text
     FROM
       user_uuid_public_keys
     WHERE

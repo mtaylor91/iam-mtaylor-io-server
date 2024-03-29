@@ -7,6 +7,7 @@ module IAM.Command.Create.User
 
 import Crypto.Sign.Ed25519
 import Data.ByteString.Base64
+import Data.Maybe
 import Data.Text as T
 import Data.Text.Encoding
 import Data.UUID
@@ -19,12 +20,13 @@ import Text.Read
 import IAM.Client.Auth
 import IAM.Client.Util
 import IAM.Config
-import IAM.Types (GroupId(..), UserId(..), User(..))
+import IAM.Types (GroupId(..), User(..), UserId(..), UserPublicKey(..))
 import qualified IAM.Client
 
 
 data CreateUser = CreateUser
   { createUserEmailOrUUID :: !Text
+  , createUserDescription :: !(Maybe Text)
   , createUserPublicKey :: !(Maybe Text)
   , createUserGroups :: ![Text]
   } deriving (Show)
@@ -67,7 +69,8 @@ createUserById' createUserInfo uid pk = do
     Left _ ->
       putStrLn "Invalid public key: base64 decoding failed"
     Right pk' -> do
-      let user = User uid (gid <$> createUserGroups createUserInfo) [] [PublicKey pk']
+      let upk' = upk (PublicKey pk') (createUserDescription createUserInfo)
+      let user = User uid (gid <$> createUserGroups createUserInfo) [] [upk']
       let clientCommand = IAM.Client.createUser user
       result <- runClientM clientCommand $ mkClientEnv mgr url
       case result of
@@ -78,6 +81,8 @@ createUserById' createUserInfo uid pk = do
     gid t = case readMaybe (unpack t) of
       Just uuid -> GroupUUID uuid
       Nothing -> GroupName t
+    upk :: PublicKey -> Maybe Text -> UserPublicKey
+    upk pk' = UserPublicKey pk' . fromMaybe "CLI"
 
 
 createUserOptions :: Parser CreateUser
@@ -86,6 +91,10 @@ createUserOptions = CreateUser
       ( metavar "EMAIL | UUID"
      <> help "Email or UUID for user"
       )
+  <*> optional ( argument str
+      ( metavar "DESCRIPTION"
+     <> help "Description for user's public key"
+      ) )
   <*> optional ( strOption
       ( long "public-key"
      <> metavar "PUBLIC_KEY"

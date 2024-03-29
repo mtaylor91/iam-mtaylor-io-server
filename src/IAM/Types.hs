@@ -3,6 +3,7 @@
 module IAM.Types
   ( User(..)
   , UserId(..)
+  , UserPublicKey(..)
   , Group(..)
   , GroupId(..)
   , Effect(..)
@@ -55,11 +56,33 @@ instance ToHttpApiData GroupId where
   toUrlPiece (GroupUUID uuid) = toText uuid
 
 
+data UserPublicKey = UserPublicKey
+  { userPublicKey :: !PublicKey
+  , userPublicKeyDescription :: !Text
+  } deriving (Eq, Show)
+
+
+instance FromJSON UserPublicKey where
+  parseJSON (Object obj) = do
+    description <- obj .: "description"
+    key <- obj .: "key"
+    case decodeBase64 $ encodeUtf8 key of
+      Left _ -> fail "Invalid JSON"
+      Right bs -> return $ UserPublicKey (PublicKey bs) description
+  parseJSON _ = fail "Invalid JSON"
+
+instance ToJSON UserPublicKey where
+  toJSON (UserPublicKey key description) = object
+    [ "description" .= description
+    , "key" .= encodeBase64 (unPublicKey key)
+    ]
+
+
 data User = User
   { userId :: !UserId
   , userGroups :: ![GroupId]
   , userPolicies :: ![UUID]
-  , userPublicKeys :: ![PublicKey]
+  , userPublicKeys :: ![UserPublicKey]
   } deriving (Eq, Show)
 
 instance FromJSON User where
@@ -69,19 +92,10 @@ instance FromJSON User where
     groups <- obj .: "groups"
     policies <- obj .: "policies"
     publicKeys <- obj .: "publicKeys"
-    case (email, uuid, decodePublicKeys publicKeys) of
-      (Just e, Nothing, Just pks) -> return $ User (UserEmail e) groups policies pks
-      (Nothing, Just u, Just pks) -> return $ User (UserUUID u) groups policies pks
-      (_, _, _) -> fail "Invalid JSON"
-    where
-      decodePublicKeys :: [Text] -> Maybe [PublicKey]
-      decodePublicKeys (x:xs) =
-        case decodeBase64 $ encodeUtf8 x of
-          Left _ -> Nothing
-          Right bs -> case decodePublicKeys xs of
-            Nothing -> Nothing
-            Just pks -> Just $ PublicKey bs : pks
-      decodePublicKeys [] = Just []
+    case (email, uuid) of
+      (Just e, Nothing) -> return $ User (UserEmail e) groups policies publicKeys
+      (Nothing, Just u) -> return $ User (UserUUID u) groups policies publicKeys
+      (_, _) -> fail "Invalid JSON"
   parseJSON _ = fail "Invalid JSON"
 
 instance ToJSON User where
@@ -89,13 +103,13 @@ instance ToJSON User where
     [ "email" .= email
     , "groups" .= groups
     , "policies" .= policies
-    , "publicKeys" .= fmap (encodeBase64 . unPublicKey) pks
+    , "publicKeys" .= toJSON pks
     ]
   toJSON (User (UserUUID uuid) groups policies pks) = object
     [ "uuid" .= uuid
     , "groups" .= groups
     , "policies" .= policies
-    , "publicKeys" .= fmap (encodeBase64 . unPublicKey) pks
+    , "publicKeys" .= toJSON pks
     ]
 
 

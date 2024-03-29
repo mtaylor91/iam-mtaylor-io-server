@@ -34,7 +34,7 @@ main = do
       callerPolicy = Policy callerPolicyId callerPolicyRules
       callerPolicyRules = [allowReads, allowWrites]
       callerId = UserEmail "caller@example.com"
-      callerPrincipal = User callerId [] [] [pk]
+      callerPrincipal = User callerId [] [] [UserPublicKey pk "test"]
   result0 <- runExceptT $ createUser db callerPrincipal
   case result0 of
     Right _  -> do
@@ -70,7 +70,7 @@ spec host db callerPK callerSK = with (return $ app host db) $ do
       (pk, _) <- liftIO createKeypair
       requestId <- liftIO nextRandom
       let uid = UserEmail "bob@example.com"
-          user = User uid [] [] [pk]
+          user = User uid [] [] [UserPublicKey pk "test"]
           userJSON = encode user
           headers =
             [ ("Authorization", "Signature " <> sig)
@@ -90,7 +90,7 @@ spec host db callerPK callerSK = with (return $ app host db) $ do
       uuid <- liftIO nextRandom
       (pk, _) <- liftIO createKeypair
       requestId <- liftIO nextRandom
-      let user = User (UserUUID uuid) [] [] [pk]
+      let user = User (UserUUID uuid) [] [] [UserPublicKey pk "test"]
           userJSON = encode user
           headers =
             [ ("Authorization", "Signature " <> sig)

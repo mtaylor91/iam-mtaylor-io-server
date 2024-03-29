@@ -5,11 +5,10 @@ module IAM.Server.IAM.DB.InMemory ( inMemory, InMemory(..) ) where
 import Control.Concurrent.STM
 import Control.Monad.IO.Class
 import Control.Monad.Except
-import Crypto.Sign.Ed25519
 import Data.UUID
 
-import IAM.Types
 import IAM.Server.IAM.DB
+import IAM.Types
 
 
 data InMemoryState = InMemoryState
@@ -19,7 +18,7 @@ data InMemoryState = InMemoryState
   , memberships :: ![(UserId, GroupId)]
   , userPolicyAttachments :: ![(UserId, UUID)]
   , groupPolicyAttachments :: ![(GroupId, UUID)]
-  , usersPublicKeys :: ![(UserId, PublicKey)]
+  , usersPublicKeys :: ![(UserId, UserPublicKey)]
   }
 
 

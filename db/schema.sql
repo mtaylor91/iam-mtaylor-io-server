@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS "user_uuid_group_uuids" (
 CREATE TABLE IF NOT EXISTS "user_email_public_keys" (
   "user_email" TEXT NOT NULL,
   "public_key" BYTEA NOT NULL,
+  "description" TEXT NOT NULL,
   PRIMARY KEY ("user_email"),
   FOREIGN KEY ("user_email") REFERENCES "user_emails" ("user_email")
 );
@@ -62,6 +63,7 @@ CREATE TABLE IF NOT EXISTS "user_email_public_keys" (
 CREATE TABLE IF NOT EXISTS "user_uuid_public_keys" (
   "user_uuid" UUID NOT NULL,
   "public_key" BYTEA NOT NULL,
+  "description" TEXT NOT NULL,
   PRIMARY KEY ("user_uuid"),
   FOREIGN KEY ("user_uuid") REFERENCES "user_uuids" ("user_uuid")
 );
