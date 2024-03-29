@@ -9,12 +9,12 @@ spec:
       - name: iam
         image: images.home.mtaylor.io/iam-mtaylor-io
         env:
-        - name: IAM_MTAYLOR_IO_EMAIL
+        - name: MTAYLOR_IO_EMAIL
           valueFrom:
             configMapKeyRef:
               name: iam-mtaylor-io
               key: email
-        - name: IAM_MTAYLOR_IO_PUBLIC_KEY
+        - name: MTAYLOR_IO_PUBLIC_KEY
           valueFrom:
             configMapKeyRef:
               name: iam-mtaylor-io
@@ -23,3 +23,11 @@ spec:
         - name: http
           protocol: TCP
           containerPort: 8080
+        readinessProbe:
+          periodSeconds: 5
+          failureThreshold: 3
+          successThreshold: 3
+          initialDelaySeconds: 5
+          timeoutSeconds: 1
+          tcpSocket:
+            port: http
