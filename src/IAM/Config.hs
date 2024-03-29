@@ -19,7 +19,7 @@ import IAM.Util
 
 
 envPrefix :: String
-envPrefix = "IAM_MTAYLOR_IO"
+envPrefix = "MTAYLOR_IO"
 
 
 headerPrefix :: String
