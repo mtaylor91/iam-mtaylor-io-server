@@ -51,12 +51,15 @@ library
       IAM.Config
       IAM.Server.API
       IAM.Server.Auth
+      IAM.Server.DB
+      IAM.Server.DB.InMemory
+      IAM.Server.DB.InMemory.State
+      IAM.Server.DB.Postgres
+      IAM.Server.DB.Postgres.Queries
+      IAM.Server.DB.Postgres.Transactions
       IAM.Server.Handlers
-      IAM.Server.IAM.DB
-      IAM.Server.IAM.DB.InMemory
-      IAM.Server.IAM.DB.Postgres
-      IAM.Server.IAM.Policy
       IAM.Server.Init
+      IAM.Server.Policy
       IAM.Types
       IAM.Util
   other-modules:
@@ -76,9 +79,11 @@ library
     , hasql
     , hasql-pool
     , hasql-th
+    , hasql-transaction
     , http-client
     , http-client-tls
     , http-types
+    , lens
     , mtl
     , optparse-applicative
     , servant-client
@@ -110,10 +115,12 @@ executable iam-mtaylor-io
     , hasql
     , hasql-pool
     , hasql-th
+    , hasql-transaction
     , http-client
     , http-client-tls
     , http-types
     , iam-mtaylor-io
+    , lens
     , mtl
     , optparse-applicative
     , servant-client
@@ -146,6 +153,7 @@ test-suite iam-mtaylor-io-test
     , hasql
     , hasql-pool
     , hasql-th
+    , hasql-transaction
     , hspec
     , hspec-wai
     , hspec-wai-json
@@ -153,6 +161,7 @@ test-suite iam-mtaylor-io-test
     , http-client-tls
     , http-types
     , iam-mtaylor-io
+    , lens
     , mtl
     , optparse-applicative
     , servant-client

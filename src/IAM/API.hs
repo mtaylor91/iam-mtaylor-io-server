@@ -35,12 +35,12 @@ type IAMAPI
 type UsersAPI
   = ( Get '[JSON] [UserId]
   :<|> ( ReqBody '[JSON] User :> PostCreated '[JSON] User )
-  :<|> ( Capture "user" UserId :> UserAPI )
+  :<|> ( Capture "user" UserIdentifier :> UserAPI )
     )
 
 type UserAPI
   = ( Get '[JSON] User
-  :<|> Delete '[JSON] UserId
+  :<|> Delete '[JSON] User
   :<|> "policies" :> Capture "policy" UUID :> UserPolicyAPI
     )
 
@@ -52,12 +52,12 @@ type UserPolicyAPI
 type GroupsAPI
   = ( Get '[JSON] [GroupId]
   :<|> ( ReqBody '[JSON] Group :> PostCreated '[JSON] Group )
-  :<|> ( Capture "group" GroupId :> GroupAPI )
+  :<|> ( Capture "group" GroupIdentifier :> GroupAPI )
     )
 
 type GroupAPI
   = ( Get '[JSON] Group
-  :<|> Delete '[JSON] GroupId
+  :<|> Delete '[JSON] Group
   :<|> "policies" :> Capture "policy" UUID :> GroupPolicyAPI
     )
 
@@ -68,7 +68,8 @@ type GroupPolicyAPI
 
 type MembershipsAPI
   = ReqBody '[JSON] Membership :> PostCreated '[JSON] Membership
-  :<|> ( Capture "group" GroupId :> Capture "user" UserId :> Delete '[JSON] Membership )
+  :<|> ( Capture "group" GroupIdentifier :> Capture "user" UserIdentifier
+    :> Delete '[JSON] Membership )
 
 type PoliciesAPI
   = ( Get '[JSON] [UUID]

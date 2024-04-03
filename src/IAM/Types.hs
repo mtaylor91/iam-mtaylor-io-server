@@ -1,7 +1,11 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
 module IAM.Types
-  ( User(..)
+  ( unUserIdentifier
+  , unUserIdentifierEmail
+  , unGroupIdentifier
+  , unGroupIdentifierName
+  , User(..)
   , UserId(..)
   , UserPublicKey(..)
   , Group(..)
@@ -13,6 +17,9 @@ module IAM.Types
   , UserPolicyAttachment(UserPolicyAttachment)
   , GroupPolicyAttachment(GroupPolicyAttachment)
   , Membership(..)
+  , Range(..)
+  , UserIdentifier(..)
+  , GroupIdentifier(..)
   ) where
 
 import Crypto.Sign.Ed25519
@@ -24,41 +31,115 @@ import Data.Text
 import Data.Text.Encoding
 import Data.UUID
 import Servant
-import Text.Read
+import Text.Read (readMaybe)
 
 
-data UserId
-  = UserUUID !UUID
-  | UserEmail !Text
+newtype UserId = UserUUID UUID deriving (Eq, Show)
+
+$(deriveJSON defaultOptions { unwrapUnaryRecords = True } ''UserId)
+
+
+newtype GroupId = GroupUUID UUID deriving (Eq, Show)
+
+$(deriveJSON defaultOptions { unwrapUnaryRecords = True } ''GroupId)
+
+
+data UserIdentifier
+  = UserEmail !Text
+  | UserId !UserId
+  | UserIdAndEmail !UserId !Text
   deriving (Eq, Show)
 
-$(deriveJSON defaultOptions { sumEncoding = UntaggedValue } ''UserId)
-
-instance FromHttpApiData UserId where
+instance FromHttpApiData UserIdentifier where
   parseUrlPiece s = case readMaybe $ unpack s of
-    Just uuid -> Right $ UserUUID uuid
+    Just uuid -> Right $ UserId $ UserUUID uuid
     Nothing -> Right $ UserEmail s
 
-instance ToHttpApiData UserId where
+instance ToHttpApiData UserIdentifier where
   toUrlPiece (UserEmail email) = email
-  toUrlPiece (UserUUID uuid) = toText uuid
+  toUrlPiece (UserId (UserUUID uuid)) = toText uuid
+  toUrlPiece (UserIdAndEmail (UserUUID uuid) _) = toText uuid
+
+instance FromJSON UserIdentifier where
+  parseJSON (Object obj) = do
+    uuid <- obj .:? "id"
+    email <- obj .:? "email"
+    case (uuid, email) of
+      (Just (Just uuid'), Just email') -> return $ UserIdAndEmail (UserUUID uuid') email'
+      (Just (Just uuid'), Nothing) -> return $ UserId $ UserUUID uuid'
+      (Nothing, Just email') -> return $ UserEmail email'
+      (_, _) -> fail "Invalid JSON"
+  parseJSON (String s) = case readMaybe $ unpack s of
+    Just uuid -> return $ UserId $ UserUUID uuid
+    Nothing -> return $ UserEmail s
+  parseJSON _ = fail "Invalid JSON"
+
+instance ToJSON UserIdentifier where
+  toJSON (UserEmail email) = toJSON email
+  toJSON (UserId (UserUUID uuid)) = toJSON uuid
+  toJSON (UserIdAndEmail (UserUUID uuid) email) = object
+    [ "id" .= uuid
+    , "email" .= email
+    ]
+
+unUserIdentifier :: UserIdentifier -> Either Text UserId
+unUserIdentifier (UserEmail _) = Left "UserEmail"
+unUserIdentifier (UserId uid) = Right uid
+unUserIdentifier (UserIdAndEmail uid _) = Right uid
+
+unUserIdentifierEmail :: UserIdentifier -> Maybe Text
+unUserIdentifierEmail (UserEmail email) = Just email
+unUserIdentifierEmail (UserIdAndEmail _ email) = Just email
+unUserIdentifierEmail _ = Nothing
 
 
-data GroupId
-  = GroupUUID !UUID
-  | GroupName !Text
+data GroupIdentifier
+  = GroupName !Text
+  | GroupId !GroupId
+  | GroupIdAndName !GroupId !Text
   deriving (Eq, Show)
 
-$(deriveJSON defaultOptions { sumEncoding = UntaggedValue } ''GroupId)
-
-instance FromHttpApiData GroupId where
+instance FromHttpApiData GroupIdentifier where
   parseUrlPiece s = case readMaybe $ unpack s of
-    Just uuid -> Right $ GroupUUID uuid
+    Just uuid -> Right $ GroupId $ GroupUUID uuid
     Nothing -> Right $ GroupName s
 
-instance ToHttpApiData GroupId where
+instance ToHttpApiData GroupIdentifier where
   toUrlPiece (GroupName name) = name
-  toUrlPiece (GroupUUID uuid) = toText uuid
+  toUrlPiece (GroupId (GroupUUID uuid)) = toText uuid
+  toUrlPiece (GroupIdAndName (GroupUUID uuid) _) = toText uuid
+
+instance FromJSON GroupIdentifier where
+  parseJSON (Object obj) = do
+    uuid <- obj .:? "id"
+    name <- obj .:? "name"
+    case (uuid, name) of
+      (Just (Just uuid'), Just name') -> return $ GroupIdAndName (GroupUUID uuid') name'
+      (Just (Just uuid'), Nothing) -> return $ GroupId $ GroupUUID uuid'
+      (Nothing, Just name') -> return $ GroupName name'
+      (_, _) -> fail "Invalid JSON"
+  parseJSON (String s) = case readMaybe $ unpack s of
+    Just uuid -> return $ GroupId $ GroupUUID uuid
+    Nothing -> return $ GroupName s
+  parseJSON _ = fail "Invalid JSON"
+
+instance ToJSON GroupIdentifier where
+  toJSON (GroupName name) = toJSON name
+  toJSON (GroupId (GroupUUID uuid)) = toJSON uuid
+  toJSON (GroupIdAndName (GroupUUID uuid) name) = object
+    [ "id" .= uuid
+    , "name" .= name
+    ]
+
+unGroupIdentifier :: GroupIdentifier -> Either Text GroupId
+unGroupIdentifier (GroupName _) = Left "GroupName"
+unGroupIdentifier (GroupId gid) = Right gid
+unGroupIdentifier (GroupIdAndName gid _) = Right gid
+
+unGroupIdentifierName :: GroupIdentifier -> Maybe Text
+unGroupIdentifierName (GroupName name) = Just name
+unGroupIdentifierName (GroupIdAndName _ name) = Just name
+unGroupIdentifierName _ = Nothing
 
 
 data UserPublicKey = UserPublicKey
@@ -69,8 +150,8 @@ data UserPublicKey = UserPublicKey
 
 instance FromJSON UserPublicKey where
   parseJSON (Object obj) = do
-    description <- obj .: "description"
     key <- obj .: "key"
+    description <- obj .: "description"
     case decodeBase64 $ encodeUtf8 key of
       Left _ -> fail "Invalid JSON"
       Right bs -> return $ UserPublicKey (PublicKey bs) description
@@ -85,33 +166,26 @@ instance ToJSON UserPublicKey where
 
 data User = User
   { userId :: !UserId
-  , userGroups :: ![GroupId]
+  , userEmail :: !(Maybe Text)
+  , userGroups :: ![GroupIdentifier]
   , userPolicies :: ![UUID]
   , userPublicKeys :: ![UserPublicKey]
   } deriving (Eq, Show)
 
 instance FromJSON User where
   parseJSON (Object obj) = do
-    email <- obj .:? "email"
-    uuid <- obj .:? "uuid"
+    uid <- obj .: "id"
     groups <- obj .: "groups"
     policies <- obj .: "policies"
     publicKeys <- obj .: "publicKeys"
-    case (email, uuid) of
-      (Just e, Nothing) -> return $ User (UserEmail e) groups policies publicKeys
-      (Nothing, Just u) -> return $ User (UserUUID u) groups policies publicKeys
-      (_, _) -> fail "Invalid JSON"
+    maybeEmail <- obj .:? "email"
+    return $ User uid maybeEmail groups policies publicKeys
   parseJSON _ = fail "Invalid JSON"
 
 instance ToJSON User where
-  toJSON (User (UserEmail email) groups policies pks) = object
-    [ "email" .= email
-    , "groups" .= groups
-    , "policies" .= policies
-    , "publicKeys" .= toJSON pks
-    ]
-  toJSON (User (UserUUID uuid) groups policies pks) = object
-    [ "uuid" .= uuid
+  toJSON (User (UserUUID uuid) email groups policies pks) = object
+    [ "id" .= uuid
+    , "email" .= email
     , "groups" .= groups
     , "policies" .= policies
     , "publicKeys" .= toJSON pks
@@ -120,32 +194,26 @@ instance ToJSON User where
 
 data Group = Group
   { groupId :: !GroupId
-  , groupUsers :: ![UserId]
+  , groupName :: !(Maybe Text)
+  , groupUsers :: ![UserIdentifier]
   , groupPolicies :: ![UUID]
   } deriving (Eq, Show)
 
 instance FromJSON Group where
   parseJSON (Object obj) = do
-    name <- obj .:? "name"
-    uuid <- obj .:? "uuid"
+    uuid <- obj .: "uuid"
+    maybeName <- obj .:? "name"
     maybeUsers <- obj .:? "users"
     maybePolicies <- obj .:? "policies"
     let users = fromMaybe [] maybeUsers
     let policies = fromMaybe [] maybePolicies
-    case (name, uuid) of
-      (Just n, Nothing) -> return $ Group (GroupName n) users policies
-      (Nothing, Just u) -> return $ Group (GroupUUID u) users policies
-      (_, _) -> fail "Invalid JSON"
+    return $ Group uuid maybeName users policies
   parseJSON _ = fail "Invalid JSON"
 
 instance ToJSON Group where
-  toJSON (Group (GroupName name) users policies) = object
-    [ "name" .= name
-    , "users" .= users
-    , "policies" .= policies
-    ]
-  toJSON (Group (GroupUUID uuid) users policies) = object
-    [ "uuid" .= uuid
+  toJSON (Group (GroupUUID uuid) maybeName users policies) = object
+    [ "id" .= uuid
+    , "name" .= maybeName
     , "users" .= users
     , "policies" .= policies
     ]
@@ -244,3 +312,9 @@ instance ToJSON GroupPolicyAttachment where
     [ "group" .= g
     , "policy" .= p
     ]
+
+
+data Range = Range
+  { rangeOffset :: !Int
+  , rangeLimit :: !(Maybe Int)
+  } deriving (Eq, Show)

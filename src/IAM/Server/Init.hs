@@ -8,7 +8,7 @@ import Data.Text
 import Data.Text.Encoding
 import Data.UUID.V4
 
-import IAM.Server.IAM.DB
+import IAM.Server.DB
 import IAM.Types
 
 
@@ -33,8 +33,8 @@ createAdmin adminEmail adminPublicKeyBase64 db = do
     Right _ -> return ()
 
   -- Create the admins group
-  let adminsGroupId = GroupName "admins"
-      adminsGroup = Group adminsGroupId [] [adminPolicyId]
+  adminsGroupId <- GroupUUID <$> nextRandom
+  let adminsGroup = Group adminsGroupId (Just "admins") [] [adminPolicyId]
   r1 <- runExceptT $ createGroup db adminsGroup
   case r1 of
     Left AlreadyExists -> return ()
@@ -45,8 +45,9 @@ createAdmin adminEmail adminPublicKeyBase64 db = do
   case decodeBase64 $ encodeUtf8 adminPublicKeyBase64 of
     Left _ -> error "Invalid base64 public key"
     Right adminPublicKey -> do
+      uid <- UserUUID <$> nextRandom
       let pk = UserPublicKey (PublicKey adminPublicKey) "Admin public key"
-      let user = User (UserEmail adminEmail) [adminsGroupId] [] [pk]
+      let user = User uid (Just adminEmail) [GroupId adminsGroupId] [] [pk]
       r2 <- runExceptT $ createUser db user
       case r2 of
         Left AlreadyExists -> return ()

@@ -28,14 +28,14 @@ getGroup nameOrId =
 
 
 getGroupByUUID :: UUID -> IO ()
-getGroupByUUID = getGroupById . GroupUUID
+getGroupByUUID = getGroupById . GroupId . GroupUUID
 
 
 getGroupByName :: Text -> IO ()
 getGroupByName = getGroupById . GroupName
 
 
-getGroupById :: GroupId -> IO ()
+getGroupById :: GroupIdentifier -> IO ()
 getGroupById gid = do
   auth <- clientAuthInfo
   mgr <- newManager tlsManagerSettings { managerModifyRequest = clientAuth auth }

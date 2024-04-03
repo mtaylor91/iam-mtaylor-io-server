@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
-module IAM.Server.IAM.DB ( DB(..), DBError(..) ) where
+module IAM.Server.DB ( DB(..), DBError(..) ) where
 
 import Control.Monad.IO.Class
 import Control.Monad.Except
@@ -20,11 +20,11 @@ class DB db where
 
   -- | getUser returns a user from the database by its email.
   getUser :: (MonadIO m, MonadError DBError m) =>
-    db -> UserId -> m User
+    db -> UserIdentifier -> m User
 
   -- | listUsers returns a list of all users in the database.
   listUsers :: (MonadIO m, MonadError DBError m) =>
-    db -> m [UserId]
+    db -> Range -> m [UserId]
 
   -- | createUser adds a new user to the database.
   createUser :: (MonadIO m, MonadError DBError m) =>
@@ -32,11 +32,11 @@ class DB db where
 
   -- | deleteUser removes a user from the database by its email.
   deleteUser :: (MonadIO m, MonadError DBError m) =>
-    db -> UserId -> m UserId
+    db -> UserIdentifier -> m User
 
   -- | getGroup returns a group from the database by its name.
   getGroup :: (MonadIO m, MonadError DBError m) =>
-    db -> GroupId -> m Group
+    db -> GroupIdentifier -> m Group
 
   -- | listGroups returns a list of all groups in the database.
   listGroups :: (MonadIO m, MonadError DBError m) =>
@@ -48,7 +48,7 @@ class DB db where
 
   -- | deleteGroup removes a group from the database by its name.
   deleteGroup :: (MonadIO m, MonadError DBError m) =>
-    db -> GroupId -> m ()
+    db -> GroupIdentifier -> m Group
 
   -- | getPolicy returns a policy from the database by its id.
   getPolicy :: (MonadIO m, MonadError DBError m) =>
@@ -77,24 +77,24 @@ class DB db where
 
   -- | createMembership adds a user to a group.
   createMembership :: (MonadIO m, MonadError DBError m) =>
-    db -> UserId -> GroupId -> m Membership
+    db -> UserIdentifier -> GroupIdentifier -> m Membership
 
   -- | deleteMembership removes a user from a group.
   deleteMembership :: (MonadIO m, MonadError DBError m) =>
-    db -> UserId -> GroupId -> m Membership
+    db -> UserIdentifier -> GroupIdentifier -> m Membership
 
   -- | createUserPolicyAttachment attaches a policy to a user.
   createUserPolicyAttachment :: (MonadIO m, MonadError DBError m) =>
-    db -> UserId -> UUID -> m UserPolicyAttachment
+    db -> UserIdentifier -> UUID -> m UserPolicyAttachment
 
   -- | deleteUserPolicyAttachment detaches a policy from a user.
   deleteUserPolicyAttachment :: (MonadIO m, MonadError DBError m) =>
-    db -> UserId -> UUID -> m UserPolicyAttachment
+    db -> UserIdentifier -> UUID -> m UserPolicyAttachment
 
   -- | createGroupPolicyAttachment attaches a policy to a group.
   createGroupPolicyAttachment :: (MonadIO m, MonadError DBError m) =>
-    db -> GroupId -> UUID -> m GroupPolicyAttachment
+    db -> GroupIdentifier -> UUID -> m GroupPolicyAttachment
 
   -- | deleteGroupPolicyAttachment detaches a policy from a group.
   deleteGroupPolicyAttachment :: (MonadIO m, MonadError DBError m) =>
-    db -> GroupId -> UUID -> m GroupPolicyAttachment
+    db -> GroupIdentifier -> UUID -> m GroupPolicyAttachment

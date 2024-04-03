@@ -14,7 +14,7 @@ import Text.Read
 
 import IAM.Client.Auth
 import IAM.Client.Util
-import IAM.Types (GroupId(..))
+import IAM.Types (GroupId(..), GroupIdentifier(..))
 import qualified IAM.Client
 
 
@@ -35,10 +35,10 @@ deleteGroupByName = deleteGroupById . GroupName
 
 
 deleteGroupByUUID :: UUID -> IO ()
-deleteGroupByUUID = deleteGroupById . GroupUUID
+deleteGroupByUUID = deleteGroupById . GroupId . GroupUUID
 
 
-deleteGroupById :: GroupId -> IO ()
+deleteGroupById :: GroupIdentifier -> IO ()
 deleteGroupById gid = do
   url <- serverUrl
   auth <- clientAuthInfo

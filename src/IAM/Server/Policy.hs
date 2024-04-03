@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module IAM.Server.IAM.Policy
+module IAM.Server.Policy
   ( isAllowedBy
   , isAuthorized
   , policyRules

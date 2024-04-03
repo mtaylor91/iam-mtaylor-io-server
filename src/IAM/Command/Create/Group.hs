@@ -7,6 +7,7 @@ module IAM.Command.Create.Group
 import Control.Exception
 import Data.Text
 import Data.UUID
+import Data.UUID.V4
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
 import Options.Applicative
@@ -15,7 +16,7 @@ import Text.Read
 
 import IAM.Client.Auth
 import IAM.Client.Util
-import IAM.Types (Group(..), GroupId(..), UserId(..))
+import IAM.Types
 import qualified IAM.Client
 
 
@@ -38,18 +39,23 @@ createGroupByName createGroupInfo = createGroupById createGroupInfo . GroupName
 
 
 createGroupByUUID :: CreateGroup -> UUID -> IO ()
-createGroupByUUID createGroupInfo = createGroupById createGroupInfo . GroupUUID
+createGroupByUUID createGroupInfo = createGroupById createGroupInfo . GroupId . GroupUUID
 
 
-createGroupById :: CreateGroup -> GroupId -> IO ()
-createGroupById createGroupInfo gid = do
+createGroupById :: CreateGroup -> GroupIdentifier -> IO ()
+createGroupById createGroupInfo gident = do
   policies <- mapM translatePolicyId $ createGroupPolicies createGroupInfo
   users <- mapM translateUserId $ createGroupUsers createGroupInfo
   url <- serverUrl
   auth <- clientAuthInfo
   mgr <- newManager tlsManagerSettings { managerModifyRequest = clientAuth auth }
 
-  let grp = Group gid users policies
+  gid <- case unGroupIdentifier gident of
+    Right (GroupUUID uuid) -> return $ GroupUUID uuid
+    Left _email -> GroupUUID <$> nextRandom
+
+  let maybeName = unGroupIdentifierName gident
+  let grp = Group gid maybeName users policies
   res <- runClientM (IAM.Client.createGroup grp) $ mkClientEnv mgr url
   case res of
     Left err -> handleClientError err
@@ -63,10 +69,10 @@ createGroupById createGroupInfo gid = do
         Just uuid -> return uuid
         Nothing -> throw $ userError $ "Invalid policy ID: " ++ show pid
 
-    translateUserId :: Text -> IO UserId
+    translateUserId :: Text -> IO UserIdentifier
     translateUserId uid = do
       case readMaybe (unpack uid) of
-        Just uuid -> return $ UserUUID uuid
+        Just uuid -> return $ UserId $ UserUUID uuid
         Nothing -> return $ UserEmail uid
 
 

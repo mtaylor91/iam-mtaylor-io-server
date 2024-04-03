@@ -33,12 +33,12 @@ import IAM.Types
 type UsersClientM
   = ClientM [UserId]
   :<|> (User -> ClientM User)
-  :<|> (UserId -> UserClientM)
+  :<|> (UserIdentifier -> UserClientM)
 
 
 type UserClientM =
     ClientM User
-    :<|> ClientM UserId
+    :<|> ClientM User
     :<|> (UUID -> UserPolicyClientM)
 
 
@@ -48,12 +48,12 @@ type UserPolicyClientM = ClientM UserPolicyAttachment :<|> ClientM UserPolicyAtt
 type GroupsClientM
   = ClientM [GroupId]
   :<|> (Group -> ClientM Group)
-  :<|> (GroupId -> GroupClientM)
+  :<|> (GroupIdentifier -> GroupClientM)
 
 
 type GroupClientM =
     ClientM Group
-    :<|> ClientM GroupId
+    :<|> ClientM Group
     :<|> (UUID -> GroupPolicyClientM)
 
 
@@ -74,12 +74,12 @@ type PolicyClientM =
 
 type MembershipsClientM
   = (Membership -> ClientM Membership)
-  :<|> (GroupId -> UserId -> ClientM Membership)
+  :<|> (GroupIdentifier -> UserIdentifier -> ClientM Membership)
 
 
 data UserClient = UserClient
   { getUser :: !(ClientM User)
-  , deleteUser :: !(ClientM UserId)
+  , deleteUser :: !(ClientM User)
   , userPolicyClient :: !(UUID -> UserPolicyClient)
   }
 
@@ -92,7 +92,7 @@ data UserPolicyClient = UserPolicyClient
 
 data GroupClient = GroupClient
   { getGroup :: !(ClientM Group)
-  , deleteGroup :: !(ClientM GroupId)
+  , deleteGroup :: !(ClientM Group)
   , groupPolicyClient :: !(UUID -> GroupPolicyClient)
   }
 
@@ -125,7 +125,7 @@ callerClient
 
 
 getCaller :: ClientM User
-deleteCaller :: ClientM UserId
+deleteCaller :: ClientM User
 callerPolicyClient :: UUID -> UserPolicyClientM
 
 
@@ -140,13 +140,13 @@ mkCallerPolicyClient pid =
 
 listUsers :: ClientM [UserId]
 createUser :: User -> ClientM User
-userClient :: UserId -> UserClientM
+userClient :: UserIdentifier -> UserClientM
 
 
 (listUsers :<|> createUser :<|> userClient) = usersClient
 
 
-mkUserClient :: UserId -> UserClient
+mkUserClient :: UserIdentifier -> UserClient
 mkUserClient uid =
   let (getUser' :<|> deleteUser' :<|> userPolicyClient') = userClient uid
   in UserClient getUser' deleteUser' (mkUserPolicyClient userPolicyClient')
@@ -159,13 +159,13 @@ mkUserClient uid =
 
 listGroups :: ClientM [GroupId]
 createGroup :: Group -> ClientM Group
-groupClient :: GroupId -> GroupClientM
+groupClient :: GroupIdentifier -> GroupClientM
 
 
 (listGroups :<|> createGroup :<|> groupClient) = groupsClient
 
 
-mkGroupClient :: GroupId -> GroupClient
+mkGroupClient :: GroupIdentifier -> GroupClient
 mkGroupClient gid =
   let (getGroup' :<|> deleteGroup' :<|> groupPolicyClient') = groupClient gid
   in GroupClient getGroup' deleteGroup' (mkGroupPolicyClient groupPolicyClient')
@@ -191,7 +191,7 @@ mkPolicyClient pid =
 
 
 createMembership :: Membership -> ClientM Membership
-deleteMembership :: GroupId -> UserId -> ClientM Membership
+deleteMembership :: GroupIdentifier -> UserIdentifier -> ClientM Membership
 
 
 createMembership :<|> deleteMembership = membershipsClient

@@ -21,8 +21,8 @@ import Servant
 
 import IAM.API
 import IAM.Server.Auth
+import IAM.Server.DB
 import IAM.Server.Handlers
-import IAM.Server.IAM.DB
 import IAM.Types
 
 app :: DB db => ByteString -> db -> Application
@@ -41,9 +41,9 @@ server db caller
 
 callerAPI :: DB db => db -> Auth -> Server UserAPI
 callerAPI db caller
-  = getUserHandler db caller (userId $ authUser $ authentication caller)
-  :<|> deleteUserHandler db caller (userId $ authUser $ authentication caller)
-  :<|> userPolicyAPI db caller (userId $ authUser $ authentication caller)
+  = getUserHandler db caller (UserId $ userId $ authUser $ authentication caller)
+  :<|> deleteUserHandler db caller (UserId $ userId $ authUser $ authentication caller)
+  :<|> userPolicyAPI db caller (UserId $ userId $ authUser $ authentication caller)
 
 usersAPI :: DB db => db -> Auth -> Server UsersAPI
 usersAPI db caller
@@ -51,13 +51,13 @@ usersAPI db caller
   :<|> createUserHandler db caller
   :<|> userAPI db caller
 
-userAPI :: DB db => db -> Auth -> UserId -> Server UserAPI
+userAPI :: DB db => db -> Auth -> UserIdentifier -> Server UserAPI
 userAPI db caller uid
   = getUserHandler db caller uid
   :<|> deleteUserHandler db caller uid
   :<|> userPolicyAPI db caller uid
 
-userPolicyAPI :: DB db => db -> Auth -> UserId -> UUID -> Server UserPolicyAPI
+userPolicyAPI :: DB db => db -> Auth -> UserIdentifier -> UUID -> Server UserPolicyAPI
 userPolicyAPI db caller uid pid
   = createUserPolicyAttachmentHandler db caller uid pid
   :<|> deleteUserPolicyAttachmentHandler db caller uid pid
@@ -68,13 +68,13 @@ groupsAPI db caller
   :<|> createGroupHandler db caller
   :<|> groupAPI db caller
 
-groupAPI :: DB db => db -> Auth -> GroupId -> Server GroupAPI
+groupAPI :: DB db => db -> Auth -> GroupIdentifier -> Server GroupAPI
 groupAPI db caller gid
   = getGroupHandler db caller gid
   :<|> deleteGroupHandler db caller gid
   :<|> groupPolicyAPI db caller gid
 
-groupPolicyAPI :: DB db => db -> Auth -> GroupId -> UUID -> Server GroupPolicyAPI
+groupPolicyAPI :: DB db => db -> Auth -> GroupIdentifier -> UUID -> Server GroupPolicyAPI
 groupPolicyAPI db caller gid pid
   = createGroupPolicyAttachmentHandler db caller gid pid
   :<|> deleteGroupPolicyAttachmentHandler db caller gid pid

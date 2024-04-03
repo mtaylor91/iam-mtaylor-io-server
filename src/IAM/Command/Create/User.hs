@@ -11,6 +11,7 @@ import Data.Maybe
 import Data.Text as T
 import Data.Text.Encoding
 import Data.UUID
+import Data.UUID.V4
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
 import Options.Applicative
@@ -20,12 +21,12 @@ import Text.Read
 import IAM.Client.Auth
 import IAM.Client.Util
 import IAM.Config
-import IAM.Types (GroupId(..), User(..), UserId(..), UserPublicKey(..))
+import IAM.Types
 import qualified IAM.Client
 
 
 data CreateUser = CreateUser
-  { createUserEmailOrUUID :: !Text
+  { createUserUUIDOrEmail :: !Text
   , createUserDescription :: !(Maybe Text)
   , createUserPublicKey :: !(Maybe Text)
   , createUserGroups :: ![Text]
@@ -34,34 +35,33 @@ data CreateUser = CreateUser
 
 createUser :: CreateUser -> IO ()
 createUser createUserInfo =
-  case readMaybe (unpack $ createUserEmailOrUUID createUserInfo) of
-    Just uuid -> createUserByUUID createUserInfo uuid
-    Nothing -> createUserByEmail createUserInfo $ createUserEmailOrUUID createUserInfo
+  case readMaybe (unpack $ createUserUUIDOrEmail createUserInfo) of
+    Just uuid -> createUserByUUID createUserInfo uuid Nothing
+    Nothing -> createUserByEmail createUserInfo $ createUserUUIDOrEmail createUserInfo
 
 
 createUserByEmail :: CreateUser -> Text -> IO ()
-createUserByEmail createUserInfo = createUserById createUserInfo . UserEmail
+createUserByEmail createUserInfo email = do
+  uuid <- nextRandom
+  createUserByUUID createUserInfo uuid $ Just email
 
 
-createUserByUUID :: CreateUser -> UUID -> IO ()
-createUserByUUID createUserInfo = createUserById createUserInfo . UserUUID
-
-
-createUserById :: CreateUser -> UserId -> IO ()
-createUserById createUserInfo uid = do
+createUserByUUID :: CreateUser -> UUID -> Maybe Text -> IO ()
+createUserByUUID createUserInfo uuid maybeEmail = do
+  let uid = UserUUID uuid
   case createUserPublicKey createUserInfo of
     Just pk -> do
-      createUserById' createUserInfo uid pk
+      createUserById' createUserInfo uid maybeEmail pk
     Nothing -> do
       (pk, sk) <- createKeypair
-      createUserById' createUserInfo uid $ encodeBase64 (unPublicKey pk)
-      case uid of
-        UserEmail email -> printUserEmailShellVars email pk sk
-        UserUUID uuid -> printUserUUIDShellVars uuid pk sk
+      createUserById' createUserInfo uid maybeEmail $ encodeBase64 (unPublicKey pk)
+      case maybeEmail of
+        Just email -> printUserEmailShellVars email pk sk
+        Nothing -> printUserUUIDShellVars uuid pk sk
 
 
-createUserById' :: CreateUser -> UserId -> Text -> IO ()
-createUserById' createUserInfo uid pk = do
+createUserById' :: CreateUser -> UserId -> Maybe Text -> Text -> IO ()
+createUserById' createUserInfo uid maybeEmail pk = do
   url <- serverUrl
   auth <- clientAuthInfo
   mgr <- newManager $ tlsManagerSettings { managerModifyRequest = clientAuth auth }
@@ -70,16 +70,16 @@ createUserById' createUserInfo uid pk = do
       putStrLn "Invalid public key: base64 decoding failed"
     Right pk' -> do
       let upk' = upk (PublicKey pk') (createUserDescription createUserInfo)
-      let user = User uid (gid <$> createUserGroups createUserInfo) [] [upk']
+      let user = User uid maybeEmail (gid <$> createUserGroups createUserInfo) [] [upk']
       let clientCommand = IAM.Client.createUser user
       result <- runClientM clientCommand $ mkClientEnv mgr url
       case result of
         Left err -> handleClientError err
         Right _ -> return ()
   where
-    gid :: Text -> GroupId
+    gid :: Text -> GroupIdentifier
     gid t = case readMaybe (unpack t) of
-      Just uuid -> GroupUUID uuid
+      Just uuid -> GroupId $ GroupUUID uuid
       Nothing -> GroupName t
     upk :: PublicKey -> Maybe Text -> UserPublicKey
     upk pk' = UserPublicKey pk' . fromMaybe "CLI"

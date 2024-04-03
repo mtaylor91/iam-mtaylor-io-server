@@ -35,10 +35,10 @@ deleteUserByEmail = deleteUserById . UserEmail
 
 
 deleteUserByUUID :: UUID -> IO ()
-deleteUserByUUID = deleteUserById . UserUUID
+deleteUserByUUID = deleteUserById . UserId . UserUUID
 
 
-deleteUserById :: UserId -> IO ()
+deleteUserById :: UserIdentifier -> IO ()
 deleteUserById uid = do
   url <- serverUrl
   auth <- clientAuthInfo

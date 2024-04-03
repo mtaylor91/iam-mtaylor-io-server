@@ -15,9 +15,9 @@ import Text.Read
 
 import IAM.Config
 import IAM.Server.API
+import IAM.Server.DB.InMemory
+import IAM.Server.DB.Postgres
 import IAM.Server.Init
-import IAM.Server.IAM.DB.InMemory
-import IAM.Server.IAM.DB.Postgres
 
 
 data ServerOptions = ServerOptions

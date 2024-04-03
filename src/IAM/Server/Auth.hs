@@ -25,8 +25,8 @@ import Servant
 import Servant.Server.Experimental.Auth
 
 import IAM.Config (headerPrefix)
-import IAM.Server.IAM.DB
-import IAM.Server.IAM.Policy
+import IAM.Server.DB
+import IAM.Server.Policy
 import IAM.Types
 
 
@@ -51,7 +51,7 @@ data AuthRequest = AuthRequest
   { authRequestAuthorization :: !ByteString
   , authRequestHost :: !ByteString
   , authRequestPublicKey :: !PublicKey
-  , authRequestUserId :: !UserId
+  , authRequestUserId :: !UserIdentifier
   , authRequestId :: !UUID
   } deriving (Eq, Show)
 
@@ -104,6 +104,16 @@ authenticate host db req = do
 
 authorize :: DB db => db -> Request -> Authentication -> Handler Auth
 authorize db req authN = do
+  callerUserId <- case authRequestUserId $ authRequest authN of
+    UserId uid -> return uid
+    UserIdAndEmail uid _ -> return uid
+    UserEmail email -> do
+      result <- liftIO $ runExceptT $ getUser db $ UserEmail email
+      case result of
+        Right user -> return $ userId user
+        Left NotFound -> throwError $ err401 { errBody = "User not found" }
+        Left _ -> throwError err500
+
   policiesResult <- liftIO $ runExceptT $ listPoliciesForUser db callerUserId
   case policiesResult of
     Right policies -> do
@@ -111,8 +121,6 @@ authorize db req authN = do
         then let authZ = Authorization policies in return $ Auth authN authZ
         else throwError err403
     Left _ -> throwError err500
-  where
-    callerUserId = authRequestUserId $ authRequest authN
 
 
 authorized :: Request ->  [Policy] -> Bool
@@ -140,10 +148,10 @@ parsePublicKey s =
     Left _ -> Nothing
 
 
-parseUserId :: Text -> Maybe UserId
+parseUserId :: Text -> Maybe UserIdentifier
 parseUserId s =
   case fromString (unpack s) of
-    Just uuid -> Just $ UserUUID uuid
+    Just uuid -> Just $ UserId $ UserUUID uuid
     Nothing -> Just $ UserEmail s
 
 

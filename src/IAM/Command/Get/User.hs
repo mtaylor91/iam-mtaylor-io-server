@@ -16,7 +16,7 @@ import qualified Data.Text as T
 import IAM.Client
 import IAM.Client.Auth
 import IAM.Client.Util
-import IAM.Types (UserId(..))
+import IAM.Types (UserIdentifier(..), UserId(..))
 
 
 getUser :: Maybe Text -> IO ()
@@ -44,14 +44,14 @@ getCurrentUser = do
 
 
 getUserByUUID :: UUID -> IO ()
-getUserByUUID = getUserById . UserUUID
+getUserByUUID = getUserById . UserId . UserUUID
 
 
 getUserByEmail :: Text -> IO ()
 getUserByEmail = getUserById . UserEmail
 
 
-getUserById :: UserId -> IO ()
+getUserById :: UserIdentifier -> IO ()
 getUserById uid = do
   auth <- clientAuthInfo
   mgr <- newManager tlsManagerSettings { managerModifyRequest = clientAuth auth }
