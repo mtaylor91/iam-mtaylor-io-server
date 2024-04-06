@@ -48,3 +48,5 @@ instance DB PostgresDB where
   deleteUser (PostgresDB pool) uid = runTransaction pool $ pgDeleteUser uid
 
   getGroup (PostgresDB pool) gid = runTransaction pool $ pgGetGroup gid
+
+  listGroups (PostgresDB pool) = runTransaction pool pgListGroups

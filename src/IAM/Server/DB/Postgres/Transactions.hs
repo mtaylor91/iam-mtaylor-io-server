@@ -27,10 +27,7 @@ pgGetUserByEmail email = do
   case result0 of
     Nothing -> return $ Left NotFound
     Just uuid' -> do
-      result1 <- pgGetUser (UserId $ UserUUID uuid')
-      case result1 of
-        Left e -> return $ Left e
-        Right user -> return $ Right $ user { userEmail = Just email }
+      pgGetUser (UserId $ UserUUID uuid')
 
 
 pgGetUserById :: UserId -> Transaction (Either DBError User)
@@ -39,6 +36,7 @@ pgGetUserById (UserUUID uuid) = do
   case result of
     Nothing -> return $ Left NotFound
     Just _ -> do
+      maybeEmail <- statement uuid selectUserEmail
       r0 <- statement uuid selectUserGroups
       r1 <- statement uuid selectUserPolicies
       r2 <- statement uuid selectUserPublicKeys
@@ -47,7 +45,7 @@ pgGetUserById (UserUUID uuid) = do
       case mapM fromJSON $ toList r1 of
         Error _ -> return $ Left InternalError
         Success policies ->
-          return $ Right $ User (UserUUID uuid) Nothing groups policies publicKeys
+          return $ Right $ User (UserUUID uuid) maybeEmail groups policies publicKeys
   where
     group (guuid, Nothing) = GroupId $ GroupUUID guuid
     group (guuid, Just name) = GroupIdAndName (GroupUUID guuid) name
@@ -162,10 +160,17 @@ pgGetGroupById (GroupUUID uuid) = do
   case result of
     Nothing -> return $ Left NotFound
     Just _ -> do
+      maybeName <- statement uuid selectGroupName
       r0 <- statement uuid selectGroupUsers
       policies <- toList <$> statement uuid selectGroupPolicies
       let users = map user $ toList r0
-      return $ Right $ Group (GroupUUID uuid) Nothing users policies
+      return $ Right $ Group (GroupUUID uuid) maybeName users policies
   where
     user (uuuid, Nothing) = UserId $ UserUUID uuuid
     user (uuuid, Just email) = UserIdAndEmail (UserUUID uuuid) email
+
+
+pgListGroups :: Transaction (Either DBError [GroupId])
+pgListGroups = do
+  result <- statement () selectGroupIds
+  return $ Right $ map GroupUUID $ toList result

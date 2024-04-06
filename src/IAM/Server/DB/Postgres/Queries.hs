@@ -66,7 +66,7 @@ insertUserPublicKey =
 selectUserId :: Statement UUID (Maybe UUID)
 selectUserId =
   [maybeStatement|
-    SELECT DISTINCT
+    SELECT
       users.user_uuid :: uuid
     FROM
       users
@@ -98,6 +98,18 @@ selectUserIds =
       $1 :: int
     OFFSET
       $2 :: int
+  |]
+
+
+selectUserEmail :: Statement UUID (Maybe Text)
+selectUserEmail =
+  [maybeStatement|
+    SELECT
+      users_emails.user_email :: text
+    FROM
+      users_emails
+    WHERE
+      users_emails.user_uuid = $1 :: uuid
   |]
 
 
@@ -180,6 +192,28 @@ selectGroupIdByName =
       groups_names
     WHERE
       groups_names.group_name = $1 :: text
+  |]
+
+
+selectGroupIds :: Statement () (Vector UUID)
+selectGroupIds =
+  [vectorStatement|
+    SELECT
+      groups.group_uuid :: uuid
+    FROM
+      groups
+  |]
+
+
+selectGroupName :: Statement UUID (Maybe Text)
+selectGroupName =
+  [maybeStatement|
+    SELECT
+      groups_names.group_name :: text
+    FROM
+      groups_names
+    WHERE
+      groups_names.group_uuid = $1 :: uuid
   |]
 
 
