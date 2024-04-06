@@ -169,3 +169,53 @@ selectGroupIdByName =
     WHERE
       groups_names.group_name = $1 :: text
   |]
+
+
+deleteUserUUID :: Statement UUID ()
+deleteUserUUID =
+  [resultlessStatement|
+    DELETE FROM
+      users
+    WHERE
+      users.user_uuid = $1 :: uuid
+  |]
+
+
+deleteUserEmail :: Statement UUID ()
+deleteUserEmail =
+  [resultlessStatement|
+    DELETE FROM
+      users_emails
+    WHERE
+      users_emails.user_uuid = $1 :: uuid
+  |]
+
+
+deleteUserGroups :: Statement UUID ()
+deleteUserGroups =
+  [resultlessStatement|
+    DELETE FROM
+      users_groups
+    WHERE
+      users_groups.user_uuid = $1 :: uuid
+  |]
+
+
+deleteUserPolicies :: Statement UUID ()
+deleteUserPolicies =
+  [resultlessStatement|
+    DELETE FROM
+      users_policies
+    WHERE
+      users_policies.user_uuid = $1 :: uuid
+  |]
+
+
+deleteUserPublicKeys :: Statement UUID ()
+deleteUserPublicKeys =
+  [resultlessStatement|
+    DELETE FROM
+      users_public_keys
+    WHERE
+      users_public_keys.user_uuid = $1 :: uuid
+  |]

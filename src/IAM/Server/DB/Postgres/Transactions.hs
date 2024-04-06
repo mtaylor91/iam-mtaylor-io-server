@@ -91,3 +91,32 @@ pgCreateUser (User (UserUUID uuid) maybeEmail groups policies publicKeys) = do
 
   insertUserPublicKey' (UserPublicKey (PublicKey pk) description) =
     statement (uuid, pk, description) insertUserPublicKey
+
+
+pgDeleteUser :: UserIdentifier -> Transaction (Either DBError User)
+pgDeleteUser userIdentifier = do
+  case unUserIdentifier userIdentifier of
+    Left email -> pgDeleteUserByEmail email
+    Right (UserUUID uuid) -> pgDeleteUserById $ UserUUID uuid
+
+
+pgDeleteUserByEmail :: Text -> Transaction (Either DBError User)
+pgDeleteUserByEmail email = do
+  result0 <- statement email selectUserUUIDByEmail
+  case result0 of
+    Nothing -> return $ Left NotFound
+    Just uuid' -> pgDeleteUserById $ UserUUID uuid'
+
+
+pgDeleteUserById :: UserId -> Transaction (Either DBError User)
+pgDeleteUserById (UserUUID uuid) = do
+  result <- pgGetUserById $ UserUUID uuid
+  case result of
+    Left e -> return $ Left e
+    Right user -> do
+      statement uuid deleteUserPublicKeys
+      statement uuid deleteUserPolicies
+      statement uuid deleteUserGroups
+      statement uuid deleteUserEmail
+      statement uuid deleteUserUUID
+      return $ Right user
