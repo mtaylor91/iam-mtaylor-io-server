@@ -80,3 +80,6 @@ instance DB PostgresDB where
 
   deletePolicy (PostgresDB pool) pid =
     runTransaction pool $ pgDeletePolicy pid
+
+  createMembership (PostgresDB pool) uid gid =
+    runTransaction pool $ pgCreateMembership uid gid

@@ -92,20 +92,14 @@ pgCreateUser (User (UserUUID uuid) maybeEmail groups policies publicKeys) = do
 
   resolveUserGroups :: [GroupIdentifier] -> Transaction (Either DBError [GroupId])
   resolveUserGroups [] = return $ Right []
-  resolveUserGroups (gident:rest) =
-    case unGroupIdentifier gident of
-      Left name -> do
-        result <- statement name selectGroupIdByName
-        case result of
-          Nothing -> return $ Left NotFound
-          Just guuid -> do
-            result' <- resolveUserGroups rest
-            case result' of
-              Left e -> return $ Left e
-              Right gids -> return $ Right $ GroupUUID guuid : gids
-      Right (GroupUUID guuid) -> do
-        result <- resolveUserGroups rest
-        case result of
+  resolveUserGroups (gident:rest) = do
+    result <- resolveGroupIdentifier gident
+    case result of
+      Nothing ->
+        return $ Left NotFound
+      Just (GroupUUID guuid) -> do
+        result' <- resolveUserGroups rest
+        case result' of
           Left e -> return $ Left e
           Right gids -> return $ Right $ GroupUUID guuid : gids
 
@@ -204,20 +198,14 @@ pgCreateGroup (Group (GroupUUID uuid) maybeName users policies) = do
 
   resolveGroupUsers :: [UserIdentifier] -> Transaction (Either DBError [UserId])
   resolveGroupUsers [] = return $ Right []
-  resolveGroupUsers (uident:rest) =
-    case unUserIdentifier uident of
-      Left email -> do
-        result <- statement email selectUserIdByEmail
-        case result of
-          Nothing -> return $ Left NotFound
-          Just uuuid -> do
-            result' <- resolveGroupUsers rest
-            case result' of
-              Left e -> return $ Left e
-              Right uids -> return $ Right $ UserUUID uuuid : uids
-      Right (UserUUID uuuid) -> do
-        result <- resolveGroupUsers rest
-        case result of
+  resolveGroupUsers (uident:rest) = do
+    result <- resolveUserIdentifier uident
+    case result of
+      Nothing ->
+        return $ Left NotFound
+      Just (UserUUID uuuid) -> do
+        result' <- resolveGroupUsers rest
+        case result' of
           Left e -> return $ Left e
           Right uids -> return $ Right $ UserUUID uuuid : uids
 
@@ -326,3 +314,37 @@ pgDeletePolicy pid = do
     Right policy -> do
       statement pid deletePolicy
       return $ Right policy
+
+
+pgCreateMembership ::
+  UserIdentifier -> GroupIdentifier -> Transaction (Either DBError Membership)
+pgCreateMembership userIdentifier groupIdentifier = do
+  maybeUid <- resolveUserIdentifier userIdentifier
+  maybeGid <- resolveGroupIdentifier groupIdentifier
+  case (maybeUid, maybeGid) of
+    (Just (UserUUID uid), Just (GroupUUID gid)) -> do
+      statement (uid, gid) insertMembership
+      return $ Right $ Membership (UserUUID uid) (GroupUUID gid)
+    (_, _) -> return $ Left NotFound
+
+
+resolveUserIdentifier :: UserIdentifier -> Transaction (Maybe UserId)
+resolveUserIdentifier userIdentifier =
+  case unUserIdentifier userIdentifier of
+    Left email -> do
+      result <- statement email selectUserIdByEmail
+      case result of
+        Nothing -> return Nothing
+        Just uuid' -> return $ Just $ UserUUID uuid'
+    Right (UserUUID uuid) -> return $ Just $ UserUUID uuid
+
+
+resolveGroupIdentifier :: GroupIdentifier -> Transaction (Maybe GroupId)
+resolveGroupIdentifier groupIdentifier =
+  case unGroupIdentifier groupIdentifier of
+    Left name -> do
+      result <- statement name selectGroupIdByName
+      case result of
+        Nothing -> return Nothing
+        Just uuid' -> return $ Just $ GroupUUID uuid'
+    Right (GroupUUID uuid) -> return $ Just $ GroupUUID uuid
