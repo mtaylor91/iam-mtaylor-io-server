@@ -100,7 +100,7 @@ createUserOptions = CreateUser
      <> metavar "PUBLIC_KEY"
      <> help "Public key for user"
       ) )
-  <*> some ( strOption
+  <*> many ( strOption
       ( long "group"
      <> metavar "GROUP"
      <> help "Group for user"
