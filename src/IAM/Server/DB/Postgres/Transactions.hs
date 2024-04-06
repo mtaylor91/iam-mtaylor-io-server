@@ -139,3 +139,33 @@ pgDeleteUserById (UserUUID uuid) = do
       statement uuid deleteUserEmail
       statement uuid deleteUserId
       return $ Right user
+
+
+pgGetGroup :: GroupIdentifier -> Transaction (Either DBError Group)
+pgGetGroup groupIdentifier =
+  case unGroupIdentifier groupIdentifier of
+    Left name -> pgGetGroupByName name
+    Right (GroupUUID uuid) -> pgGetGroupById $ GroupUUID uuid
+
+
+pgGetGroupByName :: Text -> Transaction (Either DBError Group)
+pgGetGroupByName name = do
+  result0 <- statement name selectGroupIdByName
+  case result0 of
+    Nothing -> return $ Left NotFound
+    Just uuid' -> pgGetGroupById $ GroupUUID uuid'
+
+
+pgGetGroupById :: GroupId -> Transaction (Either DBError Group)
+pgGetGroupById (GroupUUID uuid) = do
+  result <- statement uuid selectGroupId
+  case result of
+    Nothing -> return $ Left NotFound
+    Just _ -> do
+      r0 <- statement uuid selectGroupUsers
+      policies <- toList <$> statement uuid selectGroupPolicies
+      let users = map user $ toList r0
+      return $ Right $ Group (GroupUUID uuid) Nothing users policies
+  where
+    user (uuuid, Nothing) = UserId $ UserUUID uuuid
+    user (uuuid, Just email) = UserIdAndEmail (UserUUID uuuid) email

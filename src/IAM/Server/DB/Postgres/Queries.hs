@@ -159,6 +159,18 @@ selectUserPolicies =
   |]
 
 
+selectGroupId :: Statement UUID (Maybe UUID)
+selectGroupId =
+  [maybeStatement|
+    SELECT
+      groups.group_uuid :: uuid
+    FROM
+      groups
+    WHERE
+      groups.group_uuid = $1 :: uuid
+  |]
+
+
 selectGroupIdByName :: Statement Text (Maybe UUID)
 selectGroupIdByName =
   [maybeStatement|
@@ -168,6 +180,35 @@ selectGroupIdByName =
       groups_names
     WHERE
       groups_names.group_name = $1 :: text
+  |]
+
+
+selectGroupUsers :: Statement UUID (Vector (UUID, Maybe Text))
+selectGroupUsers =
+  [vectorStatement|
+    SELECT
+      users_groups.user_uuid :: uuid,
+      users_emails.user_email :: text?
+    FROM
+      users_groups
+    LEFT JOIN
+      users_emails
+    ON
+      users_groups.user_uuid = users_emails.user_uuid
+    WHERE
+      users_groups.group_uuid = $1 :: uuid
+  |]
+
+
+selectGroupPolicies :: Statement UUID (Vector UUID)
+selectGroupPolicies =
+  [vectorStatement|
+    SELECT
+      groups_policies.policy_uuid :: uuid
+    FROM
+      groups_policies
+    WHERE
+      groups_policies.group_uuid = $1 :: uuid
   |]
 
 
