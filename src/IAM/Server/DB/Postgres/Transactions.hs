@@ -220,3 +220,31 @@ pgCreateGroup (Group (GroupUUID uuid) maybeName users policies) = do
         case result of
           Left e -> return $ Left e
           Right uids -> return $ Right $ UserUUID uuuid : uids
+
+
+pgDeleteGroup :: GroupIdentifier -> Transaction (Either DBError Group)
+pgDeleteGroup groupIdentifier = do
+  case unGroupIdentifier groupIdentifier of
+    Left name -> pgDeleteGroupByName name
+    Right (GroupUUID uuid) -> pgDeleteGroupById $ GroupUUID uuid
+
+
+pgDeleteGroupByName :: Text -> Transaction (Either DBError Group)
+pgDeleteGroupByName name = do
+  result0 <- statement name selectGroupIdByName
+  case result0 of
+    Nothing -> return $ Left NotFound
+    Just uuid' -> pgDeleteGroupById $ GroupUUID uuid'
+
+
+pgDeleteGroupById :: GroupId -> Transaction (Either DBError Group)
+pgDeleteGroupById (GroupUUID uuid) = do
+  result <- pgGetGroupById $ GroupUUID uuid
+  case result of
+    Left e -> return $ Left e
+    Right group -> do
+      statement uuid deleteGroupPolicies
+      statement uuid deleteGroupUsers
+      statement uuid deleteGroupName
+      statement uuid deleteGroupId
+      return $ Right group

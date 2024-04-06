@@ -52,3 +52,5 @@ instance DB PostgresDB where
   listGroups (PostgresDB pool) = runTransaction pool pgListGroups
     
   createGroup (PostgresDB pool) g = runTransaction pool $ pgCreateGroup g
+
+  deleteGroup (PostgresDB pool) gid = runTransaction pool $ pgDeleteGroup gid

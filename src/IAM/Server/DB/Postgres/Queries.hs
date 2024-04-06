@@ -334,3 +334,43 @@ deleteUserPublicKeys =
     WHERE
       users_public_keys.user_uuid = $1 :: uuid
   |]
+
+
+deleteGroupId :: Statement UUID ()
+deleteGroupId =
+  [resultlessStatement|
+    DELETE FROM
+      groups
+    WHERE
+      groups.group_uuid = $1 :: uuid
+  |]
+
+
+deleteGroupName :: Statement UUID ()
+deleteGroupName =
+  [resultlessStatement|
+    DELETE FROM
+      groups_names
+    WHERE
+      groups_names.group_uuid = $1 :: uuid
+  |]
+
+
+deleteGroupUsers :: Statement UUID ()
+deleteGroupUsers =
+  [resultlessStatement|
+    DELETE FROM
+      users_groups
+    WHERE
+      users_groups.group_uuid = $1 :: uuid
+  |]
+
+
+deleteGroupPolicies :: Statement UUID ()
+deleteGroupPolicies =
+  [resultlessStatement|
+    DELETE FROM
+      groups_policies
+    WHERE
+      groups_policies.group_uuid = $1 :: uuid
+  |]
