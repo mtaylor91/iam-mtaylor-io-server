@@ -328,6 +328,18 @@ pgCreateMembership userIdentifier groupIdentifier = do
     (_, _) -> return $ Left NotFound
 
 
+pgDeleteMembership ::
+  UserIdentifier -> GroupIdentifier -> Transaction (Either DBError Membership)
+pgDeleteMembership userIdentifier groupIdentifier = do
+  maybeUid <- resolveUserIdentifier userIdentifier
+  maybeGid <- resolveGroupIdentifier groupIdentifier
+  case (maybeUid, maybeGid) of
+    (Just (UserUUID uid), Just (GroupUUID gid)) -> do
+      statement (uid, gid) deleteMembership
+      return $ Right $ Membership (UserUUID uid) (GroupUUID gid)
+    (_, _) -> return $ Left NotFound
+
+
 resolveUserIdentifier :: UserIdentifier -> Transaction (Maybe UserId)
 resolveUserIdentifier userIdentifier =
   case unUserIdentifier userIdentifier of

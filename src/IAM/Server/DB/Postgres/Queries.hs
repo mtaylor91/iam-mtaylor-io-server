@@ -456,3 +456,15 @@ deletePolicy =
     WHERE
       policies.policy_uuid = $1 :: uuid
   |]
+
+
+deleteMembership :: Statement (UUID, UUID) ()
+deleteMembership =
+  [resultlessStatement|
+    DELETE FROM
+      users_groups
+    WHERE
+      user_uuid = $1 :: uuid
+    AND
+      group_uuid = $2 :: uuid
+  |]

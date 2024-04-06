@@ -83,3 +83,6 @@ instance DB PostgresDB where
 
   createMembership (PostgresDB pool) uid gid =
     runTransaction pool $ pgCreateMembership uid gid
+
+  deleteMembership (PostgresDB pool) uid gid =
+    runTransaction pool $ pgDeleteMembership uid gid
