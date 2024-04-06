@@ -351,6 +351,17 @@ pgCreateUserPolicyAttachment userIdentifier pid = do
     Nothing -> return $ Left NotFound
 
 
+pgDeleteUserPolicyAttachment ::
+  UserIdentifier -> UUID -> Transaction (Either DBError UserPolicyAttachment)
+pgDeleteUserPolicyAttachment userIdentifier pid = do
+  maybeUid <- resolveUserIdentifier userIdentifier
+  case maybeUid of
+    Just (UserUUID uid) -> do
+      statement (uid, pid) deleteUserPolicyAttachment
+      return $ Right $ UserPolicyAttachment (UserUUID uid) pid
+    Nothing -> return $ Left NotFound
+
+
 resolveUserIdentifier :: UserIdentifier -> Transaction (Maybe UserId)
 resolveUserIdentifier userIdentifier =
   case unUserIdentifier userIdentifier of

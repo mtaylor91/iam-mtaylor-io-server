@@ -478,3 +478,15 @@ deleteMembership =
     AND
       group_uuid = $2 :: uuid
   |]
+
+
+deleteUserPolicyAttachment :: Statement (UUID, UUID) ()
+deleteUserPolicyAttachment =
+  [resultlessStatement|
+    DELETE FROM
+      users_policies
+    WHERE
+      user_uuid = $1 :: uuid
+    AND
+      policy_uuid = $2 :: uuid
+  |]
