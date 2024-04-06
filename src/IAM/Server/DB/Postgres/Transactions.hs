@@ -174,3 +174,49 @@ pgListGroups :: Transaction (Either DBError [GroupId])
 pgListGroups = do
   result <- statement () selectGroupIds
   return $ Right $ map GroupUUID $ toList result
+
+
+pgCreateGroup :: Group -> Transaction (Either DBError Group)
+pgCreateGroup (Group (GroupUUID uuid) maybeName users policies) = do
+  statement uuid insertGroupId
+
+  case maybeName of
+    Nothing -> return ()
+    Just name -> do
+      statement (uuid, name) insertGroupName
+
+  result <- resolveGroupUsers users
+  case result of
+    Left e -> return $ Left e
+    Right uids -> do
+      mapM_ insertGroupUser' uids
+      mapM_ insertGroupPolicy' policies
+
+      return $ Right $ Group (GroupUUID uuid) maybeName users policies
+
+  where
+
+  insertGroupUser' :: UserId -> Transaction ()
+  insertGroupUser' (UserUUID uuuid) = statement (uuid, uuuid) insertGroupUser
+
+  insertGroupPolicy' :: UUID -> Transaction ()
+  insertGroupPolicy' pid = statement (uuid, pid) insertGroupPolicy
+
+  resolveGroupUsers :: [UserIdentifier] -> Transaction (Either DBError [UserId])
+  resolveGroupUsers [] = return $ Right []
+  resolveGroupUsers (uident:rest) =
+    case unUserIdentifier uident of
+      Left email -> do
+        result <- statement email selectUserIdByEmail
+        case result of
+          Nothing -> return $ Left NotFound
+          Just uuuid -> do
+            result' <- resolveGroupUsers rest
+            case result' of
+              Left e -> return $ Left e
+              Right uids -> return $ Right $ UserUUID uuuid : uids
+      Right (UserUUID uuuid) -> do
+        result <- resolveGroupUsers rest
+        case result of
+          Left e -> return $ Left e
+          Right uids -> return $ Right $ UserUUID uuuid : uids

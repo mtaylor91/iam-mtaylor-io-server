@@ -63,6 +63,46 @@ insertUserPublicKey =
   |]
 
 
+insertGroupId :: Statement UUID ()
+insertGroupId =
+  [resultlessStatement|
+    INSERT INTO
+      groups (group_uuid)
+    VALUES
+      ($1 :: uuid)
+  |]
+
+
+insertGroupName :: Statement (UUID, Text) ()
+insertGroupName =
+  [resultlessStatement|
+    INSERT INTO
+      groups_names (group_uuid, group_name)
+    VALUES
+      ($1 :: uuid, $2 :: text)
+  |]
+
+
+insertGroupUser :: Statement (UUID, UUID) ()
+insertGroupUser =
+  [resultlessStatement|
+    INSERT INTO
+      users_groups (user_uuid, group_uuid)
+    VALUES
+      ($1 :: uuid, $2 :: uuid)
+  |]
+
+
+insertGroupPolicy :: Statement (UUID, UUID) ()
+insertGroupPolicy =
+  [resultlessStatement|
+    INSERT INTO
+      groups_policies (group_uuid, policy_uuid)
+    VALUES
+      ($1 :: uuid, $2 :: uuid)
+  |]
+
+
 selectUserId :: Statement UUID (Maybe UUID)
 selectUserId =
   [maybeStatement|

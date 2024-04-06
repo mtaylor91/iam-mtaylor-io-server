@@ -50,3 +50,5 @@ instance DB PostgresDB where
   getGroup (PostgresDB pool) gid = runTransaction pool $ pgGetGroup gid
 
   listGroups (PostgresDB pool) = runTransaction pool pgListGroups
+    
+  createGroup (PostgresDB pool) g = runTransaction pool $ pgCreateGroup g
