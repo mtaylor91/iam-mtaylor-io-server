@@ -436,3 +436,13 @@ deleteGroupPolicies =
     WHERE
       groups_policies.group_uuid = $1 :: uuid
   |]
+
+
+deletePolicy :: Statement UUID ()
+deletePolicy =
+  [resultlessStatement|
+    DELETE FROM
+      policies
+    WHERE
+      policies.policy_uuid = $1 :: uuid
+  |]

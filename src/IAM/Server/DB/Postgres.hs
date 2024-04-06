@@ -77,3 +77,6 @@ instance DB PostgresDB where
 
   updatePolicy (PostgresDB pool) p =
     runTransaction pool $ pgUpdatePolicy p
+
+  deletePolicy (PostgresDB pool) pid =
+    runTransaction pool $ pgDeletePolicy pid

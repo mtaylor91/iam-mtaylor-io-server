@@ -9,7 +9,7 @@ import Data.UUID (UUID)
 import Data.Vector (toList)
 import Hasql.Transaction (Transaction, statement)
 
-import IAM.Server.DB
+import IAM.Server.DB (DBError(..))
 import IAM.Server.DB.Postgres.Queries
 import IAM.Types
 
@@ -314,5 +314,15 @@ pgCreatePolicy policy = do
 
 pgUpdatePolicy :: Policy -> Transaction (Either DBError Policy)
 pgUpdatePolicy policy = do
-  statement (policyId policy, toJSON policy) IAM.Server.DB.Postgres.Queries.updatePolicy
+  statement (policyId policy, toJSON policy) updatePolicy
   return $ Right policy
+
+
+pgDeletePolicy :: UUID -> Transaction (Either DBError Policy)
+pgDeletePolicy pid = do
+  result <- pgGetPolicy pid
+  case result of
+    Left e -> return $ Left e
+    Right policy -> do
+      statement pid deletePolicy
+      return $ Right policy
