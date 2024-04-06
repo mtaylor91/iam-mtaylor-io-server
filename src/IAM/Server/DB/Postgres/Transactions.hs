@@ -362,6 +362,28 @@ pgDeleteUserPolicyAttachment userIdentifier pid = do
     Nothing -> return $ Left NotFound
 
 
+pgCreateGroupPolicyAttachment ::
+  GroupIdentifier -> UUID -> Transaction (Either DBError GroupPolicyAttachment)
+pgCreateGroupPolicyAttachment groupIdentifier pid = do
+  maybeGid <- resolveGroupIdentifier groupIdentifier
+  case maybeGid of
+    Just (GroupUUID gid) -> do
+      statement (gid, pid) insertGroupPolicyAttachment
+      return $ Right $ GroupPolicyAttachment (GroupUUID gid) pid
+    Nothing -> return $ Left NotFound
+
+
+pgDeleteGroupPolicyAttachment ::
+  GroupIdentifier -> UUID -> Transaction (Either DBError GroupPolicyAttachment)
+pgDeleteGroupPolicyAttachment groupIdentifier pid = do
+  maybeGid <- resolveGroupIdentifier groupIdentifier
+  case maybeGid of
+    Just (GroupUUID gid) -> do
+      statement (gid, pid) deleteGroupPolicyAttachment
+      return $ Right $ GroupPolicyAttachment (GroupUUID gid) pid
+    Nothing -> return $ Left NotFound
+
+
 resolveUserIdentifier :: UserIdentifier -> Transaction (Maybe UserId)
 resolveUserIdentifier userIdentifier =
   case unUserIdentifier userIdentifier of

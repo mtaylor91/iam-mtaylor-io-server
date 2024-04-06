@@ -135,6 +135,16 @@ insertUserPolicyAttachment =
   |]
 
 
+insertGroupPolicyAttachment :: Statement (UUID, UUID) ()
+insertGroupPolicyAttachment =
+  [resultlessStatement|
+    INSERT INTO
+      groups_policies (group_uuid, policy_uuid)
+    VALUES
+      ($1 :: uuid, $2 :: uuid)
+  |]
+
+
 selectUserId :: Statement UUID (Maybe UUID)
 selectUserId =
   [maybeStatement|
@@ -487,6 +497,18 @@ deleteUserPolicyAttachment =
       users_policies
     WHERE
       user_uuid = $1 :: uuid
+    AND
+      policy_uuid = $2 :: uuid
+  |]
+
+
+deleteGroupPolicyAttachment :: Statement (UUID, UUID) ()
+deleteGroupPolicyAttachment =
+  [resultlessStatement|
+    DELETE FROM
+      groups_policies
+    WHERE
+      group_uuid = $1 :: uuid
     AND
       policy_uuid = $2 :: uuid
   |]
