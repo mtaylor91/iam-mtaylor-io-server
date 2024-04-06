@@ -58,3 +58,36 @@ pgListUsers (Range offset Nothing) = pgListUsers (Range offset $ Just 100)
 pgListUsers (Range offset (Just limit)) = do
   result <- statement (fromIntegral offset, fromIntegral limit) selectUserIds
   return $ Right $ map UserUUID $ toList result
+
+
+pgCreateUser :: User -> Transaction (Either DBError User)
+pgCreateUser (User (UserUUID uuid) maybeEmail groups policies publicKeys) = do
+  statement uuid insertUserUUID
+
+  case maybeEmail of
+    Nothing -> return ()
+    Just email -> do
+      statement (uuid, email) insertUserEmail
+
+  mapM_ insertUserGroup' groups
+  mapM_ insertUserPolicy' policies
+  mapM_ insertUserPublicKey' publicKeys
+
+  return $ Right $ User (UserUUID uuid) maybeEmail groups policies publicKeys
+
+  where
+
+  insertUserGroup' (GroupId (GroupUUID guuid)) =
+    statement (uuid, guuid) insertUserGroup
+  insertUserGroup' (GroupIdAndName (GroupUUID guuid) _) =
+    statement (uuid, guuid) insertUserGroup
+  insertUserGroup' (GroupName name) = do
+    result <- statement name selectGroupIdByName
+    case result of
+      Nothing -> return ()
+      Just guuid -> statement (uuid, guuid) insertUserGroup
+
+  insertUserPolicy' pid = statement (uuid, pid) insertUserPolicy
+
+  insertUserPublicKey' (UserPublicKey (PublicKey pk) description) =
+    statement (uuid, pk, description) insertUserPublicKey

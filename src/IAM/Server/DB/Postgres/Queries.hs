@@ -33,6 +33,36 @@ insertUserEmail =
   |]
 
 
+insertUserGroup :: Statement (UUID, UUID) ()
+insertUserGroup =
+  [resultlessStatement|
+    INSERT INTO
+      users_groups (user_uuid, group_uuid)
+    VALUES
+      ($1 :: uuid, $2 :: uuid)
+  |]
+
+
+insertUserPolicy :: Statement (UUID, UUID) ()
+insertUserPolicy =
+  [resultlessStatement|
+    INSERT INTO
+      users_policies (user_uuid, policy_uuid)
+    VALUES
+      ($1 :: uuid, $2 :: uuid)
+  |]
+
+
+insertUserPublicKey :: Statement (UUID, ByteString, Text) ()
+insertUserPublicKey =
+  [resultlessStatement|
+    INSERT INTO
+      users_public_keys (user_uuid, public_key, description)
+    VALUES
+      ($1 :: uuid, $2 :: bytea, $3 :: text)
+  |]
+
+
 selectUserUUID :: Statement UUID (Maybe UUID)
 selectUserUUID =
   [maybeStatement|
@@ -126,4 +156,16 @@ selectUserPolicies =
       users_policies.policy_uuid = policies.policy_uuid
     WHERE
       users_policies.user_uuid = $1 :: uuid
+  |]
+
+
+selectGroupIdByName :: Statement Text (Maybe UUID)
+selectGroupIdByName =
+  [maybeStatement|
+    SELECT
+      groups_names.group_uuid :: uuid
+    FROM
+      groups_names
+    WHERE
+      groups_names.group_name = $1 :: text
   |]
