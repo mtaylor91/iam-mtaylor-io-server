@@ -13,8 +13,8 @@ import Hasql.Statement (Statement)
 import Hasql.TH (maybeStatement, resultlessStatement, vectorStatement)
 
 
-insertUserUUID :: Statement UUID ()
-insertUserUUID =
+insertUserId :: Statement UUID ()
+insertUserId =
   [resultlessStatement|
     INSERT INTO
       users (user_uuid)
@@ -63,8 +63,8 @@ insertUserPublicKey =
   |]
 
 
-selectUserUUID :: Statement UUID (Maybe UUID)
-selectUserUUID =
+selectUserId :: Statement UUID (Maybe UUID)
+selectUserId =
   [maybeStatement|
     SELECT DISTINCT
       users.user_uuid :: uuid
@@ -75,8 +75,8 @@ selectUserUUID =
   |]
 
 
-selectUserUUIDByEmail :: Statement Text (Maybe UUID)
-selectUserUUIDByEmail =
+selectUserIdByEmail :: Statement Text (Maybe UUID)
+selectUserIdByEmail =
   [maybeStatement|
     SELECT
       users_emails.user_uuid :: uuid
@@ -171,8 +171,8 @@ selectGroupIdByName =
   |]
 
 
-deleteUserUUID :: Statement UUID ()
-deleteUserUUID =
+deleteUserId :: Statement UUID ()
+deleteUserId =
   [resultlessStatement|
     DELETE FROM
       users

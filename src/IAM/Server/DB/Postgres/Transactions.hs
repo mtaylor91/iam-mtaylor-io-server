@@ -5,6 +5,7 @@ module IAM.Server.DB.Postgres.Transactions
 import Crypto.Sign.Ed25519 (PublicKey(..))
 import Data.Aeson (Result(..), fromJSON)
 import Data.Text (Text)
+import Data.UUID (UUID)
 import Data.Vector (toList)
 import Hasql.Transaction (Transaction, statement)
 
@@ -22,7 +23,7 @@ pgGetUser userIdentifier =
 
 pgGetUserByEmail :: Text -> Transaction (Either DBError User)
 pgGetUserByEmail email = do
-  result0 <- statement email selectUserUUIDByEmail
+  result0 <- statement email selectUserIdByEmail
   case result0 of
     Nothing -> return $ Left NotFound
     Just uuid' -> do
@@ -34,7 +35,7 @@ pgGetUserByEmail email = do
 
 pgGetUserById :: UserId -> Transaction (Either DBError User)
 pgGetUserById (UserUUID uuid) = do
-  result <- statement uuid selectUserUUID
+  result <- statement uuid selectUserId
   case result of
     Nothing -> return $ Left NotFound
     Just _ -> do
@@ -62,35 +63,53 @@ pgListUsers (Range offset (Just limit)) = do
 
 pgCreateUser :: User -> Transaction (Either DBError User)
 pgCreateUser (User (UserUUID uuid) maybeEmail groups policies publicKeys) = do
-  statement uuid insertUserUUID
+  statement uuid insertUserId
 
   case maybeEmail of
     Nothing -> return ()
     Just email -> do
       statement (uuid, email) insertUserEmail
 
-  mapM_ insertUserGroup' groups
-  mapM_ insertUserPolicy' policies
-  mapM_ insertUserPublicKey' publicKeys
+  result <- resolveUserGroups groups
+  case result of
+    Left e -> return $ Left e
+    Right gids -> do
+      mapM_ insertUserGroup' gids
+      mapM_ insertUserPolicy' policies
+      mapM_ insertUserPublicKey' publicKeys
 
-  return $ Right $ User (UserUUID uuid) maybeEmail groups policies publicKeys
+      return $ Right $ User (UserUUID uuid) maybeEmail groups policies publicKeys
 
   where
 
-  insertUserGroup' (GroupId (GroupUUID guuid)) =
-    statement (uuid, guuid) insertUserGroup
-  insertUserGroup' (GroupIdAndName (GroupUUID guuid) _) =
-    statement (uuid, guuid) insertUserGroup
-  insertUserGroup' (GroupName name) = do
-    result <- statement name selectGroupIdByName
-    case result of
-      Nothing -> return ()
-      Just guuid -> statement (uuid, guuid) insertUserGroup
+  insertUserGroup' :: GroupId -> Transaction ()
+  insertUserGroup' (GroupUUID guuid) = statement (uuid, guuid) insertUserGroup
 
+  insertUserPolicy' :: UUID -> Transaction ()
   insertUserPolicy' pid = statement (uuid, pid) insertUserPolicy
 
+  insertUserPublicKey' :: UserPublicKey -> Transaction ()
   insertUserPublicKey' (UserPublicKey (PublicKey pk) description) =
     statement (uuid, pk, description) insertUserPublicKey
+
+  resolveUserGroups :: [GroupIdentifier] -> Transaction (Either DBError [GroupId])
+  resolveUserGroups [] = return $ Right []
+  resolveUserGroups (gident:rest) =
+    case unGroupIdentifier gident of
+      Left name -> do
+        result <- statement name selectGroupIdByName
+        case result of
+          Nothing -> return $ Left NotFound
+          Just guuid -> do
+            result' <- resolveUserGroups rest
+            case result' of
+              Left e -> return $ Left e
+              Right gids -> return $ Right $ GroupUUID guuid : gids
+      Right (GroupUUID guuid) -> do
+        result <- resolveUserGroups rest
+        case result of
+          Left e -> return $ Left e
+          Right gids -> return $ Right $ GroupUUID guuid : gids
 
 
 pgDeleteUser :: UserIdentifier -> Transaction (Either DBError User)
@@ -102,7 +121,7 @@ pgDeleteUser userIdentifier = do
 
 pgDeleteUserByEmail :: Text -> Transaction (Either DBError User)
 pgDeleteUserByEmail email = do
-  result0 <- statement email selectUserUUIDByEmail
+  result0 <- statement email selectUserIdByEmail
   case result0 of
     Nothing -> return $ Left NotFound
     Just uuid' -> pgDeleteUserById $ UserUUID uuid'
@@ -118,5 +137,5 @@ pgDeleteUserById (UserUUID uuid) = do
       statement uuid deleteUserPolicies
       statement uuid deleteUserGroups
       statement uuid deleteUserEmail
-      statement uuid deleteUserUUID
+      statement uuid deleteUserId
       return $ Right user
