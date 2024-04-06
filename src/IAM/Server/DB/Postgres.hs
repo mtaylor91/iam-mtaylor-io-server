@@ -71,3 +71,6 @@ instance DB PostgresDB where
 
   listPoliciesForUser (PostgresDB pool) uid =
     runTransaction pool $ pgListPoliciesForUser uid
+
+  createPolicy (PostgresDB pool) p =
+    runTransaction pool $ pgCreatePolicy p

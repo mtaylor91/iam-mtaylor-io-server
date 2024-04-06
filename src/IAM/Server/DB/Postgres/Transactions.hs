@@ -3,7 +3,7 @@ module IAM.Server.DB.Postgres.Transactions
   ) where
 
 import Crypto.Sign.Ed25519 (PublicKey(..))
-import Data.Aeson (Result(..), fromJSON)
+import Data.Aeson (Result(..), fromJSON, toJSON)
 import Data.Text (Text)
 import Data.UUID (UUID)
 import Data.Vector (toList)
@@ -304,3 +304,9 @@ pgListPoliciesForGroupById (GroupUUID uuid) = do
   case mapM fromJSON $ toList r0 of
     Error _ -> return $ Left InternalError
     Success policies -> return $ Right policies
+
+
+pgCreatePolicy :: Policy -> Transaction (Either DBError Policy)
+pgCreatePolicy policy = do
+  statement (policyId policy, toJSON policy) insertPolicy
+  return $ Right policy

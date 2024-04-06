@@ -103,6 +103,18 @@ insertGroupPolicy =
   |]
 
 
+insertPolicy :: Statement (UUID, Value) ()
+insertPolicy =
+  [resultlessStatement|
+    INSERT INTO
+      policies (policy_uuid, policy)
+    VALUES
+      ($1 :: uuid, $2 :: jsonb)
+    RETURNING
+      policy_uuid :: uuid
+  |]
+
+
 selectUserId :: Statement UUID (Maybe UUID)
 selectUserId =
   [maybeStatement|
