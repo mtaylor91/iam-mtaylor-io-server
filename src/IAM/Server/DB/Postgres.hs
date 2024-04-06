@@ -86,3 +86,6 @@ instance DB PostgresDB where
 
   deleteMembership (PostgresDB pool) uid gid =
     runTransaction pool $ pgDeleteMembership uid gid
+
+  createUserPolicyAttachment (PostgresDB pool) uid pid =
+    runTransaction pool $ pgCreateUserPolicyAttachment uid pid

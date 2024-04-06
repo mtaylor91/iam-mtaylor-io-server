@@ -125,6 +125,16 @@ insertMembership =
   |]
 
 
+insertUserPolicyAttachment :: Statement (UUID, UUID) ()
+insertUserPolicyAttachment =
+  [resultlessStatement|
+    INSERT INTO
+      users_policies (user_uuid, policy_uuid)
+    VALUES
+      ($1 :: uuid, $2 :: uuid)
+  |]
+
+
 selectUserId :: Statement UUID (Maybe UUID)
 selectUserId =
   [maybeStatement|
