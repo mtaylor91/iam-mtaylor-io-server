@@ -310,3 +310,9 @@ pgCreatePolicy :: Policy -> Transaction (Either DBError Policy)
 pgCreatePolicy policy = do
   statement (policyId policy, toJSON policy) insertPolicy
   return $ Right policy
+
+
+pgUpdatePolicy :: Policy -> Transaction (Either DBError Policy)
+pgUpdatePolicy policy = do
+  statement (policyId policy, toJSON policy) IAM.Server.DB.Postgres.Queries.updatePolicy
+  return $ Right policy

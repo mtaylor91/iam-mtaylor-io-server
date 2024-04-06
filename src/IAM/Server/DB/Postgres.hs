@@ -74,3 +74,6 @@ instance DB PostgresDB where
 
   createPolicy (PostgresDB pool) p =
     runTransaction pool $ pgCreatePolicy p
+
+  updatePolicy (PostgresDB pool) p =
+    runTransaction pool $ pgUpdatePolicy p
