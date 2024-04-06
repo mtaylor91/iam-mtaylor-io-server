@@ -61,24 +61,39 @@ pgListUsers (Range offset (Just limit)) = do
 
 pgCreateUser :: User -> Transaction (Either DBError User)
 pgCreateUser (User (UserUUID uuid) maybeEmail groups policies publicKeys) = do
-  statement uuid insertUserId
+  result0 <- statement uuid selectUserId
+  result1 <- emailQuery maybeEmail
 
-  case maybeEmail of
-    Nothing -> return ()
-    Just email -> do
-      statement (uuid, email) insertUserEmail
+  case (result0, result1) of
+    (Just _, _) -> return $ Left AlreadyExists
+    (_, Just _) -> return $ Left AlreadyExists
+    (Nothing, Nothing) -> do
+      statement uuid insertUserId
 
-  result <- resolveUserGroups groups
-  case result of
-    Left e -> return $ Left e
-    Right gids -> do
-      mapM_ insertUserGroup' gids
-      mapM_ insertUserPolicy' policies
-      mapM_ insertUserPublicKey' publicKeys
+      case maybeEmail of
+        Nothing -> return ()
+        Just email -> do
+          statement (uuid, email) insertUserEmail
 
-      return $ Right $ User (UserUUID uuid) maybeEmail groups policies publicKeys
+      result <- resolveUserGroups groups
+      case result of
+        Left e -> return $ Left e
+        Right gids -> do
+          mapM_ insertUserGroup' gids
+          mapM_ insertUserPolicy' policies
+          mapM_ insertUserPublicKey' publicKeys
+
+          return $ Right $ User (UserUUID uuid) maybeEmail groups policies publicKeys
 
   where
+
+  emailQuery :: Maybe Text -> Transaction (Maybe UUID)
+  emailQuery Nothing = return Nothing
+  emailQuery (Just email) = do
+    result <- statement email selectUserIdByEmail
+    case result of
+      Nothing -> return Nothing
+      Just uuuid -> return $ Just uuuid
 
   insertUserGroup' :: GroupId -> Transaction ()
   insertUserGroup' (GroupUUID guuid) = statement (uuid, guuid) insertUserGroup
@@ -172,23 +187,37 @@ pgListGroups = do
 
 pgCreateGroup :: Group -> Transaction (Either DBError Group)
 pgCreateGroup (Group (GroupUUID uuid) maybeName users policies) = do
-  statement uuid insertGroupId
+  result0 <- statement uuid selectGroupId
+  result1 <- nameQuery maybeName
+  case (result0, result1) of
+    (Just _, _) -> return $ Left AlreadyExists
+    (_, Just _) -> return $ Left AlreadyExists
+    (Nothing, Nothing) -> do
+      statement uuid insertGroupId
 
-  case maybeName of
-    Nothing -> return ()
-    Just name -> do
-      statement (uuid, name) insertGroupName
+      case maybeName of
+        Nothing -> return ()
+        Just name -> do
+          statement (uuid, name) insertGroupName
 
-  result <- resolveGroupUsers users
-  case result of
-    Left e -> return $ Left e
-    Right uids -> do
-      mapM_ insertGroupUser' uids
-      mapM_ insertGroupPolicy' policies
+      result2 <- resolveGroupUsers users
+      case result2 of
+        Left e -> return $ Left e
+        Right uids -> do
+          mapM_ insertGroupUser' uids
+          mapM_ insertGroupPolicy' policies
 
-      return $ Right $ Group (GroupUUID uuid) maybeName users policies
+          return $ Right $ Group (GroupUUID uuid) maybeName users policies
 
   where
+
+  nameQuery :: Maybe Text -> Transaction (Maybe UUID)
+  nameQuery Nothing = return Nothing
+  nameQuery (Just name) = do
+    result <- statement name selectGroupIdByName
+    case result of
+      Nothing -> return Nothing
+      Just guuid -> return $ Just guuid
 
   insertGroupUser' :: UserId -> Transaction ()
   insertGroupUser' (UserUUID uuuid) = statement (uuid, uuuid) insertGroupUser
