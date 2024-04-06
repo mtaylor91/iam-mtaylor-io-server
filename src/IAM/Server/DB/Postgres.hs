@@ -39,18 +39,35 @@ runTransaction pool t = do
 
 instance DB PostgresDB where
 
-  getUser (PostgresDB pool) uid = runTransaction pool $ pgGetUser uid
+  getUser (PostgresDB pool) uid =
+    runTransaction pool $ pgGetUser uid
 
-  listUsers (PostgresDB pool) range = runTransaction pool $ pgListUsers range
+  listUsers (PostgresDB pool) range =
+    runTransaction pool $ pgListUsers range
 
-  createUser (PostgresDB pool) u = runTransaction pool $ pgCreateUser u
+  createUser (PostgresDB pool) u =
+    runTransaction pool $ pgCreateUser u
 
-  deleteUser (PostgresDB pool) uid = runTransaction pool $ pgDeleteUser uid
+  deleteUser (PostgresDB pool) uid =
+    runTransaction pool $ pgDeleteUser uid
 
-  getGroup (PostgresDB pool) gid = runTransaction pool $ pgGetGroup gid
+  getGroup (PostgresDB pool) gid =
+    runTransaction pool $ pgGetGroup gid
 
-  listGroups (PostgresDB pool) = runTransaction pool pgListGroups
+  listGroups (PostgresDB pool) =
+    runTransaction pool pgListGroups
     
-  createGroup (PostgresDB pool) g = runTransaction pool $ pgCreateGroup g
+  createGroup (PostgresDB pool) g =
+    runTransaction pool $ pgCreateGroup g
 
-  deleteGroup (PostgresDB pool) gid = runTransaction pool $ pgDeleteGroup gid
+  deleteGroup (PostgresDB pool) gid =
+    runTransaction pool $ pgDeleteGroup gid
+
+  getPolicy (PostgresDB pool) pid =
+    runTransaction pool $ pgGetPolicy pid
+
+  listPolicies (PostgresDB pool) =
+    runTransaction pool pgListPolicies
+
+  listPoliciesForUser (PostgresDB pool) uid =
+    runTransaction pool $ pgListPoliciesForUser uid

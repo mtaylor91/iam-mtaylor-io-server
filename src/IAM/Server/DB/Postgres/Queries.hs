@@ -274,8 +274,8 @@ selectGroupUsers =
   |]
 
 
-selectGroupPolicies :: Statement UUID (Vector UUID)
-selectGroupPolicies =
+selectGroupPolicyIds :: Statement UUID (Vector UUID)
+selectGroupPolicyIds =
   [vectorStatement|
     SELECT
       groups_policies.policy_uuid :: uuid
@@ -283,6 +283,56 @@ selectGroupPolicies =
       groups_policies
     WHERE
       groups_policies.group_uuid = $1 :: uuid
+  |]
+
+
+selectGroupPolicies :: Statement UUID (Vector Value)
+selectGroupPolicies =
+  [vectorStatement|
+    SELECT
+      policies.policy :: jsonb
+    FROM
+      groups_policies
+    JOIN
+      policies
+    ON
+      groups_policies.policy_uuid = policies.policy_uuid
+    WHERE
+      groups_policies.group_uuid = $1 :: uuid
+  |]
+
+
+selectPolicyIds :: Statement () (Vector UUID)
+selectPolicyIds =
+  [vectorStatement|
+    SELECT
+      policies.policy_uuid :: uuid
+    FROM
+      policies
+  |]
+
+
+selectPolicy :: Statement UUID (Maybe Value)
+selectPolicy =
+  [maybeStatement|
+    SELECT
+      policies.policy :: jsonb
+    FROM
+      policies
+    WHERE
+      policies.policy_uuid = $1 :: uuid
+  |]
+
+
+updatePolicy :: Statement (UUID, Value) ()
+updatePolicy =
+  [resultlessStatement|
+    UPDATE
+      policies
+    SET
+      policy = $2 :: jsonb
+    WHERE
+      policy_uuid = $1 :: uuid
   |]
 
 

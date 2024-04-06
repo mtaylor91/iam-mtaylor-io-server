@@ -162,7 +162,7 @@ pgGetGroupById (GroupUUID uuid) = do
     Just _ -> do
       maybeName <- statement uuid selectGroupName
       r0 <- statement uuid selectGroupUsers
-      policies <- toList <$> statement uuid selectGroupPolicies
+      policies <- toList <$> statement uuid selectGroupPolicyIds
       let users = map user $ toList r0
       return $ Right $ Group (GroupUUID uuid) maybeName users policies
   where
@@ -248,3 +248,59 @@ pgDeleteGroupById (GroupUUID uuid) = do
       statement uuid deleteGroupName
       statement uuid deleteGroupId
       return $ Right group
+
+
+pgGetPolicy :: UUID -> Transaction (Either DBError Policy)
+pgGetPolicy pid = do
+  result <- statement pid selectPolicy
+  case result of
+    Nothing -> return $ Left NotFound
+    Just policy ->
+      case fromJSON policy of
+        Error _ -> return $ Left InternalError
+        Success p -> return $ Right p
+
+
+pgListPolicies :: Transaction (Either DBError [UUID])
+pgListPolicies = do
+  result <- statement () selectPolicyIds
+  return $ Right $ toList result
+
+
+pgListPoliciesForUser :: UserId -> Transaction (Either DBError [Policy])
+pgListPoliciesForUser (UserUUID uuid) = do
+  r0 <- statement uuid selectUserPolicies
+  r1 <- statement uuid selectUserGroups
+  let groups = map group $ toList r1
+  case mapM fromJSON $ toList r0 of
+    Error _ -> return $ Left InternalError
+    Success ups -> do
+      r2 <- mapM pgListPoliciesForGroup groups
+      case sequence r2 of
+        Left e -> return $ Left e
+        Right gps -> return $ Right $ ups ++ concat gps
+  where
+    group (guuid, _) = GroupId $ GroupUUID guuid
+
+
+pgListPoliciesForGroup :: GroupIdentifier -> Transaction (Either DBError [Policy])
+pgListPoliciesForGroup groupIdentifier = do
+  case unGroupIdentifier groupIdentifier of
+    Left name -> pgListPoliciesForGroupByName name
+    Right (GroupUUID uuid) -> pgListPoliciesForGroupById $ GroupUUID uuid
+
+
+pgListPoliciesForGroupByName :: Text -> Transaction (Either DBError [Policy])
+pgListPoliciesForGroupByName name = do
+  result0 <- statement name selectGroupIdByName
+  case result0 of
+    Nothing -> return $ Left NotFound
+    Just uuid' -> pgListPoliciesForGroupById $ GroupUUID uuid'
+
+
+pgListPoliciesForGroupById :: GroupId -> Transaction (Either DBError [Policy])
+pgListPoliciesForGroupById (GroupUUID uuid) = do
+  r0 <- statement uuid selectGroupPolicies
+  case mapM fromJSON $ toList r0 of
+    Error _ -> return $ Left InternalError
+    Success policies -> return $ Right policies
