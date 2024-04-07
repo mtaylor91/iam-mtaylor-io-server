@@ -62,7 +62,7 @@ type GroupPolicyClientM =
 
 
 type PoliciesClientM
-  = ClientM [UUID]
+  = (Maybe Int -> Maybe Int -> ClientM [UUID])
   :<|> (Policy -> ClientM Policy)
   :<|> (UUID -> PolicyClientM)
 
@@ -176,7 +176,7 @@ mkGroupClient gid =
     in GroupPolicyClient attachGroupPolicy' detachGroupPolicy'
 
 
-listPolicies :: ClientM [UUID]
+listPolicies :: Maybe Int -> Maybe Int -> ClientM [UUID]
 createPolicy :: Policy -> ClientM Policy
 policyClient :: UUID -> PolicyClientM
 

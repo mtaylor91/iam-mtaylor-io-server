@@ -66,8 +66,8 @@ instance DB PostgresDB where
   getPolicy (PostgresDB pool) pid =
     runTransaction pool $ pgGetPolicy pid
 
-  listPolicyIds (PostgresDB pool) =
-    runTransaction pool pgListPolicies
+  listPolicyIds (PostgresDB pool) range =
+    runTransaction pool $ pgListPolicies range
 
   listPoliciesForUser (PostgresDB pool) uid =
     runTransaction pool $ pgListPoliciesForUser uid

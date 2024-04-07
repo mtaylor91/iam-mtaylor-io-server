@@ -101,9 +101,10 @@ getPolicyHandler db _ policy = do
     Right policy' -> return policy'
     Left err      -> throwError $ dbError err
 
-listPoliciesHandler :: DB db => db -> Auth -> Handler [UUID]
-listPoliciesHandler db _ = do
-  result <- liftIO $ runExceptT $ listPolicyIds db
+listPoliciesHandler :: DB db => db -> Auth -> Maybe Int -> Maybe Int -> Handler [UUID]
+listPoliciesHandler db _ maybeOffset maybeLimit = do
+  let offset = fromMaybe 0 maybeOffset
+  result <- liftIO $ runExceptT $ listPolicyIds db $ Range offset maybeLimit
   case result of
     Right pids -> return pids
     Left err   -> throwError $ dbError err

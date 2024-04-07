@@ -98,9 +98,12 @@ instance DB InMemory where
       Just p -> return p
       Nothing -> throwError NotFound
 
-  listPolicyIds (InMemory tvar) = do
+  listPolicyIds (InMemory tvar) (Range offset maybeLimit) = do
     s <- liftIO $ readTVarIO tvar
-    return $ policyId <$> policies s
+    let policyIds = policyId <$> policies s
+    case maybeLimit of
+      Just limit -> return $ Prelude.take limit $ Prelude.drop offset policyIds
+      Nothing -> return $ Prelude.drop offset policyIds
 
   listPoliciesForUser (InMemory tvar) uid = do
     s <- liftIO $ readTVarIO tvar

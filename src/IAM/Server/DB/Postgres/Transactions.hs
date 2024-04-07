@@ -4,6 +4,7 @@ module IAM.Server.DB.Postgres.Transactions
 
 import Crypto.Sign.Ed25519 (PublicKey(..))
 import Data.Aeson (Result(..), fromJSON, toJSON)
+import Data.Maybe
 import Data.Text (Text)
 import Data.UUID (UUID)
 import Data.Vector (toList)
@@ -272,9 +273,10 @@ pgGetPolicy pid = do
         Success p -> return $ Right p
 
 
-pgListPolicies :: Transaction (Either DBError [UUID])
-pgListPolicies = do
-  result <- statement () selectPolicyIds
+pgListPolicies :: Range -> Transaction (Either DBError [UUID])
+pgListPolicies (Range offset maybeLimit) = do
+  let limit = fromMaybe 100 maybeLimit
+  result <- statement (fromIntegral offset, fromIntegral limit) selectPolicyIds
   return $ Right $ toList result
 
 

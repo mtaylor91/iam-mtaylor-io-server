@@ -358,13 +358,17 @@ selectGroupPolicies =
   |]
 
 
-selectPolicyIds :: Statement () (Vector UUID)
+selectPolicyIds :: Statement (Int32, Int32) (Vector UUID)
 selectPolicyIds =
   [vectorStatement|
     SELECT
       policies.policy_uuid :: uuid
     FROM
       policies
+    OFFSET
+      $1 :: int
+    LIMIT
+      $2 :: int
   |]
 
 

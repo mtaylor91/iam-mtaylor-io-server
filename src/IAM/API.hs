@@ -72,7 +72,7 @@ type MembershipsAPI
     :> Delete '[JSON] Membership )
 
 type PoliciesAPI
-  = ( Get '[JSON] [UUID]
+  = ( QueryParam "offset" Int :> QueryParam "limit" Int :> Get '[JSON] [UUID]
   :<|> ( ReqBody '[JSON] Policy :> PostCreated '[JSON] Policy )
   :<|> ( Capture "policy" UUID :> PolicyAPI )
     )
