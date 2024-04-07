@@ -8,7 +8,7 @@ USER build
 RUN stack install --system-ghc --resolver lts-21.25 \
   aeson base64 bytestring case-insensitive ed25519 \
   hasql hasql-pool hasql-th http-client http-client-tls \
-  http-types mtl optparse-applicative servant-client servant-server \
+  http-types lens mtl optparse-applicative servant-client servant-server \
   stm text uuid vector wai warp
 ADD --chown=build:build . .
 RUN stack build --system-ghc --copy-bins
