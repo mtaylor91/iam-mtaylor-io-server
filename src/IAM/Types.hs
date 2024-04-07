@@ -1,25 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
 module IAM.Types
-  ( unUserIdentifier
-  , unUserIdentifierEmail
-  , unGroupIdentifier
-  , unGroupIdentifierName
-  , User(..)
-  , UserId(..)
-  , UserPublicKey(..)
-  , Group(..)
-  , GroupId(..)
-  , Effect(..)
-  , Action(..)
-  , Policy(..)
-  , Rule(..)
-  , UserPolicyAttachment(UserPolicyAttachment)
-  , GroupPolicyAttachment(GroupPolicyAttachment)
-  , Membership(..)
-  , Range(..)
-  , UserIdentifier(..)
-  , GroupIdentifier(..)
+  ( module IAM.Types
   ) where
 
 import Crypto.Sign.Ed25519
@@ -312,6 +294,42 @@ instance ToJSON GroupPolicyAttachment where
     [ "group" .= g
     , "policy" .= p
     ]
+
+
+data AuthorizationRequest = AuthorizationRequest
+  { authorizationRequestUser :: !UserIdentifier
+  , authorizationRequestAction :: !Action
+  , authorizationRequestResource :: !Text
+  } deriving (Eq, Show)
+
+
+instance FromJSON AuthorizationRequest where
+  parseJSON (Object obj) = do
+    u <- obj .: "user"
+    a <- obj .: "action"
+    r <- obj .: "resource"
+    return $ AuthorizationRequest u a r
+  parseJSON _ = fail "Invalid JSON"
+
+instance ToJSON AuthorizationRequest where
+  toJSON (AuthorizationRequest u a r) = object
+    [ "user" .= u
+    , "action" .= a
+    , "resource" .= r
+    ]
+
+
+newtype AuthorizationResponse = AuthorizationResponse
+  { authorizationResponseEffect :: Effect } deriving (Eq, Show)
+
+instance FromJSON AuthorizationResponse where
+  parseJSON (Object obj) = do
+    e <- obj .: "effect"
+    return $ AuthorizationResponse e
+  parseJSON _ = fail "Invalid JSON"
+
+instance ToJSON AuthorizationResponse where
+  toJSON (AuthorizationResponse e) = object ["effect" .= e]
 
 
 data Range = Range

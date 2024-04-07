@@ -38,6 +38,7 @@ server db caller
   :<|> groupsAPI db caller
   :<|> policiesAPI db caller
   :<|> membershipsAPI db caller
+  :<|> authorizeAPI db caller
 
 callerAPI :: DB db => db -> Auth -> Server UserAPI
 callerAPI db caller
@@ -94,3 +95,6 @@ membershipsAPI :: DB db => db -> Auth -> Server MembershipsAPI
 membershipsAPI db caller
   = createMembershipHandler db caller
   :<|> deleteMembershipHandler db caller
+
+authorizeAPI :: DB db => db -> Auth -> Server AuthorizeAPI
+authorizeAPI db _ = authorizeHandler db

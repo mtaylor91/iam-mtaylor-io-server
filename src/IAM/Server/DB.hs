@@ -18,9 +18,13 @@ data DBError
 
 class DB db where
 
-  -- | getUser returns a user from the database by its email.
+  -- | getUser returns a user from the database by its identifier.
   getUser :: (MonadIO m, MonadError DBError m) =>
     db -> UserIdentifier -> m User
+
+  -- | getUserId returns a user id by its identifier.
+  getUserId :: (MonadIO m, MonadError DBError m) =>
+    db -> UserIdentifier -> m UserId
 
   -- | listUsers returns a list of all users in the database.
   listUsers :: (MonadIO m, MonadError DBError m) =>

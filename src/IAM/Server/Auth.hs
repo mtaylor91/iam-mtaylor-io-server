@@ -24,6 +24,7 @@ import Network.Wai
 import Servant
 import Servant.Server.Experimental.Auth
 
+import IAM.Auth
 import IAM.Config (headerPrefix)
 import IAM.Server.DB
 import IAM.Server.Policy
@@ -108,9 +109,9 @@ authorize db req authN = do
     UserId uid -> return uid
     UserIdAndEmail uid _ -> return uid
     UserEmail email -> do
-      result <- liftIO $ runExceptT $ getUser db $ UserEmail email
+      result <- liftIO $ runExceptT $ getUserId db $ UserEmail email
       case result of
-        Right user -> return $ userId user
+        Right uid -> return uid
         Left NotFound -> throwError $ err401 { errBody = "User not found" }
         Left _ -> throwError err500
 
@@ -127,18 +128,7 @@ authorized :: Request ->  [Policy] -> Bool
 authorized req policies = isAuthorized reqAction reqResource $ policyRules policies
   where
     reqResource = decodeUtf8 $ rawPathInfo req
-    reqAction = case parseMethod $ requestMethod req of
-      Right method -> case method of
-        GET -> Read
-        POST -> Write
-        HEAD -> Read
-        PUT -> Write
-        DELETE -> Write
-        TRACE -> Read
-        CONNECT -> Read
-        OPTIONS -> Read
-        PATCH -> Write
-      Left _ -> Write
+    reqAction = actionFromMethod $ requestMethod req
 
 
 parsePublicKey :: ByteString -> Maybe PublicKey
@@ -185,13 +175,3 @@ decodeSignature s =
 lookupHeader :: Request -> HeaderName -> Maybe ByteString
 lookupHeader req header = lookup header' (requestHeaders req) where
   header' = mk (encodeUtf8 $ pack headerPrefix) <> "-" <> header
-
-
--- | String to sign to authenticate the request
-stringToSign :: Method -> ByteString -> ByteString -> ByteString -> UUID -> ByteString
-stringToSign method host path query requestId
-  = method <> "\n"
-  <> host <> "\n"
-  <> path <> "\n"
-  <> query <> "\n"
-  <> encodeUtf8 (toText requestId)

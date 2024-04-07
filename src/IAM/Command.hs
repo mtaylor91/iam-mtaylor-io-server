@@ -3,6 +3,7 @@ module IAM.Command ( options, run, ServerOptions(..) ) where
 
 import Options.Applicative
 
+import IAM.Command.Authorize
 import IAM.Command.Create
 import IAM.Command.Delete
 import IAM.Command.Get
@@ -12,7 +13,8 @@ import IAM.Command.Server
 
 
 data Command
-  = Create !CreateCommand
+  = Authorize !AuthorizeCommand
+  | Create !CreateCommand
   | Delete !DeleteCommand
   | Get !GetCommand
   | List !ListCommand
@@ -26,7 +28,10 @@ newtype Options = Options Command deriving (Show)
 
 options :: Parser Options
 options = Options <$> hsubparser
-  ( command "create"
+  ( command "authorize"
+    (info (Authorize <$> authorizeCommand)
+    (progDesc "Authorize a user to perform an action"))
+  <> command "create"
     (info (Create <$> createCommand) (progDesc "Create resources"))
   <> command "delete"
     (info (Delete <$> deleteCommand) (progDesc "Delete resources"))
@@ -44,6 +49,8 @@ options = Options <$> hsubparser
 runOptions :: Options -> IO ()
 runOptions opts =
   case opts of
+    Options (Authorize cmd) ->
+      authorize cmd
     Options (Create cmd) ->
       create cmd
     Options (Delete cmd) ->

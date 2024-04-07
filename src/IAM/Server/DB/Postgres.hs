@@ -42,6 +42,9 @@ instance DB PostgresDB where
   getUser (PostgresDB pool) uid =
     runTransaction pool $ pgGetUser uid
 
+  getUserId (PostgresDB pool) uid =
+    runTransaction pool $ pgGetUserId uid
+
   listUsers (PostgresDB pool) range =
     runTransaction pool $ pgListUsers range
 

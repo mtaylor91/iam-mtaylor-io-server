@@ -26,6 +26,12 @@ instance DB InMemory where
       Just u -> return u
       Nothing -> throwError NotFound
 
+  getUserId (InMemory tvar) uid = do
+    s <- liftIO $ readTVarIO tvar
+    case resolveUserIdentifier s uid of
+      Just uid' -> return uid'
+      Nothing -> throwError NotFound
+
   listUsers (InMemory tvar) (Range offset maybeLimit) = do
     s <- liftIO $ readTVarIO tvar
     let users' = resolveUser s <$> users s

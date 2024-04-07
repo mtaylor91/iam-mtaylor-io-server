@@ -16,6 +16,7 @@ module IAM.Client
   , mkPolicyClient
   , createMembership
   , deleteMembership
+  , authorizeClient
   , UserClient(..)
   , UserPolicyClient(..)
   , GroupClient(..)
@@ -77,6 +78,10 @@ type MembershipsClientM
   :<|> (GroupIdentifier -> UserIdentifier -> ClientM Membership)
 
 
+type AuthorizationClientM
+  = AuthorizationRequest -> ClientM AuthorizationResponse
+
+
 data UserClient = UserClient
   { getUser :: !(ClientM User)
   , deleteUser :: !(ClientM User)
@@ -114,6 +119,7 @@ usersClient :: UsersClientM
 groupsClient :: GroupsClientM
 policiesClient :: PoliciesClientM
 membershipsClient :: MembershipsClientM
+authorizeClient :: AuthorizationClientM
 
 
 callerClient
@@ -121,6 +127,7 @@ callerClient
   :<|> groupsClient
   :<|> policiesClient
   :<|> membershipsClient
+  :<|> authorizeClient
   = client iamAPI
 
 

@@ -53,6 +53,17 @@ pgGetUserById (UserUUID uuid) = do
     pk (pkBytes, pkDescription) = UserPublicKey (PublicKey pkBytes) pkDescription
 
 
+pgGetUserId :: UserIdentifier -> Transaction (Either DBError UserId)
+pgGetUserId userIdentifier = do
+  case unUserIdentifier userIdentifier of
+    Left email -> do
+      result <- statement email selectUserIdByEmail
+      case result of
+        Nothing -> return $ Left NotFound
+        Just uuid' -> return $ Right $ UserUUID uuid'
+    Right (UserUUID uuid) -> return $ Right $ UserUUID uuid
+
+
 pgListUsers :: Range -> Transaction (Either DBError [UserIdentifier])
 pgListUsers (Range offset Nothing) = pgListUsers (Range offset $ Just 100)
 pgListUsers (Range offset (Just limit)) = do

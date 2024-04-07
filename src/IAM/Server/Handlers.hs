@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module IAM.Server.Handlers
   ( getUserHandler
   , listUsersHandler
@@ -17,6 +18,7 @@ module IAM.Server.Handlers
   , deleteUserPolicyAttachmentHandler
   , createGroupPolicyAttachmentHandler
   , deleteGroupPolicyAttachmentHandler
+  , authorizeHandler
   ) where
 
 import Control.Monad.IO.Class
@@ -197,3 +199,28 @@ deleteGroupPolicyAttachmentHandler db _ gid pid = do
   case result of
     Right attachment -> return attachment
     Left err         -> throwError $ dbError err
+
+
+authorizeHandler :: DB db =>
+  db ->  AuthorizationRequest -> Handler AuthorizationResponse
+authorizeHandler db req = do
+  r0 <- liftIO $ runExceptT $ getUserId db userIdent
+  uid <- case r0 of
+    Left NotFound -> throwError $ err401 { errBody = "User not found" }
+    Left _ -> throwError err500
+    Right uid' -> return uid'
+
+  result <- liftIO $ runExceptT $ listPoliciesForUser db uid
+  case result of
+    Left err -> throwError $ dbError err
+    Right policies ->
+      return $ AuthorizationResponse $
+        if isAuthorized reqAction reqResource $ policyRules policies
+          then Allow
+          else Deny
+
+  where
+
+  userIdent = authorizationRequestUser req
+  reqAction = authorizationRequestAction req
+  reqResource = authorizationRequestResource req

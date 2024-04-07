@@ -26,10 +26,12 @@ source-repository head
 library
   exposed-modules:
       IAM.API
+      IAM.Auth
       IAM.Client
       IAM.Client.Auth
       IAM.Client.Util
       IAM.Command
+      IAM.Command.Authorize
       IAM.Command.Create
       IAM.Command.Create.Group
       IAM.Command.Create.Policy

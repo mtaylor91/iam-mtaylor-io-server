@@ -11,6 +11,7 @@ module IAM.API
   , MembershipsAPI
   , PolicyAPI
   , PoliciesAPI
+  , AuthorizeAPI
   , api
   , iamAPI
   ) where
@@ -30,6 +31,7 @@ type IAMAPI
   :<|> ( "groups" :> GroupsAPI )
   :<|> ( "policies" :> PoliciesAPI )
   :<|> ( "memberships" :> MembershipsAPI )
+  :<|> ( "authorize" :> AuthorizeAPI )
     )
 
 type UsersAPI
@@ -81,6 +83,10 @@ type PolicyAPI
   = ( Get '[JSON] Policy
   :<|> Delete '[JSON] Policy
     )
+
+type AuthorizeAPI
+  = ReqBody '[JSON] AuthorizationRequest :> Post '[JSON] AuthorizationResponse
+
 
 api :: Proxy API
 api = Proxy
