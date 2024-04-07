@@ -114,13 +114,17 @@ instance DB InMemory where
       Just limit -> return $ Prelude.take limit $ Prelude.drop offset policyIds
       Nothing -> return $ Prelude.drop offset policyIds
 
-  listPoliciesForUser (InMemory tvar) uid = do
+  listPoliciesForUser (InMemory tvar) uid host = do
     s <- liftIO $ readTVarIO tvar
     let gs = [gid | (uid', gid) <- memberships s, uid' == uid]
     let gps = [pid | (gid, pid) <- groupPolicyAttachments s, gid `Prelude.elem` gs]
     let ups = [pid | (uid', pid) <- userPolicyAttachments s, uid' == uid]
     let pids = Prelude.foldr (:) gps ups
-    return $ [p | p <- policies s, policyId p `Prelude.elem` pids]
+    return $
+      [ p | p <- policies s
+      , hostname p == host
+      , policyId p `Prelude.elem` pids
+      ]
 
   createPolicy (InMemory tvar) p = do
     liftIO $ atomically $ do

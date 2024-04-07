@@ -13,14 +13,16 @@ module IAM.Server.Auth
 
 import Control.Monad.Except
 import Crypto.Sign.Ed25519
-import Data.ByteString (ByteString, splitAt)
+import Data.ByteString (ByteString, splitAt, takeWhile)
 import Data.ByteString.Base64
+import Data.ByteString.Lazy (fromStrict)
 import Data.CaseInsensitive
 import Data.Text (Text, pack, unpack)
 import Data.Text.Encoding
 import Data.UUID
 import Network.HTTP.Types
 import Network.Wai
+import Prelude hiding (takeWhile)
 import Servant
 import Servant.Server.Experimental.Auth
 
@@ -60,17 +62,17 @@ data AuthRequest = AuthRequest
 type instance AuthServerData (AuthProtect "signature-auth") = Auth
 
 
-authContext :: DB db => ByteString -> db -> Context (AuthHandler Request Auth ': '[])
+authContext :: DB db => Text -> db -> Context (AuthHandler Request Auth ': '[])
 authContext host db = authHandler host db :. EmptyContext
 
 
-authHandler :: DB db => ByteString -> db -> AuthHandler Request Auth
+authHandler :: DB db => Text -> db -> AuthHandler Request Auth
 authHandler host db = mkAuthHandler $ \req -> do
   (authReq, user) <- authenticate host db req
-  authorize db req $ Authentication user authReq
+  authorize host db req $ Authentication user authReq
 
 
-authenticate :: DB db => ByteString -> db -> Request -> Handler (AuthRequest, User)
+authenticate :: DB db => Text -> db -> Request -> Handler (AuthRequest, User)
 authenticate host db req = do
   let maybeAuth = do
         authHeader <- lookup "Authorization" (requestHeaders req)
@@ -87,24 +89,35 @@ authenticate host db req = do
       result <- liftIO $ runExceptT $ getUser db $ authRequestUserId authReq
       case result of
         Right user -> do
-          let authHeader = authRequestAuthorization authReq
-              method = requestMethod req
-              path = rawPathInfo req
-              query = rawQueryString req
-              authStringToSign = stringToSign method host path query requestId
-              requestId = authRequestId authReq
-              pk = authRequestPublicKey authReq
-          if verifySignature user pk authHeader authStringToSign
-            then return (authReq, user)
-            else throwError $ err401 { errBody = "Invalid signature" }
+          case authReqError authReq user of
+            Nothing -> return (authReq, user)
+            Just err -> throwError $ err401 { errBody = fromStrict $ encodeUtf8 err }
         Left NotFound -> throwError $ err401 { errBody = "User not found" }
         Left _ -> throwError err500
     Nothing -> do
       throwError $ err401 { errBody = "Missing or invalid authentication headers" }
+  where
+    authReqError :: AuthRequest -> User -> Maybe Text
+    authReqError authReq user =
+      let authHeader = authRequestAuthorization authReq
+          method = requestMethod req
+          path = rawPathInfo req
+          query = rawQueryString req
+          reqHost = removeHostPort $ authRequestHost authReq
+          requestId = authRequestId authReq
+          pk = authRequestPublicKey authReq
+          authStringToSign = stringToSign method reqHost path query requestId
+       in if reqHost /= encodeUtf8 host
+            then Just "Invalid host"
+            else if not $ verifySignature user pk authHeader authStringToSign
+              then Just "Invalid signature"
+              else Nothing
+    removeHostPort :: ByteString -> ByteString
+    removeHostPort = takeWhile (not . (==) 58)
 
 
-authorize :: DB db => db -> Request -> Authentication -> Handler Auth
-authorize db req authN = do
+authorize :: DB db => Text -> db -> Request -> Authentication -> Handler Auth
+authorize host db req authN = do
   callerUserId <- case authRequestUserId $ authRequest authN of
     UserId uid -> return uid
     UserIdAndEmail uid _ -> return uid
@@ -115,7 +128,7 @@ authorize db req authN = do
         Left NotFound -> throwError $ err401 { errBody = "User not found" }
         Left _ -> throwError err500
 
-  policiesResult <- liftIO $ runExceptT $ listPoliciesForUser db callerUserId
+  policiesResult <- liftIO $ runExceptT $ listPoliciesForUser db callerUserId host
   case policiesResult of
     Right policies -> do
       if authorized req policies

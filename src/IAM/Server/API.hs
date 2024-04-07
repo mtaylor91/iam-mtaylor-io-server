@@ -14,7 +14,7 @@ module IAM.Server.API
   , GroupPolicyAPI
   ) where
 
-import Data.ByteString
+import Data.Text
 import Data.UUID
 import Network.Wai.Handler.Warp
 import Servant
@@ -25,10 +25,10 @@ import IAM.Server.DB
 import IAM.Server.Handlers
 import IAM.Types
 
-app :: DB db => ByteString -> db -> Application
+app :: DB db => Text -> db -> Application
 app host db = serveWithContext api (authContext host db) $ server db
 
-startApp :: DB db => Int -> ByteString -> db -> IO ()
+startApp :: DB db => Int -> Text -> db -> IO ()
 startApp port host db = run port $ app host db
 
 server :: DB db => db -> Server API

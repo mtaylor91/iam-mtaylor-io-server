@@ -241,19 +241,22 @@ $(deriveJSON defaultOptions ''Rule)
 
 data Policy = Policy
   { policyId :: !UUID
+  , hostname :: !Text
   , statements :: ![Rule]
   } deriving (Eq, Show)
 
 instance FromJSON Policy where
   parseJSON (Object obj) = do
     id' <- obj .: "id"
+    hostname' <- obj .: "hostname"
     statements' <- obj .: "statements"
-    return $ Policy id' statements'
+    return $ Policy id' hostname' statements'
   parseJSON _ = fail "Invalid JSON"
 
 instance ToJSON Policy where
-  toJSON (Policy id' statements') = object
+  toJSON (Policy id' hostname' statements') = object
     [ "id" .= id'
+    , "hostname" .= hostname'
     , "statements" .= statements'
     ]
 
@@ -300,6 +303,7 @@ data AuthorizationRequest = AuthorizationRequest
   { authorizationRequestUser :: !UserIdentifier
   , authorizationRequestAction :: !Action
   , authorizationRequestResource :: !Text
+  , authorizationRequestHost :: !Text
   } deriving (Eq, Show)
 
 
@@ -308,14 +312,16 @@ instance FromJSON AuthorizationRequest where
     u <- obj .: "user"
     a <- obj .: "action"
     r <- obj .: "resource"
-    return $ AuthorizationRequest u a r
+    h <- obj .: "host"
+    return $ AuthorizationRequest u a r h
   parseJSON _ = fail "Invalid JSON"
 
 instance ToJSON AuthorizationRequest where
-  toJSON (AuthorizationRequest u a r) = object
+  toJSON (AuthorizationRequest u a r h) = object
     [ "user" .= u
     , "action" .= a
     , "resource" .= r
+    , "host" .= h
     ]
 
 

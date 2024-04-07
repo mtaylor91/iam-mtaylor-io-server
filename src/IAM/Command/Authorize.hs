@@ -21,6 +21,7 @@ import qualified IAM.Client
 
 data AuthorizeCommand = AuthorizeCommand
   { authorizeUser :: !Text
+  , authorizeHost :: !Text
   , authorizeMethod :: !Text
   , authorizeResource :: !Text
   } deriving (Show)
@@ -42,6 +43,7 @@ authorize cmd = do
         { authorizationRequestUser = reqUser
         , authorizationRequestAction = reqAction
         , authorizationRequestResource = authorizeResource cmd
+        , authorizationRequestHost = authorizeHost cmd
         }
 
   let authorizeClient = IAM.Client.authorizeClient req
@@ -58,6 +60,10 @@ authorizeCommand = AuthorizeCommand
   <$> argument str
       ( metavar "USER"
      <> help "User to authorize"
+      )
+  <*> argument str
+      ( metavar "HOST"
+      <> help "Host to authorize"
       )
   <*> argument str
       ( metavar "METHOD"

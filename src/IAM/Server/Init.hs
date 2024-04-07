@@ -12,20 +12,20 @@ import IAM.Server.DB
 import IAM.Types
 
 
-initDB :: DB db => Text -> Text -> db -> IO db
-initDB adminEmail adminPublicKeyBase64 db = do
-  createAdmin adminEmail adminPublicKeyBase64 db
+initDB :: DB db => Text -> Text -> Text -> db -> IO db
+initDB host adminEmail adminPublicKeyBase64 db = do
+  createAdmin host adminEmail adminPublicKeyBase64 db
   return db
 
 
-createAdmin :: DB db => Text -> Text -> db -> IO ()
-createAdmin adminEmail adminPublicKeyBase64 db = do
+createAdmin :: DB db => Text -> Text -> Text -> db -> IO ()
+createAdmin host adminEmail adminPublicKeyBase64 db = do
   adminPolicyId <- nextRandom
 
   -- Create the admin policy
   let allowReads = Rule Allow Read "*"
       allowWrites = Rule Allow Write "*"
-      adminPolicy = Policy adminPolicyId [allowReads, allowWrites]
+      adminPolicy = Policy adminPolicyId host [allowReads, allowWrites]
   r0 <- runExceptT $ createPolicy db adminPolicy
   case r0 of
     Left AlreadyExists -> return ()

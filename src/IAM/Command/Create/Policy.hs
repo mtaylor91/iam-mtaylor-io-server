@@ -23,7 +23,8 @@ import qualified IAM.Client
 
 data CreatePolicy
   = CreatePolicy
-    { createPolicyUUID :: !(Maybe Text)
+    { createPolicyHost :: !Text
+    , createPolicyUUID :: !(Maybe Text)
     , createPolicyAllowRead :: ![Text]
     , createPolicyAllowWrite :: ![Text]
     , createPolicyDenyRead :: ![Text]
@@ -41,7 +42,10 @@ createPolicy createPolicyInfo =
 
 
 createPolicyWithUUID :: CreatePolicy -> UUID -> IO ()
-createPolicyWithUUID createPolicyInfo uuid = createPolicy' $ Policy uuid stmts where
+createPolicyWithUUID createPolicyInfo uuid =
+  createPolicy' $ Policy uuid host' stmts
+  where
+  host' = createPolicyHost createPolicyInfo
   stmts = allowStmts ++ denyStmts
   allowStmts = allowReadStmts ++ allowWriteStmts
   allowReadStmts = Rule Allow Read <$> createPolicyAllowRead createPolicyInfo
@@ -66,7 +70,11 @@ createPolicy' policy = do
 
 createPolicyOptions :: Parser CreatePolicy
 createPolicyOptions = CreatePolicy
-  <$> optional (argument str
+  <$> argument str
+      ( metavar "HOST"
+     <> help "Service hostname"
+      )
+  <*> optional (argument str
       ( metavar "UUID"
      <> help "Policy UUID"
       ))

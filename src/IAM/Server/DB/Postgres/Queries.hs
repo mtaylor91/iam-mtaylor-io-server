@@ -103,13 +103,13 @@ insertGroupPolicy =
   |]
 
 
-insertPolicy :: Statement (UUID, Value) ()
+insertPolicy :: Statement (UUID, Text, Value) ()
 insertPolicy =
   [resultlessStatement|
     INSERT INTO
-      policies (policy_uuid, policy)
+      policies (policy_uuid, policy_host, policy)
     VALUES
-      ($1 :: uuid, $2 :: jsonb)
+      ($1 :: uuid, $2 :: text, $3 :: jsonb)
     RETURNING
       policy_uuid :: uuid
   |]
@@ -262,6 +262,24 @@ selectUserPolicies =
   |]
 
 
+selectUserPoliciesForHost :: Statement (UUID, Text) (Vector Value)
+selectUserPoliciesForHost =
+  [vectorStatement|
+    SELECT
+      policies.policy :: jsonb
+    FROM
+      users_policies
+    JOIN
+      policies
+    ON
+      users_policies.policy_uuid = policies.policy_uuid
+    WHERE
+      users_policies.user_uuid = $1 :: uuid
+    AND
+      policies.policy_host = $2 :: text
+  |]
+
+
 selectGroupId :: Statement UUID (Maybe UUID)
 selectGroupId =
   [maybeStatement|
@@ -346,8 +364,8 @@ selectGroupPolicyIds =
   |]
 
 
-selectGroupPolicies :: Statement UUID (Vector Value)
-selectGroupPolicies =
+selectGroupPoliciesForHost :: Statement (UUID, Text) (Vector Value)
+selectGroupPoliciesForHost =
   [vectorStatement|
     SELECT
       policies.policy :: jsonb
@@ -359,6 +377,8 @@ selectGroupPolicies =
       groups_policies.policy_uuid = policies.policy_uuid
     WHERE
       groups_policies.group_uuid = $1 :: uuid
+    AND
+      policies.policy_host = $2 :: text
   |]
 
 

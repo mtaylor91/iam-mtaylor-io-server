@@ -210,7 +210,8 @@ authorizeHandler db req = do
     Left _ -> throwError err500
     Right uid' -> return uid'
 
-  result <- liftIO $ runExceptT $ listPoliciesForUser db uid
+  let host = authorizationRequestHost req
+  result <- liftIO $ runExceptT $ listPoliciesForUser db uid host
   case result of
     Left err -> throwError $ dbError err
     Right policies ->

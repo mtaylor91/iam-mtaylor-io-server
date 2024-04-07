@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS "groups_names" (
 
 CREATE TABLE IF NOT EXISTS "policies" (
   "policy_uuid" UUID PRIMARY KEY NOT NULL,
+  "policy_host" TEXT NOT NULL,
   "policy" JSONB NOT NULL
 );
 

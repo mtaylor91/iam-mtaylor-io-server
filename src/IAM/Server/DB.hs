@@ -3,6 +3,7 @@ module IAM.Server.DB ( DB(..), DBError(..) ) where
 
 import Control.Monad.IO.Class
 import Control.Monad.Except
+import Data.Text
 import Data.UUID
 
 import IAM.Types
@@ -65,7 +66,7 @@ class DB db where
   -- | listPoliciesForUser returns a list of all policies attached
   -- | to a user and its groups.
   listPoliciesForUser :: (MonadIO m, MonadError DBError m) =>
-    db -> UserId -> m [Policy]
+    db -> UserId -> Text -> m [Policy]
 
   -- | createPolicy adds a new policy to the database.
   createPolicy :: (MonadIO m, MonadError DBError m) =>
