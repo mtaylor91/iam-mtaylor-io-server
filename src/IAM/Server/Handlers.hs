@@ -73,9 +73,11 @@ getGroupHandler db _ gid = do
     Right group' -> return group'
     Left err     -> throwError $ dbError err
 
-listGroupsHandler :: DB db => db -> Auth -> Handler [GroupIdentifier]
-listGroupsHandler db _ = do
-  result <- liftIO $ runExceptT $ listGroups db
+listGroupsHandler ::
+  DB db => db -> Auth -> Maybe Int -> Maybe Int -> Handler [GroupIdentifier]
+listGroupsHandler db _ maybeOffset maybeLimit = do
+  let offset = fromMaybe 0 maybeOffset
+  result <- liftIO $ runExceptT $ listGroups db $ Range offset maybeLimit
   case result of
     Right groups' -> return groups'
     Left err      -> throwError $ dbError err

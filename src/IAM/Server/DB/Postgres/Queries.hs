@@ -286,7 +286,7 @@ selectGroupIdByName =
   |]
 
 
-selectGroupIdentifiers :: Statement () (Vector (UUID, Maybe Text))
+selectGroupIdentifiers :: Statement (Int32, Int32) (Vector (UUID, Maybe Text))
 selectGroupIdentifiers =
   [vectorStatement|
     SELECT
@@ -298,6 +298,10 @@ selectGroupIdentifiers =
       groups_names
     ON
       groups.group_uuid = groups_names.group_uuid
+    OFFSET
+      $1 :: int
+    LIMIT
+      $2 :: int
   |]
 
 

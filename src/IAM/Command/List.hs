@@ -12,14 +12,14 @@ import IAM.Command.List.Users
 
 
 data ListCommand
-  = ListGroups
+  = ListGroups !ListGroupsOptions
   | ListPolicies !ListPoliciesOptions
   | ListUsers !ListUsersOptions
   deriving (Show)
 
 
 list :: ListCommand -> IO ()
-list ListGroups = listGroups
+list (ListGroups opts) = listGroups opts
 list (ListPolicies opts) = listPolicies opts
 list (ListUsers opts) = listUsers opts
 
@@ -27,7 +27,7 @@ list (ListUsers opts) = listUsers opts
 listCommand :: Parser ListCommand
 listCommand = subparser
   ( command "groups"
-    (info (pure ListGroups) (progDesc "List groups"))
+    (info (ListGroups <$> listGroupsOptions) (progDesc "List groups"))
   <> command "policies"
     (info (ListPolicies <$> listPoliciesOptions) (progDesc "List policies"))
   <> command "users"

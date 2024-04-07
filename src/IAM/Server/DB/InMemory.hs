@@ -64,9 +64,12 @@ instance DB InMemory where
       Just g -> return g
       Nothing -> throwError NotFound
 
-  listGroups (InMemory tvar) = do
+  listGroups (InMemory tvar) (Range offset maybeLimit) = do
     s <- liftIO $ readTVarIO tvar
-    return $ resolveGroup s <$> groups s
+    let gs = resolveGroup s <$> groups s
+    case maybeLimit of
+      Just limit -> return $ Prelude.take limit $ Prelude.drop offset gs
+      Nothing -> return $ Prelude.drop offset gs
     where
       resolveGroup :: InMemoryState -> GroupId -> GroupIdentifier
       resolveGroup s gid = case s ^. groupState (GroupId gid) of

@@ -171,9 +171,10 @@ pgGetGroupById (GroupUUID uuid) = do
     user (uuuid, Just email) = UserIdAndEmail (UserUUID uuuid) email
 
 
-pgListGroups :: Transaction (Either DBError [GroupIdentifier])
-pgListGroups = do
-  result <- statement () selectGroupIdentifiers
+pgListGroups :: Range -> Transaction (Either DBError [GroupIdentifier])
+pgListGroups (Range offset maybeLimit) = do
+  let limit = fromMaybe 100 maybeLimit
+  result <- statement (fromIntegral offset, fromIntegral limit) selectGroupIdentifiers
   return $ Right $ map groupIdentifier $ toList result
   where
     groupIdentifier (guuid, Nothing) = GroupId $ GroupUUID guuid
