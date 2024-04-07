@@ -33,7 +33,7 @@ type IAMAPI
     )
 
 type UsersAPI
-  = ( Get '[JSON] [UserIdentifier]
+  = ( QueryParam "offset" Int :> QueryParam "limit" Int :> Get '[JSON] [UserIdentifier]
   :<|> ( ReqBody '[JSON] User :> PostCreated '[JSON] User )
   :<|> ( Capture "user" UserIdentifier :> UserAPI )
     )

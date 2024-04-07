@@ -21,6 +21,7 @@ module IAM.Server.Handlers
 
 import Control.Monad.IO.Class
 import Control.Monad.Except
+import Data.Maybe
 import Data.UUID
 import Servant
 
@@ -42,9 +43,11 @@ getUserHandler db _ uid = do
     Right user' -> return user'
     Left err    -> throwError $ dbError err
 
-listUsersHandler :: DB db => db -> Auth -> Handler [UserIdentifier]
-listUsersHandler db _ = do
-  result <- liftIO $ runExceptT $ listUsers db $ Range 0 Nothing
+listUsersHandler ::
+  DB db => db -> Auth -> Maybe Int -> Maybe Int -> Handler [UserIdentifier]
+listUsersHandler db _ maybeOffset maybeLimit = do
+  let offset = fromMaybe 0 maybeOffset
+  result <- liftIO $ runExceptT $ listUsers db $ Range offset maybeLimit
   case result of
     Right users' -> return users'
     Left err     -> throwError $ dbError err
