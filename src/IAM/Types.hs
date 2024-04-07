@@ -75,8 +75,8 @@ instance FromJSON UserIdentifier where
   parseJSON _ = fail "Invalid JSON"
 
 instance ToJSON UserIdentifier where
-  toJSON (UserEmail email) = toJSON email
-  toJSON (UserId (UserUUID uuid)) = toJSON uuid
+  toJSON (UserEmail email) = object ["email" .= email]
+  toJSON (UserId (UserUUID uuid)) = object ["id" .= uuid]
   toJSON (UserIdAndEmail (UserUUID uuid) email) = object
     [ "id" .= uuid
     , "email" .= email
@@ -124,8 +124,8 @@ instance FromJSON GroupIdentifier where
   parseJSON _ = fail "Invalid JSON"
 
 instance ToJSON GroupIdentifier where
-  toJSON (GroupName name) = toJSON name
-  toJSON (GroupId (GroupUUID uuid)) = toJSON uuid
+  toJSON (GroupName name) = object ["name" .= name]
+  toJSON (GroupId (GroupUUID uuid)) = object ["id" .= uuid]
   toJSON (GroupIdAndName (GroupUUID uuid) name) = object
     [ "id" .= uuid
     , "name" .= name
