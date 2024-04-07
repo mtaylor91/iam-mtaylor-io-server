@@ -183,7 +183,7 @@ data Group = Group
 
 instance FromJSON Group where
   parseJSON (Object obj) = do
-    uuid <- obj .: "uuid"
+    uuid <- obj .: "id"
     maybeName <- obj .:? "name"
     maybeUsers <- obj .:? "users"
     maybePolicies <- obj .:? "policies"
