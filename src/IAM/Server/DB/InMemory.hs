@@ -26,9 +26,12 @@ instance DB InMemory where
       Just u -> return u
       Nothing -> throwError NotFound
 
-  listUsers (InMemory tvar) _ = do
+  listUsers (InMemory tvar) (Range offset maybeLimit) = do
     s <- liftIO $ readTVarIO tvar
-    return $ resolveUser s <$> users s
+    let users' = resolveUser s <$> users s
+     in return $ case maybeLimit of
+      Just limit -> Prelude.take limit $ Prelude.drop offset users'
+      Nothing -> Prelude.drop offset users'
     where
       resolveUser :: InMemoryState -> UserId -> UserIdentifier
       resolveUser s uid = case s ^. userState (UserId uid) of
