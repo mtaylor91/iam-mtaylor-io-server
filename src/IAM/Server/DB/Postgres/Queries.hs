@@ -176,9 +176,9 @@ selectUserIds =
       users.user_uuid :: uuid
     FROM
       users
-    LIMIT
-      $1 :: int
     OFFSET
+      $1 :: int
+    LIMIT
       $2 :: int
   |]
 

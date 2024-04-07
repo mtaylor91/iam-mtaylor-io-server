@@ -24,7 +24,7 @@ class DB db where
 
   -- | listUsers returns a list of all users in the database.
   listUsers :: (MonadIO m, MonadError DBError m) =>
-    db -> Range -> m [UserId]
+    db -> Range -> m [UserIdentifier]
 
   -- | createUser adds a new user to the database.
   createUser :: (MonadIO m, MonadError DBError m) =>
@@ -54,8 +54,8 @@ class DB db where
   getPolicy :: (MonadIO m, MonadError DBError m) =>
     db -> UUID -> m Policy
 
-  -- | listPolicies returns a list of all policies in the database.
-  listPolicies :: (MonadIO m, MonadError DBError m) =>
+  -- | listPolicyIds returns a list of all policies in the database.
+  listPolicyIds :: (MonadIO m, MonadError DBError m) =>
     db -> m [UUID]
 
   -- | listPoliciesForUser returns a list of all policies attached

@@ -42,7 +42,7 @@ getUserHandler db _ uid = do
     Right user' -> return user'
     Left err    -> throwError $ dbError err
 
-listUsersHandler :: DB db => db -> Auth -> Handler [UserId]
+listUsersHandler :: DB db => db -> Auth -> Handler [UserIdentifier]
 listUsersHandler db _ = do
   result <- liftIO $ runExceptT $ listUsers db $ Range 0 Nothing
   case result of
@@ -100,7 +100,7 @@ getPolicyHandler db _ policy = do
 
 listPoliciesHandler :: DB db => db -> Auth -> Handler [UUID]
 listPoliciesHandler db _ = do
-  result <- liftIO $ runExceptT $ listPolicies db
+  result <- liftIO $ runExceptT $ listPolicyIds db
   case result of
     Right pids -> return pids
     Left err   -> throwError $ dbError err

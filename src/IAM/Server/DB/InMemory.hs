@@ -28,7 +28,15 @@ instance DB InMemory where
 
   listUsers (InMemory tvar) _ = do
     s <- liftIO $ readTVarIO tvar
-    return $ users s
+    return $ resolveUser s <$> users s
+    where
+      resolveUser :: InMemoryState -> UserId -> UserIdentifier
+      resolveUser s uid = case s ^. userState (UserId uid) of
+        Nothing -> UserId uid
+        Just u ->
+          case userEmail u of
+            Nothing -> UserId uid
+            Just email -> UserIdAndEmail uid email
 
   createUser (InMemory tvar) u@(User uid _ _ _ _) = do
     liftIO $ atomically $ do
@@ -79,7 +87,7 @@ instance DB InMemory where
       Just p -> return p
       Nothing -> throwError NotFound
 
-  listPolicies (InMemory tvar) = do
+  listPolicyIds (InMemory tvar) = do
     s <- liftIO $ readTVarIO tvar
     return $ policyId <$> policies s
 

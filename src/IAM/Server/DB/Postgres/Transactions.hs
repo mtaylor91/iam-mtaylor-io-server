@@ -52,11 +52,25 @@ pgGetUserById (UserUUID uuid) = do
     pk (pkBytes, pkDescription) = UserPublicKey (PublicKey pkBytes) pkDescription
 
 
-pgListUsers :: Range -> Transaction (Either DBError [UserId])
+pgListUsers :: Range -> Transaction (Either DBError [UserIdentifier])
 pgListUsers (Range offset Nothing) = pgListUsers (Range offset $ Just 100)
 pgListUsers (Range offset (Just limit)) = do
-  result <- statement (fromIntegral offset, fromIntegral limit) selectUserIds
-  return $ Right $ map UserUUID $ toList result
+  uids <- statement (fromIntegral offset, fromIntegral limit) selectUserIds
+  result $ toList uids
+  where
+    result :: [UUID] -> Transaction (Either DBError [UserIdentifier])
+    result [] = return $ Right []
+    result (uid:rest) = do
+      rest' <- result rest
+      result' <- statement uid selectUserEmail
+      case (result', rest') of
+        (_, Left e) ->
+          return $ Left e
+        (Nothing, Right rest'') -> do
+          return $ Right $ UserId (UserUUID uid) : rest''
+        (Just email, Right rest'') -> do
+          return $ Right $ UserIdAndEmail (UserUUID uid) email : rest''
+          
 
 
 pgCreateUser :: User -> Transaction (Either DBError User)
@@ -104,19 +118,6 @@ pgCreateUser (User (UserUUID uuid) maybeEmail groups policies publicKeys) = do
   insertUserPublicKey' :: UserPublicKey -> Transaction ()
   insertUserPublicKey' (UserPublicKey (PublicKey pk) description) =
     statement (uuid, pk, description) insertUserPublicKey
-
-  resolveUserGroups :: [GroupIdentifier] -> Transaction (Either DBError [GroupId])
-  resolveUserGroups [] = return $ Right []
-  resolveUserGroups (gident:rest) = do
-    result <- resolveGroupIdentifier gident
-    case result of
-      Nothing ->
-        return $ Left NotFound
-      Just (GroupUUID guuid) -> do
-        result' <- resolveUserGroups rest
-        case result' of
-          Left e -> return $ Left e
-          Right gids -> return $ Right $ GroupUUID guuid : gids
 
 
 pgDeleteUser :: UserIdentifier -> Transaction (Either DBError User)
@@ -433,3 +434,17 @@ resolveGroupIdentifier groupIdentifier =
         Nothing -> return Nothing
         Just uuid' -> return $ Just $ GroupUUID uuid'
     Right (GroupUUID uuid) -> return $ Just $ GroupUUID uuid
+
+
+resolveUserGroups :: [GroupIdentifier] -> Transaction (Either DBError [GroupId])
+resolveUserGroups [] = return $ Right []
+resolveUserGroups (gident:rest) = do
+  result <- resolveGroupIdentifier gident
+  case result of
+    Nothing ->
+      return $ Left NotFound
+    Just (GroupUUID guuid) -> do
+      result' <- resolveUserGroups rest
+      case result' of
+        Left e -> return $ Left e
+        Right gids -> return $ Right $ GroupUUID guuid : gids

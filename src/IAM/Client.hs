@@ -31,7 +31,7 @@ import IAM.Types
 
 
 type UsersClientM
-  = ClientM [UserId]
+  = ClientM [UserIdentifier]
   :<|> (User -> ClientM User)
   :<|> (UserIdentifier -> UserClientM)
 
@@ -138,7 +138,7 @@ mkCallerPolicyClient pid =
   in UserPolicyClient attachUserPolicy' detachUserPolicy'
 
 
-listUsers :: ClientM [UserId]
+listUsers :: ClientM [UserIdentifier]
 createUser :: User -> ClientM User
 userClient :: UserIdentifier -> UserClientM
 
