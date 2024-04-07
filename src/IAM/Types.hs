@@ -83,7 +83,7 @@ instance ToJSON UserIdentifier where
     ]
 
 unUserIdentifier :: UserIdentifier -> Either Text UserId
-unUserIdentifier (UserEmail _) = Left "UserEmail"
+unUserIdentifier (UserEmail email) = Left email
 unUserIdentifier (UserId uid) = Right uid
 unUserIdentifier (UserIdAndEmail uid _) = Right uid
 

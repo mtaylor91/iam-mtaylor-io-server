@@ -203,12 +203,16 @@ selectUserGroups =
       groups_names.group_name :: text?
     FROM
       groups
+    INNER JOIN
+      users_groups
+    ON
+      groups.group_uuid = users_groups.group_uuid
     LEFT JOIN
       groups_names
     ON
       groups.group_uuid = groups_names.group_uuid
     WHERE
-      groups.group_uuid = $1 :: uuid
+      users_groups.user_uuid = $1 :: uuid
   |]
 
 
