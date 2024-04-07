@@ -169,13 +169,18 @@ selectUserIdByEmail =
   |]
 
 
-selectUserIds :: Statement (Int32, Int32) (Vector UUID)
-selectUserIds =
+selectUserIdentifiers :: Statement (Int32, Int32) (Vector (UUID, Maybe Text))
+selectUserIdentifiers =
   [vectorStatement|
     SELECT
-      users.user_uuid :: uuid
+      users.user_uuid :: uuid,
+      users_emails.user_email :: text?
     FROM
       users
+    LEFT JOIN
+      users_emails
+    ON
+      users.user_uuid = users_emails.user_uuid
     OFFSET
       $1 :: int
     LIMIT
@@ -281,13 +286,18 @@ selectGroupIdByName =
   |]
 
 
-selectGroupIds :: Statement () (Vector UUID)
-selectGroupIds =
+selectGroupIdentifiers :: Statement () (Vector (UUID, Maybe Text))
+selectGroupIdentifiers =
   [vectorStatement|
     SELECT
-      groups.group_uuid :: uuid
+      groups.group_uuid :: uuid,
+      groups_names.group_name :: text?
     FROM
       groups
+    LEFT JOIN
+      groups_names
+    ON
+      groups.group_uuid = groups_names.group_uuid
   |]
 
 

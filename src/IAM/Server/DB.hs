@@ -40,7 +40,7 @@ class DB db where
 
   -- | listGroups returns a list of all groups in the database.
   listGroups :: (MonadIO m, MonadError DBError m) =>
-    db -> m [GroupId]
+    db -> m [GroupIdentifier]
 
   -- | createGroup adds a new group to the database.
   createGroup :: (MonadIO m, MonadError DBError m) =>

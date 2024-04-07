@@ -55,21 +55,11 @@ pgGetUserById (UserUUID uuid) = do
 pgListUsers :: Range -> Transaction (Either DBError [UserIdentifier])
 pgListUsers (Range offset Nothing) = pgListUsers (Range offset $ Just 100)
 pgListUsers (Range offset (Just limit)) = do
-  uids <- statement (fromIntegral offset, fromIntegral limit) selectUserIds
-  result $ toList uids
+  result <- statement (fromIntegral offset, fromIntegral limit) selectUserIdentifiers
+  return $ Right $ map userIdentifier $ toList result
   where
-    result :: [UUID] -> Transaction (Either DBError [UserIdentifier])
-    result [] = return $ Right []
-    result (uid:rest) = do
-      rest' <- result rest
-      result' <- statement uid selectUserEmail
-      case (result', rest') of
-        (_, Left e) ->
-          return $ Left e
-        (Nothing, Right rest'') -> do
-          return $ Right $ UserId (UserUUID uid) : rest''
-        (Just email, Right rest'') -> do
-          return $ Right $ UserIdAndEmail (UserUUID uid) email : rest''
+    userIdentifier (uuuid, Nothing) = UserId $ UserUUID uuuid
+    userIdentifier (uuuid, Just email) = UserIdAndEmail (UserUUID uuuid) email
           
 
 
@@ -180,10 +170,13 @@ pgGetGroupById (GroupUUID uuid) = do
     user (uuuid, Just email) = UserIdAndEmail (UserUUID uuuid) email
 
 
-pgListGroups :: Transaction (Either DBError [GroupId])
+pgListGroups :: Transaction (Either DBError [GroupIdentifier])
 pgListGroups = do
-  result <- statement () selectGroupIds
-  return $ Right $ map GroupUUID $ toList result
+  result <- statement () selectGroupIdentifiers
+  return $ Right $ map groupIdentifier $ toList result
+  where
+    groupIdentifier (guuid, Nothing) = GroupId $ GroupUUID guuid
+    groupIdentifier (guuid, Just name) = GroupIdAndName (GroupUUID guuid) name
 
 
 pgCreateGroup :: Group -> Transaction (Either DBError Group)

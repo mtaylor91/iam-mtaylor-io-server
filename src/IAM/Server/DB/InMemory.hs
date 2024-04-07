@@ -63,7 +63,15 @@ instance DB InMemory where
 
   listGroups (InMemory tvar) = do
     s <- liftIO $ readTVarIO tvar
-    return $ groups s
+    return $ resolveGroup s <$> groups s
+    where
+      resolveGroup :: InMemoryState -> GroupId -> GroupIdentifier
+      resolveGroup s gid = case s ^. groupState (GroupId gid) of
+        Nothing -> GroupId gid
+        Just g ->
+          case groupName g of
+            Nothing -> GroupId gid
+            Just name -> GroupIdAndName gid name
 
   createGroup (InMemory tvar) g@(Group gid _ _ _) = do
     liftIO $ atomically $ do

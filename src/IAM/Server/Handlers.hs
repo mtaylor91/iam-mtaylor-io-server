@@ -70,7 +70,7 @@ getGroupHandler db _ gid = do
     Right group' -> return group'
     Left err     -> throwError $ dbError err
 
-listGroupsHandler :: DB db => db -> Auth -> Handler [GroupId]
+listGroupsHandler :: DB db => db -> Auth -> Handler [GroupIdentifier]
 listGroupsHandler db _ = do
   result <- liftIO $ runExceptT $ listGroups db
   case result of

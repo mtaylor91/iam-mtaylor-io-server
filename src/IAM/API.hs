@@ -50,7 +50,7 @@ type UserPolicyAPI
     )
 
 type GroupsAPI
-  = ( Get '[JSON] [GroupId]
+  = ( Get '[JSON] [GroupIdentifier]
   :<|> ( ReqBody '[JSON] Group :> PostCreated '[JSON] Group )
   :<|> ( Capture "group" GroupIdentifier :> GroupAPI )
     )

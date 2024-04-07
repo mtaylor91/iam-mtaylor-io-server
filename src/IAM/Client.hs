@@ -46,7 +46,7 @@ type UserPolicyClientM = ClientM UserPolicyAttachment :<|> ClientM UserPolicyAtt
 
 
 type GroupsClientM
-  = ClientM [GroupId]
+  = ClientM [GroupIdentifier]
   :<|> (Group -> ClientM Group)
   :<|> (GroupIdentifier -> GroupClientM)
 
@@ -157,7 +157,7 @@ mkUserClient uid =
     in UserPolicyClient attachUserPolicy' detachUserPolicy'
 
 
-listGroups :: ClientM [GroupId]
+listGroups :: ClientM [GroupIdentifier]
 createGroup :: Group -> ClientM Group
 groupClient :: GroupIdentifier -> GroupClientM
 
