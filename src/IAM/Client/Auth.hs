@@ -15,6 +15,7 @@ import Data.UUID
 import Data.UUID.V4
 import Network.HTTP.Client
 
+import IAM.Auth
 import IAM.Config (configEmail, configSecretKey, headerPrefix)
 
 
@@ -70,8 +71,8 @@ authHeader reqStringToSign secretKey = "Signature " <> encodeUtf8 (encodeBase64 
 
 authStringToSign :: Request -> UUID -> Text
 authStringToSign req reqId
-  = decodeUtf8 (method req) <> "\n"
-  <> decodeUtf8 (host req) <> "\n"
-  <> decodeUtf8 (path req) <> "\n"
-  <> decodeUtf8 (queryString req) <> "\n"
-  <> pack (toString reqId)
+  = decodeUtf8 $ stringToSign m h p q reqId
+  where m = method req
+        h = host req
+        p = path req
+        q = queryString req
