@@ -4,6 +4,9 @@ module IAM.Client.Util
   , serverUrl
   ) where
 
+import Data.ByteString.Lazy (toStrict)
+import Data.Text
+import Data.Text.Encoding
 import Network.HTTP.Types.Status
 import Servant.Client
 import System.Exit
@@ -25,7 +28,7 @@ printClientError (FailureResponse _ response) =
     s | s == status403 ->
       putStrLn "Forbidden"
     s | s == status404 ->
-      putStrLn "Not found"
+      putStrLn $ "Not found: " ++ rBody
     s | s == status500 ->
       putStrLn "Internal server error"
     s | s == status502 ->
@@ -34,6 +37,8 @@ printClientError (FailureResponse _ response) =
       putStrLn "Service unavailable"
     _anyOtherStatus ->
       putStrLn "Unknown failure"
+  where
+    rBody = unpack $ decodeUtf8 $ toStrict $ responseBody response
 printClientError (DecodeFailure _ _) =
   putStrLn "Error decoding response"
 printClientError (UnsupportedContentType _ _) =

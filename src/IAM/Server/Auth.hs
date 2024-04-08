@@ -92,7 +92,7 @@ authenticate host db req = do
           case authReqError authReq user of
             Nothing -> return (authReq, user)
             Just err -> throwError $ err401 { errBody = fromStrict $ encodeUtf8 err }
-        Left NotFound -> throwError $ err401 { errBody = "User not found" }
+        Left (NotFound _ _) -> throwError $ err401 { errBody = "User not found" }
         Left _ -> throwError err500
     Nothing -> do
       throwError $ err401 { errBody = "Missing or invalid authentication headers" }
@@ -125,7 +125,7 @@ authorize host db req authN = do
       result <- liftIO $ runExceptT $ getUserId db $ UserEmail email
       case result of
         Right uid -> return uid
-        Left NotFound -> throwError $ err401 { errBody = "User not found" }
+        Left (NotFound _ _) -> throwError $ err401 { errBody = "User not found" }
         Left _ -> throwError err500
 
   policiesResult <- liftIO $ runExceptT $ listPoliciesForUser db callerUserId host

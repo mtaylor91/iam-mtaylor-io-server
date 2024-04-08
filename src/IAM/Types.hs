@@ -74,6 +74,11 @@ unUserIdentifierEmail (UserEmail email) = Just email
 unUserIdentifierEmail (UserIdAndEmail _ email) = Just email
 unUserIdentifierEmail _ = Nothing
 
+userIdentifierToText :: UserIdentifier -> Text
+userIdentifierToText (UserEmail email) = email
+userIdentifierToText (UserId (UserUUID uuid)) = toText uuid
+userIdentifierToText (UserIdAndEmail (UserUUID uuid) _) = toText uuid
+
 
 data GroupIdentifier
   = GroupName !Text
@@ -114,7 +119,7 @@ instance ToJSON GroupIdentifier where
     ]
 
 unGroupIdentifier :: GroupIdentifier -> Either Text GroupId
-unGroupIdentifier (GroupName _) = Left "GroupName"
+unGroupIdentifier (GroupName name) = Left name
 unGroupIdentifier (GroupId gid) = Right gid
 unGroupIdentifier (GroupIdAndName gid _) = Right gid
 
@@ -122,6 +127,11 @@ unGroupIdentifierName :: GroupIdentifier -> Maybe Text
 unGroupIdentifierName (GroupName name) = Just name
 unGroupIdentifierName (GroupIdAndName _ name) = Just name
 unGroupIdentifierName _ = Nothing
+
+groupIdentifierToText :: GroupIdentifier -> Text
+groupIdentifierToText (GroupName name) = name
+groupIdentifierToText (GroupId (GroupUUID uuid)) = toText uuid
+groupIdentifierToText (GroupIdAndName (GroupUUID uuid) _) = toText uuid
 
 
 data UserPublicKey = UserPublicKey

@@ -11,7 +11,7 @@ import IAM.Types
 
 data DBError
   = AlreadyExists
-  | NotFound
+  | NotFound Text Text
   | InternalError
   | NotImplemented
   deriving (Show, Eq)

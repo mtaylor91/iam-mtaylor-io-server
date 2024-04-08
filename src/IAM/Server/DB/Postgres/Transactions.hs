@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module IAM.Server.DB.Postgres.Transactions
   ( module IAM.Server.DB.Postgres.Transactions
   ) where
@@ -6,7 +7,7 @@ import Crypto.Sign.Ed25519 (PublicKey(..))
 import Data.Aeson (Result(..), fromJSON, toJSON)
 import Data.Maybe
 import Data.Text (Text)
-import Data.UUID (UUID)
+import Data.UUID (UUID, toText)
 import Data.Vector (toList)
 import Hasql.Transaction (Transaction, statement)
 
@@ -26,7 +27,7 @@ pgGetUserByEmail :: Text -> Transaction (Either DBError User)
 pgGetUserByEmail email = do
   result0 <- statement email selectUserIdByEmail
   case result0 of
-    Nothing -> return $ Left NotFound
+    Nothing -> return $ Left $ NotFound "user" email
     Just uuid' -> do
       pgGetUser (UserId $ UserUUID uuid')
 
@@ -35,7 +36,7 @@ pgGetUserById :: UserId -> Transaction (Either DBError User)
 pgGetUserById (UserUUID uuid) = do
   result <- statement uuid selectUserId
   case result of
-    Nothing -> return $ Left NotFound
+    Nothing -> return $ Left $ NotFound "user" $ toText uuid
     Just _ -> do
       maybeEmail <- statement uuid selectUserEmail
       r0 <- statement uuid selectUserGroups
@@ -59,7 +60,7 @@ pgGetUserId userIdentifier = do
     Left email -> do
       result <- statement email selectUserIdByEmail
       case result of
-        Nothing -> return $ Left NotFound
+        Nothing -> return $ Left $ NotFound "user" email
         Just uuid' -> return $ Right $ UserUUID uuid'
     Right (UserUUID uuid) -> return $ Right $ UserUUID uuid
 
@@ -133,7 +134,7 @@ pgDeleteUserByEmail :: Text -> Transaction (Either DBError User)
 pgDeleteUserByEmail email = do
   result0 <- statement email selectUserIdByEmail
   case result0 of
-    Nothing -> return $ Left NotFound
+    Nothing -> return $ Left $ NotFound "user" email
     Just uuid' -> pgDeleteUserById $ UserUUID uuid'
 
 
@@ -162,7 +163,7 @@ pgGetGroupByName :: Text -> Transaction (Either DBError Group)
 pgGetGroupByName name = do
   result0 <- statement name selectGroupIdByName
   case result0 of
-    Nothing -> return $ Left NotFound
+    Nothing -> return $ Left $ NotFound "group" name
     Just uuid' -> pgGetGroupById $ GroupUUID uuid'
 
 
@@ -170,7 +171,7 @@ pgGetGroupById :: GroupId -> Transaction (Either DBError Group)
 pgGetGroupById (GroupUUID uuid) = do
   result <- statement uuid selectGroupId
   case result of
-    Nothing -> return $ Left NotFound
+    Nothing -> return $ Left $ NotFound "group" $ toText uuid
     Just _ -> do
       maybeName <- statement uuid selectGroupName
       r0 <- statement uuid selectGroupUsers
@@ -238,7 +239,7 @@ pgCreateGroup (Group (GroupUUID uuid) maybeName users policies) = do
     result <- resolveUserIdentifier uident
     case result of
       Nothing ->
-        return $ Left NotFound
+        return $ Left $ NotFound "user" $ userIdentifierToText uident
       Just (UserUUID uuuid) -> do
         result' <- resolveGroupUsers rest
         case result' of
@@ -257,7 +258,7 @@ pgDeleteGroupByName :: Text -> Transaction (Either DBError Group)
 pgDeleteGroupByName name = do
   result0 <- statement name selectGroupIdByName
   case result0 of
-    Nothing -> return $ Left NotFound
+    Nothing -> return $ Left $ NotFound "group" name
     Just uuid' -> pgDeleteGroupById $ GroupUUID uuid'
 
 
@@ -278,7 +279,7 @@ pgGetPolicy :: UUID -> Transaction (Either DBError Policy)
 pgGetPolicy pid = do
   result <- statement pid selectPolicy
   case result of
-    Nothing -> return $ Left NotFound
+    Nothing -> return $ Left $ NotFound "policy" $ toText pid
     Just policy ->
       case fromJSON policy of
         Error _ -> return $ Left InternalError
@@ -320,7 +321,7 @@ pgListPoliciesForGroupByName :: Text -> Text -> Transaction (Either DBError [Pol
 pgListPoliciesForGroupByName host name = do
   result0 <- statement name selectGroupIdByName
   case result0 of
-    Nothing -> return $ Left NotFound
+    Nothing -> return $ Left $ NotFound "group" name
     Just uuid' -> pgListPoliciesForGroupById host $ GroupUUID uuid'
 
 
@@ -363,7 +364,10 @@ pgCreateMembership userIdentifier groupIdentifier = do
     (Just (UserUUID uid), Just (GroupUUID gid)) -> do
       statement (uid, gid) insertMembership
       return $ Right $ Membership (UserUUID uid) (GroupUUID gid)
-    (_, _) -> return $ Left NotFound
+    (Nothing, _) ->
+      return $ Left $ NotFound "user" $ userIdentifierToText userIdentifier
+    (_, Nothing) ->
+      return $ Left $ NotFound "group" $ groupIdentifierToText groupIdentifier
 
 
 pgDeleteMembership ::
@@ -375,7 +379,10 @@ pgDeleteMembership userIdentifier groupIdentifier = do
     (Just (UserUUID uid), Just (GroupUUID gid)) -> do
       statement (uid, gid) deleteMembership
       return $ Right $ Membership (UserUUID uid) (GroupUUID gid)
-    (_, _) -> return $ Left NotFound
+    (Nothing, _) ->
+      return $ Left $ NotFound "user" $ userIdentifierToText userIdentifier
+    (_, Nothing) ->
+      return $ Left $ NotFound "group" $ groupIdentifierToText groupIdentifier
 
 
 pgCreateUserPolicyAttachment ::
@@ -386,7 +393,7 @@ pgCreateUserPolicyAttachment userIdentifier pid = do
     Just (UserUUID uid) -> do
       statement (uid, pid) insertUserPolicyAttachment
       return $ Right $ UserPolicyAttachment (UserUUID uid) pid
-    Nothing -> return $ Left NotFound
+    Nothing -> return $ Left $ NotFound "user" $ userIdentifierToText userIdentifier
 
 
 pgDeleteUserPolicyAttachment ::
@@ -397,7 +404,7 @@ pgDeleteUserPolicyAttachment userIdentifier pid = do
     Just (UserUUID uid) -> do
       statement (uid, pid) deleteUserPolicyAttachment
       return $ Right $ UserPolicyAttachment (UserUUID uid) pid
-    Nothing -> return $ Left NotFound
+    Nothing -> return $ Left $ NotFound "user" $ userIdentifierToText userIdentifier
 
 
 pgCreateGroupPolicyAttachment ::
@@ -408,7 +415,7 @@ pgCreateGroupPolicyAttachment groupIdentifier pid = do
     Just (GroupUUID gid) -> do
       statement (gid, pid) insertGroupPolicyAttachment
       return $ Right $ GroupPolicyAttachment (GroupUUID gid) pid
-    Nothing -> return $ Left NotFound
+    Nothing -> return $ Left $ NotFound "group" $ groupIdentifierToText groupIdentifier
 
 
 pgDeleteGroupPolicyAttachment ::
@@ -419,7 +426,7 @@ pgDeleteGroupPolicyAttachment groupIdentifier pid = do
     Just (GroupUUID gid) -> do
       statement (gid, pid) deleteGroupPolicyAttachment
       return $ Right $ GroupPolicyAttachment (GroupUUID gid) pid
-    Nothing -> return $ Left NotFound
+    Nothing -> return $ Left $ NotFound "group" $ groupIdentifierToText groupIdentifier
 
 
 resolveUserIdentifier :: UserIdentifier -> Transaction (Maybe UserId)
@@ -450,7 +457,7 @@ resolveUserGroups (gident:rest) = do
   result <- resolveGroupIdentifier gident
   case result of
     Nothing ->
-      return $ Left NotFound
+      return $ Left $ NotFound "group" $ groupIdentifierToText gident
     Just (GroupUUID guuid) -> do
       result' <- resolveUserGroups rest
       case result' of

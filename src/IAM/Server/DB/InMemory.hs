@@ -1,9 +1,11 @@
+{-# LANGUAGE OverloadedStrings #-}
 module IAM.Server.DB.InMemory ( inMemory, InMemory(..) ) where
 
 import Control.Concurrent.STM
 import Control.Lens
 import Control.Monad.IO.Class
 import Control.Monad.Except
+import Data.UUID (toText)
 
 import IAM.Server.DB
 import IAM.Server.DB.InMemory.State
@@ -24,13 +26,13 @@ instance DB InMemory where
     s <- liftIO $ readTVarIO tvar
     case s ^. userState uid of
       Just u -> return u
-      Nothing -> throwError NotFound
+      Nothing -> throwError $ NotFound "user" $ userIdentifierToText uid
 
   getUserId (InMemory tvar) uid = do
     s <- liftIO $ readTVarIO tvar
     case resolveUserIdentifier s uid of
       Just uid' -> return uid'
-      Nothing -> throwError NotFound
+      Nothing -> throwError $ NotFound "user" $ userIdentifierToText uid
 
   listUsers (InMemory tvar) (Range offset maybeLimit) = do
     s <- liftIO $ readTVarIO tvar
@@ -61,14 +63,14 @@ instance DB InMemory where
           writeTVar tvar $ s & userState uid .~ Nothing
           return $ Right u
         Nothing ->
-          return $ Left NotFound
+          return $ Left $ NotFound "user" $ userIdentifierToText uid
     either throwError return result
 
   getGroup (InMemory tvar) gid = do
     s <- liftIO $ readTVarIO tvar
     case s ^. groupState gid of
       Just g -> return g
-      Nothing -> throwError NotFound
+      Nothing -> throwError $ NotFound "group" $ groupIdentifierToText gid
 
   listGroups (InMemory tvar) (Range offset maybeLimit) = do
     s <- liftIO $ readTVarIO tvar
@@ -98,14 +100,14 @@ instance DB InMemory where
           writeTVar tvar $ s & groupState gid .~ Nothing
           return $ Right g
         Nothing ->
-          return $ Left NotFound
+          return $ Left $ NotFound "group" $ groupIdentifierToText gid
     either throwError return result
 
   getPolicy (InMemory tvar) pid = do
     s <- liftIO $ readTVarIO tvar
     case s ^. policyState pid of
       Just p -> return p
-      Nothing -> throwError NotFound
+      Nothing -> throwError $ NotFound "policy" $ toText pid
 
   listPolicyIds (InMemory tvar) (Range offset maybeLimit) = do
     s <- liftIO $ readTVarIO tvar
@@ -145,7 +147,7 @@ instance DB InMemory where
           writeTVar tvar $ s & policyState pid .~ Nothing
           return $ Right p
         Nothing ->
-          return $ Left NotFound
+          return $ Left $ NotFound "policy" $ toText pid
     either throwError return result
 
   createMembership (InMemory tvar) uid gid = do
@@ -159,8 +161,10 @@ instance DB InMemory where
               return $ Right $ Membership uid' gid'
             _:_ ->
               return $ Left AlreadyExists
-        (_, _) ->
-          return $ Left NotFound
+        (Nothing, _) ->
+          return $ Left $ NotFound "user" $ userIdentifierToText uid
+        (_, Nothing) ->
+          return $ Left $ NotFound "group" $ groupIdentifierToText gid
     either throwError return result
 
   deleteMembership (InMemory tvar) uid gid = do
@@ -170,13 +174,16 @@ instance DB InMemory where
         (Just uid', Just gid') -> do
           case Prelude.filter (== (uid', gid')) $ memberships s of
             [] ->
-              return $ Left NotFound
+              return $ Left $ NotFound "membership" $ userIdentifierToText uid
+                <> " " <> groupIdentifierToText gid
             _:_ -> do
               writeTVar tvar $ s { memberships =
                 Prelude.filter (/= (uid', gid')) $ memberships s }
               return $ Right $ Membership uid' gid'
-        (_, _) ->
-          return $ Left NotFound
+        (Nothing, _) ->
+          return $ Left $ NotFound "user" $ userIdentifierToText uid
+        (_, Nothing) ->
+          return $ Left $ NotFound "group" $ groupIdentifierToText gid
     either throwError return result
 
   createUserPolicyAttachment (InMemory tvar) uid pid = do
@@ -192,7 +199,7 @@ instance DB InMemory where
             _:_ ->
               return $ Left AlreadyExists
         Nothing ->
-          return $ Left NotFound
+          return $ Left $ NotFound "user" $ userIdentifierToText uid
     either throwError return result
 
   deleteUserPolicyAttachment (InMemory tvar) uid pid = do
@@ -201,13 +208,14 @@ instance DB InMemory where
         Just uid' -> do
           case Prelude.filter (== (uid', pid)) $ userPolicyAttachments s of
             [] ->
-              return $ Left NotFound
+              return $ Left $ NotFound "user policy attachment" $
+                userIdentifierToText uid <> " " <> toText pid
             _:_ -> do
               writeTVar tvar $ s { userPolicyAttachments =
                 Prelude.filter (/= (uid', pid)) $ userPolicyAttachments s }
               return $ Right $ UserPolicyAttachment uid' pid
         Nothing ->
-          return $ Left NotFound
+          return $ Left $ NotFound "user" $ userIdentifierToText uid
     either throwError return result
 
   createGroupPolicyAttachment (InMemory tvar) gid pid = do
@@ -222,7 +230,7 @@ instance DB InMemory where
             _:_ ->
               return $ Left AlreadyExists
         Nothing ->
-          return $ Left NotFound
+          return $ Left $ NotFound "group" $ groupIdentifierToText gid
     either throwError return result
 
   deleteGroupPolicyAttachment (InMemory tvar) gid pid = do
@@ -231,11 +239,12 @@ instance DB InMemory where
         Just gid' -> do
           case Prelude.filter (== (gid', pid)) $ groupPolicyAttachments s of
             [] ->
-              return $ Left NotFound
+              return $ Left $ NotFound "group policy attachment" $
+                groupIdentifierToText gid <> " " <> toText pid
             _:_ -> do
               writeTVar tvar $ s { groupPolicyAttachments =
                 Prelude.filter (/= (gid', pid)) $ groupPolicyAttachments s }
               return $ Right $ GroupPolicyAttachment gid' pid
         Nothing ->
-          return $ Left NotFound
+          return $ Left $ NotFound "group" $ groupIdentifierToText gid
     either throwError return result

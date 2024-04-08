@@ -23,7 +23,9 @@ module IAM.Server.Handlers
 
 import Control.Monad.IO.Class
 import Control.Monad.Except
+import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe
+import Data.Text.Encoding
 import Data.UUID
 import Servant
 
@@ -34,9 +36,12 @@ import IAM.Types
 
 dbError :: DBError -> ServerError
 dbError AlreadyExists  = err409
-dbError NotFound       = err404
 dbError InternalError  = err500
 dbError NotImplemented = err501
+dbError (NotFound r n) = err404
+  { errBody = t r <> " " <> t n <> " not found" }
+  where
+    t = fromStrict . encodeUtf8
 
 getUserHandler :: DB db => db -> Auth -> UserIdentifier -> Handler User
 getUserHandler db _ uid = do
@@ -206,8 +211,7 @@ authorizeHandler :: DB db =>
 authorizeHandler db req = do
   r0 <- liftIO $ runExceptT $ getUserId db userIdent
   uid <- case r0 of
-    Left NotFound -> throwError $ err401 { errBody = "User not found" }
-    Left _ -> throwError err500
+    Left e -> throwError $ dbError e
     Right uid' -> return uid'
 
   let host = authorizationRequestHost req
