@@ -17,6 +17,7 @@ module IAM.Server.Handlers
   , deleteUserPolicyAttachmentHandler
   , createGroupPolicyAttachmentHandler
   , deleteGroupPolicyAttachmentHandler
+  , createSessionHandler
   , listUserSessionsHandler
   , getUserSessionHandler
   , deleteUserSessionHandler
@@ -224,6 +225,19 @@ deleteGroupPolicyAttachmentHandler db _ gid pid = do
   case result of
     Right attachment -> return attachment
     Left err         -> errorHandler err
+
+
+createSessionHandler :: DB db => db -> Auth -> UserIdentifier -> Handler Session
+createSessionHandler db _ uid = do
+  r0 <- liftIO $ runExceptT $ getUserId db uid
+  case r0 of
+    Left e -> throwError $ toServerError e
+    Right uid' -> do
+      session <- liftIO $ IAM.Session.createSession uid'
+      result <- liftIO $ runExceptT $ IAM.Server.DB.createSession db session
+      case result of
+        Right session' -> return session'
+        Left err       -> errorHandler err
 
 
 listUserSessionsHandler :: DB db =>

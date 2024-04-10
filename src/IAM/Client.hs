@@ -62,7 +62,8 @@ type UserPolicyClientM
 
 
 type UserSessionsClientM
-  = (Maybe Int -> Maybe Int -> ClientM [Session])
+  = ClientM Session
+  :<|> (Maybe Int -> Maybe Int -> ClientM [Session])
   :<|> (SessionId -> UserSessionClientM)
 
 
@@ -124,7 +125,8 @@ data UserPolicyClient = UserPolicyClient
 
 
 data UserSessionsClient = UserSessionsClient
-  { listSessions :: !(Maybe Int -> Maybe Int -> ClientM [Session])
+  { createSession :: !(ClientM Session)
+  , listSessions :: !(Maybe Int -> Maybe Int -> ClientM [Session])
   , sessionClient :: !(SessionId -> UserSessionClient)
   }
 
@@ -195,8 +197,9 @@ mkCallerPolicyClient pid =
 
 mkCallerSessionsClient :: UserSessionsClient
 mkCallerSessionsClient =
-  let (listSessions' :<|> sessionClient') = callerSessionClient
-  in UserSessionsClient listSessions' (mkCallerSessionsClient' sessionClient')
+  let (createSession' :<|> listSessions' :<|> sessionClient') = callerSessionClient
+      sessionClient'' = mkCallerSessionsClient' sessionClient'
+  in UserSessionsClient createSession' listSessions' sessionClient''
   where
   mkCallerSessionsClient' ::
     (SessionId -> UserSessionClientM) -> SessionId -> UserSessionClient
@@ -230,8 +233,9 @@ mkUserClient uid =
 
   mkUserSessionsClient :: UserSessionsClientM -> UserSessionsClient
   mkUserSessionsClient userSessionClient' =
-    let (listSessions' :<|> sessionClient') = userSessionClient'
-    in UserSessionsClient listSessions' (mkUserSessionClient sessionClient')
+    let (createSession' :<|> listSessions' :<|> sessionClient') = userSessionClient'
+        sessionClient'' = mkUserSessionClient sessionClient'
+    in UserSessionsClient createSession' listSessions' sessionClient''
 
   mkUserSessionClient ::
     (SessionId -> UserSessionClientM) -> SessionId -> UserSessionClient

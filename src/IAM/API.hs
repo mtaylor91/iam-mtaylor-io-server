@@ -62,7 +62,8 @@ type UserPolicyAPI
     )
 
 type UserSessionsAPI
-  = ( QueryParam "offset" Int :> QueryParam "limit" Int :> Get '[JSON] [Session]
+  = ( PostCreated '[JSON] Session
+  :<|> QueryParam "offset" Int :> QueryParam "limit" Int :> Get '[JSON] [Session]
   :<|> ( Capture "session" SessionId :> UserSessionAPI )
     )
 

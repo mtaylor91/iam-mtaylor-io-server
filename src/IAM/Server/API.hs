@@ -68,7 +68,8 @@ userPolicyAPI db caller uid pid
 
 userSessionsAPI :: DB db => db -> Auth -> UserIdentifier -> Server UserSessionsAPI
 userSessionsAPI db caller uid
-  = listUserSessionsHandler db caller uid
+  = createSessionHandler db caller uid
+  :<|> listUserSessionsHandler db caller uid
   :<|> userSessionAPI db caller uid
 
 userSessionAPI ::
