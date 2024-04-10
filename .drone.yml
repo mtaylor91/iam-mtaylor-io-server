@@ -3,6 +3,22 @@ kind: pipeline
 type: kubernetes
 name: build
 steps:
+- name: image
+  image: images.home.mtaylor.io/drone-kaniko:latest
+  settings:
+    repo: images.home.mtaylor.io/iam-mtaylor-io
+    enable_cache: true
+    username: anonymous
+    password: anonymous
+    registry: images.home.mtaylor.io
+trigger:
+  event:
+  - push
+---
+kind: pipeline
+type: kubernetes
+name: build
+steps:
 - name: version
   image: images.home.mtaylor.io/base:latest
   commands:
@@ -43,9 +59,7 @@ steps:
     - tag
 trigger:
   event:
-  - push
   - tag
-  - custom
 ---
 kind: pipeline
 type: kubernetes
