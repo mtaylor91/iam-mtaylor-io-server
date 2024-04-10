@@ -87,6 +87,7 @@ library
     , bytestring
     , case-insensitive
     , ed25519
+    , entropy
     , hasql
     , hasql-pool
     , hasql-th
@@ -124,6 +125,7 @@ executable iam-mtaylor-io
     , bytestring
     , case-insensitive
     , ed25519
+    , entropy
     , hasql
     , hasql-pool
     , hasql-th
@@ -163,6 +165,7 @@ test-suite iam-mtaylor-io-test
     , bytestring
     , case-insensitive
     , ed25519
+    , entropy
     , hasql
     , hasql-pool
     , hasql-th

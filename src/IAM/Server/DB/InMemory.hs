@@ -264,33 +264,57 @@ instance DB InMemory where
       writeTVar tvar $ s' & sessionState (sessionId s) ?~ s
     return s
 
-  getSession (InMemory tvar) sid = do
+  getSession (InMemory tvar) uid sid = do
     s <- liftIO $ readTVarIO tvar
-    case s ^. sessionState sid of
-      Just session -> return session
-      Nothing -> throwError $ NotFound "session" $ toText $ unSessionId sid
+    let maybeUid = resolveUserIdentifier s uid
+    case (s ^. sessionState sid, maybeUid) of
+      (Just session, Just uid') -> do
+        if sessionUser session == uid'
+          then return session
+          else throwError $ NotFound "session" $ toText $ unSessionId sid
+      (Nothing, _) ->
+        throwError $ NotFound "session" $ toText $ unSessionId sid
+      (_, Nothing) ->
+        throwError $ NotFound "user" $ userIdentifierToText uid
 
-  replaceSession (InMemory tvar) s = do
-    liftIO $ atomically $ do
+  replaceSession (InMemory tvar) uid s = do
+    result <- liftIO $ atomically $ do
       s' <- readTVar tvar
-      writeTVar tvar $ s' & sessionState (sessionId s) ?~ s
-    return s
+      let maybeUid = resolveUserIdentifier s' uid
+      case maybeUid of
+        Nothing ->
+          return $ Left $ NotFound "user" $ userIdentifierToText uid
+        Just uid' -> do
+          if sessionUser s /= uid'
+            then return $ Left $ NotFound "session" $ toText $ unSessionId $ sessionId s
+            else do
+              writeTVar tvar $ s' & sessionState (sessionId s) ?~ s
+              return $ Right s
+    either throwError return result
 
-  deleteSession (InMemory tvar) sid = do
+  deleteSession (InMemory tvar) uid sid = do
     result <- liftIO $ atomically $
       readTVar tvar >>= \s -> case s ^. sessionState sid of
-        Just session -> do
-          writeTVar tvar $ s & sessionState sid .~ Nothing
-          return $ Right session
+        Just session ->
+          let maybeUid = resolveUserIdentifier s uid
+           in if Just (sessionUser session) == maybeUid
+            then do
+              writeTVar tvar $ s & sessionState sid .~ Nothing
+              return $ Right session
+            else
+              return $ Left $ NotFound "session" $ toText $ unSessionId sid
         Nothing ->
           return $ Left $ NotFound "session" $ toText $ unSessionId sid
     either throwError return result
 
-  listUserSessions (InMemory tvar) uid = do
+  listUserSessions (InMemory tvar) uid (Range offset maybeLimit) = do
     s <- liftIO $ readTVarIO tvar
     let maybeUid = resolveUserIdentifier s uid
     case maybeUid of
       Nothing ->
         throwError $ NotFound "user" $ userIdentifierToText uid
       Just uid' ->
-        return $ [ session | session <- sessions s, sessionUser session == uid' ]
+        let results = [ session | session <- sessions s, sessionUser session == uid' ]
+         in return $ case maybeLimit of
+          Just limit -> Prelude.take limit $ Prelude.drop offset results
+          Nothing -> Prelude.drop offset results

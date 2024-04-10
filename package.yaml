@@ -26,6 +26,7 @@ dependencies:
 - bytestring
 - case-insensitive
 - ed25519
+- entropy
 - hasql
 - hasql-pool
 - hasql-th

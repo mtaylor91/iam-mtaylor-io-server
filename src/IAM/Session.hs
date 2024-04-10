@@ -6,11 +6,13 @@ module IAM.Session
 
 import Data.Aeson
 import Data.Aeson.TH
+import Data.ByteString.Base64
 import Data.Text
 import Data.Time.Clock
 import Data.UUID
 import Data.UUID.V4
 import Servant
+import System.Entropy
 import Text.Read (readMaybe)
 
 import IAM.Identifiers
@@ -57,7 +59,9 @@ createSession :: UserId -> IO Session
 createSession uid = do
   uuid <- nextRandom
   now <- getCurrentTime
-  return $ Session (SessionUUID uuid) uid (pack $ show uuid) (addUTCTime 3600 now)
+  randomBytes <- getEntropy 32
+  let token = encodeBase64 randomBytes
+  return $ Session (SessionUUID uuid) uid token (addUTCTime 3600 now)
 
 
 refreshSession :: Session -> Session

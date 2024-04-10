@@ -229,7 +229,8 @@ deleteGroupPolicyAttachmentHandler db _ gid pid = do
 listUserSessionsHandler :: DB db =>
   db -> Auth -> UserIdentifier -> Maybe Int -> Maybe Int -> Handler [Session]
 listUserSessionsHandler db _ uid maybeOffset maybeLimit = do
-  result <- liftIO $ runExceptT $ listUserSessions db uid
+  let offset = fromMaybe 0 maybeOffset
+  result <- liftIO $ runExceptT $ listUserSessions db uid $ Range offset maybeLimit
   case result of
     Right sessions -> return sessions
     Left err       -> errorHandler err
@@ -238,7 +239,7 @@ listUserSessionsHandler db _ uid maybeOffset maybeLimit = do
 getUserSessionHandler :: DB db =>
   db -> Auth -> UserIdentifier -> SessionId -> Handler Session
 getUserSessionHandler db _ uid sid = do
-  result <- liftIO $ runExceptT $ getSession db sid
+  result <- liftIO $ runExceptT $ getSession db uid sid
   case result of
     Right session -> return session
     Left err      -> errorHandler err
@@ -247,7 +248,7 @@ getUserSessionHandler db _ uid sid = do
 deleteUserSessionHandler :: DB db =>
   db -> Auth -> UserIdentifier -> SessionId -> Handler Session
 deleteUserSessionHandler db _ uid sid = do
-  result <- liftIO $ runExceptT $ deleteSession db sid
+  result <- liftIO $ runExceptT $ deleteSession db uid sid
   case result of
     Right session -> return session
     Left err      -> errorHandler err
@@ -256,11 +257,11 @@ deleteUserSessionHandler db _ uid sid = do
 refreshUserSessionHandler :: DB db =>
   db -> Auth -> UserIdentifier -> SessionId -> Handler Session
 refreshUserSessionHandler db _ uid sid = do
-  result <- liftIO $ runExceptT $ getSession db sid
+  result <- liftIO $ runExceptT $ getSession db uid sid
   case result of
     Right session -> do
       let updatedSession = refreshSession session
-      result' <- liftIO $ runExceptT $ replaceSession db updatedSession
+      result' <- liftIO $ runExceptT $ replaceSession db uid updatedSession
       case result' of
         Right session' -> return session'
         Left err       -> errorHandler err

@@ -111,16 +111,16 @@ class DB db where
 
   -- | getSession returns a session from the database by its id.
   getSession :: (MonadIO m, MonadError Error m) =>
-    db -> SessionId -> m Session
+    db -> UserIdentifier -> SessionId -> m Session
 
   -- | replaceSession updates an existing session in the database.
   replaceSession :: (MonadIO m, MonadError Error m) =>
-    db -> Session -> m Session
+    db -> UserIdentifier -> Session -> m Session
 
   -- | deleteSession removes a session from the database by its id.
   deleteSession :: (MonadIO m, MonadError Error m) =>
-    db -> SessionId -> m Session
+    db -> UserIdentifier -> SessionId -> m Session
 
   -- | listUserSessions returns a list of all sessions for a user.
   listUserSessions :: (MonadIO m, MonadError Error m) =>
-    db -> UserIdentifier -> m [Session]
+    db -> UserIdentifier -> Range -> m [Session]

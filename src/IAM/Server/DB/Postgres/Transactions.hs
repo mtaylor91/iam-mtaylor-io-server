@@ -442,9 +442,9 @@ pgCreateSession session = do
   return $ Right session
 
 
-pgDeleteSession :: SessionId -> Transaction (Either Error Session)
-pgDeleteSession sid = do
-  result <- pgGetSession sid
+pgDeleteSession :: UserIdentifier -> SessionId -> Transaction (Either Error Session)
+pgDeleteSession uid sid = do
+  result <- pgGetSession uid sid
   case result of
     Left e -> return $ Left e
     Right session -> do
@@ -452,33 +452,39 @@ pgDeleteSession sid = do
       return $ Right session
 
 
-pgReplaceSession :: Session -> Transaction (Either Error Session)
-pgReplaceSession session = do
-  let Session sid uid token expires = session
-  result <- pgGetSession sid
+pgReplaceSession :: UserIdentifier -> Session -> Transaction (Either Error Session)
+pgReplaceSession uid session = do
+  let Session sid uid' token expires = session
+  result <- pgGetSession uid sid
   case result of
     Left e -> return $ Left e
     Right _ -> do
-      statement (unSessionId sid, unUserId uid, token, expires) replaceSession
+      statement (unSessionId sid, unUserId uid', token, expires) replaceSession
       return $ Right session
 
 
-pgGetSession :: SessionId -> Transaction (Either Error Session)
-pgGetSession sid = do
-  result <- statement (unSessionId sid) selectSession
-  case result of
-    Nothing ->
-      return $ Left $ NotFound "session" $ toText $ unSessionId sid
-    Just (uid, token, expires) ->
-      return $ Right $ Session sid (UserUUID uid) token expires
+pgGetSession :: UserIdentifier -> SessionId -> Transaction (Either Error Session)
+pgGetSession uid sid = do
+  maybeUid <- resolveUserIdentifier uid
+  case maybeUid of
+    Just (UserUUID uuid) -> do
+      result <- statement (uuid, unSessionId sid) selectSession
+      case result of
+        Nothing ->
+          return $ Left $ NotFound "session" $ toText $ unSessionId sid
+        Just (token, expires) ->
+          return $ Right $ Session sid (UserUUID uuid) token expires
+    Nothing -> return $ Left $ NotFound "user" $ userIdentifierToText uid
 
 
-pgListUserSessions :: UserIdentifier -> Transaction (Either Error [Session])
-pgListUserSessions userIdentifier = do
+pgListUserSessions :: UserIdentifier -> Range -> Transaction (Either Error [Session])
+pgListUserSessions userIdentifier (Range offset maybeLimit) = do
+  let limit = fromMaybe 100 maybeLimit
   maybeUid <- resolveUserIdentifier userIdentifier
   case maybeUid of
     Just (UserUUID uid) -> do
-      result <- statement uid selectUserSessions
+      let params = (uid, fromIntegral offset, fromIntegral limit)
+      result <- statement params selectUserSessions
       return $ Right $ map (session uid) $ toList result
     Nothing -> return $ Left $ NotFound "user" $ userIdentifierToText userIdentifier
   where

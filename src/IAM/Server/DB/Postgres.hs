@@ -107,14 +107,14 @@ instance DB PostgresDB where
   createSession (PostgresDB pool) s =
     runTransaction pool $ pgCreateSession s
 
-  getSession (PostgresDB pool) sid =
-    runTransaction pool $ pgGetSession sid
+  getSession (PostgresDB pool) uid sid =
+    runTransaction pool $ pgGetSession uid sid
 
-  deleteSession (PostgresDB pool) sid =
-    runTransaction pool $ pgDeleteSession sid
+  deleteSession (PostgresDB pool) uid sid =
+    runTransaction pool $ pgDeleteSession uid sid
 
-  replaceSession (PostgresDB pool) s =
-    runTransaction pool $ pgReplaceSession s
+  replaceSession (PostgresDB pool) uid s =
+    runTransaction pool $ pgReplaceSession uid s
 
-  listUserSessions (PostgresDB pool) uid =
-    runTransaction pool $ pgListUserSessions uid
+  listUserSessions (PostgresDB pool) uid range =
+    runTransaction pool $ pgListUserSessions uid range

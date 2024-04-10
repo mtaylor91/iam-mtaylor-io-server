@@ -419,21 +419,22 @@ selectPolicy =
   |]
 
 
-selectSession :: Statement UUID (Maybe (UUID, Text, UTCTime))
+selectSession :: Statement (UUID, UUID) (Maybe (Text, UTCTime))
 selectSession =
   [maybeStatement|
     SELECT
-      sessions.session_user :: uuid,
       sessions.session_token :: text,
       sessions.session_expiration :: timestamptz
     FROM
       sessions
     WHERE
-      sessions.session_uuid = $1 :: uuid
+      sessions.session_user = $1 :: uuid
+    AND
+      sessions.session_uuid = $2 :: uuid
   |]
 
 
-selectUserSessions :: Statement UUID (Vector (UUID, Text, UTCTime))
+selectUserSessions :: Statement (UUID, Int32, Int32) (Vector (UUID, Text, UTCTime))
 selectUserSessions =
   [vectorStatement|
     SELECT
@@ -444,6 +445,10 @@ selectUserSessions =
       sessions
     WHERE
       sessions.session_user = $1 :: uuid
+    OFFSET
+      $2 :: int
+    LIMIT
+      $3 :: int
   |]
 
 
