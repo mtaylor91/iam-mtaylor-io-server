@@ -69,6 +69,7 @@ library
       IAM.Server.DB.Postgres.Transactions
       IAM.Server.Handlers
       IAM.Server.Init
+      IAM.Session
       IAM.User
       IAM.UserPolicy
       IAM.Util
@@ -100,6 +101,7 @@ library
     , servant-server
     , stm
     , text
+    , time
     , uuid
     , vector
     , wai
@@ -137,6 +139,7 @@ executable iam-mtaylor-io
     , servant-server
     , stm
     , text
+    , time
     , uuid
     , vector
     , wai
@@ -178,6 +181,7 @@ test-suite iam-mtaylor-io-test
     , servant-server
     , stm
     , text
+    , time
     , uuid
     , vector
     , wai

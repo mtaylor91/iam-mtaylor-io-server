@@ -17,6 +17,10 @@ module IAM.Server.Handlers
   , deleteUserPolicyAttachmentHandler
   , createGroupPolicyAttachmentHandler
   , deleteGroupPolicyAttachmentHandler
+  , listUserSessionsHandler
+  , getUserSessionHandler
+  , deleteUserSessionHandler
+  , refreshUserSessionHandler
   , authorizeHandler
   ) where
 
@@ -36,6 +40,7 @@ import IAM.Policy
 import IAM.Range
 import IAM.Server.Auth
 import IAM.Server.DB
+import IAM.Session
 import IAM.User
 import IAM.UserPolicy
 
@@ -219,6 +224,47 @@ deleteGroupPolicyAttachmentHandler db _ gid pid = do
   case result of
     Right attachment -> return attachment
     Left err         -> errorHandler err
+
+
+listUserSessionsHandler :: DB db =>
+  db -> Auth -> UserIdentifier -> Maybe Int -> Maybe Int -> Handler [Session]
+listUserSessionsHandler db _ uid maybeOffset maybeLimit = do
+  result <- liftIO $ runExceptT $ listUserSessions db uid
+  case result of
+    Right sessions -> return sessions
+    Left err       -> errorHandler err
+
+
+getUserSessionHandler :: DB db =>
+  db -> Auth -> UserIdentifier -> SessionId -> Handler Session
+getUserSessionHandler db _ uid sid = do
+  result <- liftIO $ runExceptT $ getSession db sid
+  case result of
+    Right session -> return session
+    Left err      -> errorHandler err
+
+
+deleteUserSessionHandler :: DB db =>
+  db -> Auth -> UserIdentifier -> SessionId -> Handler Session
+deleteUserSessionHandler db _ uid sid = do
+  result <- liftIO $ runExceptT $ deleteSession db sid
+  case result of
+    Right session -> return session
+    Left err      -> errorHandler err
+
+
+refreshUserSessionHandler :: DB db =>
+  db -> Auth -> UserIdentifier -> SessionId -> Handler Session
+refreshUserSessionHandler db _ uid sid = do
+  result <- liftIO $ runExceptT $ getSession db sid
+  case result of
+    Right session -> do
+      let updatedSession = refreshSession session
+      result' <- liftIO $ runExceptT $ replaceSession db updatedSession
+      case result' of
+        Right session' -> return session'
+        Left err       -> errorHandler err
+    Left err -> errorHandler err
 
 
 authorizeHandler :: DB db =>

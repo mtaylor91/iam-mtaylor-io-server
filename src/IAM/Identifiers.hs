@@ -12,12 +12,12 @@ import Servant
 import Text.Read (readMaybe)
 
 
-newtype UserId = UserUUID UUID deriving (Eq, Show)
+newtype UserId = UserUUID { unUserId :: UUID } deriving (Eq, Show)
 
 $(deriveJSON defaultOptions { unwrapUnaryRecords = True } ''UserId)
 
 
-newtype GroupId = GroupUUID UUID deriving (Eq, Show)
+newtype GroupId = GroupUUID { unGroupId :: UUID } deriving (Eq, Show)
 
 $(deriveJSON defaultOptions { unwrapUnaryRecords = True } ''GroupId)
 

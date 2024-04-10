@@ -5,6 +5,7 @@ module IAM.Client
   ( getCaller
   , deleteCaller
   , mkCallerPolicyClient
+  , mkCallerSessionsClient
   , listUsers
   , createUser
   , mkUserClient
@@ -19,6 +20,8 @@ module IAM.Client
   , authorizeClient
   , UserClient(..)
   , UserPolicyClient(..)
+  , UserSessionsClient(..)
+  , UserSessionClient(..)
   , GroupClient(..)
   , GroupPolicyClient(..)
   , PolicyClient(..)
@@ -35,6 +38,7 @@ import IAM.GroupPolicy
 import IAM.Identifiers
 import IAM.Membership
 import IAM.Policy
+import IAM.Session
 import IAM.User
 import IAM.UserPolicy
 
@@ -49,9 +53,23 @@ type UserClientM =
     ClientM User
     :<|> ClientM User
     :<|> (UUID -> UserPolicyClientM)
+    :<|> UserSessionsClientM
 
 
-type UserPolicyClientM = ClientM UserPolicyAttachment :<|> ClientM UserPolicyAttachment
+type UserPolicyClientM
+  = ClientM UserPolicyAttachment
+  :<|> ClientM UserPolicyAttachment
+
+
+type UserSessionsClientM
+  = (Maybe Int -> Maybe Int -> ClientM [Session])
+  :<|> (SessionId -> UserSessionClientM)
+
+
+type UserSessionClientM
+  = ClientM Session
+  :<|> ClientM Session
+  :<|> ClientM Session
 
 
 type GroupsClientM
@@ -95,12 +113,26 @@ data UserClient = UserClient
   { getUser :: !(ClientM User)
   , deleteUser :: !(ClientM User)
   , userPolicyClient :: !(UUID -> UserPolicyClient)
+  , userSessionsClient :: !UserSessionsClient
   }
 
 
 data UserPolicyClient = UserPolicyClient
   { attachUserPolicy :: !(ClientM UserPolicyAttachment)
   , detachUserPolicy :: !(ClientM UserPolicyAttachment)
+  }
+
+
+data UserSessionsClient = UserSessionsClient
+  { listSessions :: !(Maybe Int -> Maybe Int -> ClientM [Session])
+  , sessionClient :: !(SessionId -> UserSessionClient)
+  }
+
+
+data UserSessionClient = UserSessionClient
+  { getSession :: !(ClientM Session)
+  , deleteSession :: !(ClientM Session)
+  , refreshSession :: !(ClientM Session)
   }
 
 
@@ -148,15 +180,29 @@ callerClient
 getCaller :: ClientM User
 deleteCaller :: ClientM User
 callerPolicyClient :: UUID -> UserPolicyClientM
+callerSessionClient :: UserSessionsClientM
 
 
-(getCaller :<|> deleteCaller :<|> callerPolicyClient) = callerClient
+(getCaller :<|> deleteCaller :<|> callerPolicyClient :<|> callerSessionClient) =
+  callerClient
 
 
 mkCallerPolicyClient :: UUID -> UserPolicyClient
 mkCallerPolicyClient pid =
   let (attachUserPolicy' :<|> detachUserPolicy') = callerPolicyClient pid
   in UserPolicyClient attachUserPolicy' detachUserPolicy'
+
+
+mkCallerSessionsClient :: UserSessionsClient
+mkCallerSessionsClient =
+  let (listSessions' :<|> sessionClient') = callerSessionClient
+  in UserSessionsClient listSessions' (mkCallerSessionsClient' sessionClient')
+  where
+  mkCallerSessionsClient' ::
+    (SessionId -> UserSessionClientM) -> SessionId -> UserSessionClient
+  mkCallerSessionsClient' sessionClient' sid =
+    let (getSession' :<|> deleteSession' :<|> refreshSession') = sessionClient' sid
+    in UserSessionClient getSession' deleteSession' refreshSession'
 
 
 listUsers :: Maybe Int -> Maybe Int -> ClientM [UserIdentifier]
@@ -169,13 +215,29 @@ userClient :: UserIdentifier -> UserClientM
 
 mkUserClient :: UserIdentifier -> UserClient
 mkUserClient uid =
-  let (getUser' :<|> deleteUser' :<|> userPolicyClient') = userClient uid
-  in UserClient getUser' deleteUser' (mkUserPolicyClient userPolicyClient')
+  let (getUser' :<|> deleteUser' :<|> userPolicyClient' :<|> userSessionClient') =
+        userClient uid
+      userPolicyClient'' = mkUserPolicyClient userPolicyClient'
+      userSessionClient'' = mkUserSessionsClient userSessionClient'
+  in UserClient getUser' deleteUser' userPolicyClient'' userSessionClient''
+
   where
+
   mkUserPolicyClient :: (UUID -> UserPolicyClientM) -> UUID -> UserPolicyClient
   mkUserPolicyClient userPolicyClient' pid =
     let (attachUserPolicy' :<|> detachUserPolicy') = userPolicyClient' pid
     in UserPolicyClient attachUserPolicy' detachUserPolicy'
+
+  mkUserSessionsClient :: UserSessionsClientM -> UserSessionsClient
+  mkUserSessionsClient userSessionClient' =
+    let (listSessions' :<|> sessionClient') = userSessionClient'
+    in UserSessionsClient listSessions' (mkUserSessionClient sessionClient')
+
+  mkUserSessionClient ::
+    (SessionId -> UserSessionClientM) -> SessionId -> UserSessionClient
+  mkUserSessionClient sessionClient' sid =
+    let (getSession' :<|> deleteSession' :<|> refreshSession') = sessionClient' sid
+    in UserSessionClient getSession' deleteSession' refreshSession'
 
 
 listGroups :: Maybe Int -> Maybe Int -> ClientM [GroupIdentifier]

@@ -11,12 +11,14 @@ import IAM.Group
 import IAM.Identifiers
 import IAM.Policy
 import IAM.User
+import IAM.Session
 
 
 data InMemoryState = InMemoryState
   { users :: ![UserId]
   , groups :: ![GroupId]
   , policies :: ![Policy]
+  , sessions :: ![Session]
   , usersEmails :: ![(UserId, Text)]
   , groupsNames :: ![(GroupId, Text)]
   , memberships :: ![(UserId, GroupId)]
@@ -24,6 +26,21 @@ data InMemoryState = InMemoryState
   , groupPolicyAttachments :: ![(GroupId, UUID)]
   , usersPublicKeys :: ![(UserId, UserPublicKey)]
   } deriving (Show)
+
+
+newInMemoryState :: InMemoryState
+newInMemoryState = InMemoryState
+  { users = []
+  , groups = []
+  , policies = []
+  , sessions = []
+  , usersEmails = []
+  , groupsNames = []
+  , memberships = []
+  , userPolicyAttachments = []
+  , groupPolicyAttachments = []
+  , usersPublicKeys = []
+  }
 
 
 lookupGroupIdentifier :: InMemoryState -> GroupId -> GroupIdentifier
@@ -88,6 +105,14 @@ policyState pid f s =
     [] -> p <$> f Nothing
     policy:_ -> p <$> f (Just policy)
   where p = updatePolicyState s pid
+
+
+sessionState :: forall f. Functor f =>
+  SessionId -> (Maybe Session -> f (Maybe Session)) -> InMemoryState -> f InMemoryState
+sessionState sid f s =
+  case Prelude.filter ((== sid) . sessionId) $ sessions s of
+    [] -> updateSessionState s sid <$> f Nothing
+    session:_ -> updateSessionState s sid <$> f (Just session)
 
 
 updateUserState :: InMemoryState -> UserId -> Maybe User -> InMemoryState
@@ -156,6 +181,13 @@ updatePolicyState s pid (Just p) = s
   { policies = p : Prelude.filter ((/= pid) . policyId) (policies s) }
 updatePolicyState s pid Nothing = s
   { policies = Prelude.filter ((/= pid) . policyId) (policies s) }
+
+
+updateSessionState :: InMemoryState -> SessionId -> Maybe Session -> InMemoryState
+updateSessionState s sid (Just session) = s
+  { sessions = session : Prelude.filter ((/= sid) . sessionId) (sessions s) }
+updateSessionState s sid Nothing = s
+  { sessions = Prelude.filter ((/= sid) . sessionId) (sessions s) }
 
 
 resolveUserIdentifier :: InMemoryState -> UserIdentifier -> Maybe UserId

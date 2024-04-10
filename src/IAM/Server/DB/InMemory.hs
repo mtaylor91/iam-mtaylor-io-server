@@ -16,6 +16,7 @@ import IAM.Policy
 import IAM.Range
 import IAM.Server.DB
 import IAM.Server.DB.InMemory.State
+import IAM.Session
 import IAM.User
 import IAM.UserPolicy
 
@@ -25,7 +26,7 @@ newtype InMemory = InMemory (TVar InMemoryState)
 
 
 inMemory :: IO InMemory
-inMemory = InMemory <$> newTVarIO (InMemoryState [] [] [] [] [] [] [] [] [])
+inMemory = InMemory <$> newTVarIO newInMemoryState
 
 
 instance DB InMemory where
@@ -256,3 +257,40 @@ instance DB InMemory where
         Nothing ->
           return $ Left $ NotFound "group" $ groupIdentifierToText gid
     either throwError return result
+
+  createSession (InMemory tvar) s = do
+    liftIO $ atomically $ do
+      s' <- readTVar tvar
+      writeTVar tvar $ s' & sessionState (sessionId s) ?~ s
+    return s
+
+  getSession (InMemory tvar) sid = do
+    s <- liftIO $ readTVarIO tvar
+    case s ^. sessionState sid of
+      Just session -> return session
+      Nothing -> throwError $ NotFound "session" $ toText $ unSessionId sid
+
+  replaceSession (InMemory tvar) s = do
+    liftIO $ atomically $ do
+      s' <- readTVar tvar
+      writeTVar tvar $ s' & sessionState (sessionId s) ?~ s
+    return s
+
+  deleteSession (InMemory tvar) sid = do
+    result <- liftIO $ atomically $
+      readTVar tvar >>= \s -> case s ^. sessionState sid of
+        Just session -> do
+          writeTVar tvar $ s & sessionState sid .~ Nothing
+          return $ Right session
+        Nothing ->
+          return $ Left $ NotFound "session" $ toText $ unSessionId sid
+    either throwError return result
+
+  listUserSessions (InMemory tvar) uid = do
+    s <- liftIO $ readTVarIO tvar
+    let maybeUid = resolveUserIdentifier s uid
+    case maybeUid of
+      Nothing ->
+        throwError $ NotFound "user" $ userIdentifierToText uid
+      Just uid' ->
+        return $ [ session | session <- sessions s, sessionUser session == uid' ]

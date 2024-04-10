@@ -5,6 +5,8 @@ module IAM.API
   , UserAPI
   , UsersAPI
   , UserPolicyAPI
+  , UserSessionsAPI
+  , UserSessionAPI
   , GroupAPI
   , GroupsAPI
   , GroupPolicyAPI
@@ -25,6 +27,7 @@ import IAM.GroupPolicy
 import IAM.Identifiers
 import IAM.Membership
 import IAM.Policy
+import IAM.Session
 import IAM.User
 import IAM.UserPolicy
 
@@ -50,11 +53,23 @@ type UserAPI
   = ( Get '[JSON] User
   :<|> Delete '[JSON] User
   :<|> "policies" :> Capture "policy" UUID :> UserPolicyAPI
+  :<|> "sessions" :> UserSessionsAPI
     )
 
 type UserPolicyAPI
   = ( PostCreated '[JSON] UserPolicyAttachment
   :<|> Delete '[JSON] UserPolicyAttachment
+    )
+
+type UserSessionsAPI
+  = ( QueryParam "offset" Int :> QueryParam "limit" Int :> Get '[JSON] [Session]
+  :<|> ( Capture "session" SessionId :> UserSessionAPI )
+    )
+
+type UserSessionAPI
+  = ( Get '[JSON] Session
+  :<|> Delete '[JSON] Session
+  :<|> "refresh" :> Post '[JSON] Session
     )
 
 type GroupsAPI

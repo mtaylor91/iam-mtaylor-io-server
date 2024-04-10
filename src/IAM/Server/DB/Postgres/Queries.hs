@@ -7,6 +7,7 @@ import Data.Aeson (Value)
 import Data.ByteString (ByteString)
 import Data.Int (Int32)
 import Data.Text (Text)
+import Data.Time (UTCTime)
 import Data.UUID (UUID)
 import Data.Vector (Vector)
 import Hasql.Statement (Statement)
@@ -142,6 +143,16 @@ insertGroupPolicyAttachment =
       groups_policies (group_uuid, policy_uuid)
     VALUES
       ($1 :: uuid, $2 :: uuid)
+  |]
+
+
+insertSession :: Statement (UUID, UUID, Text, UTCTime) ()
+insertSession =
+  [resultlessStatement|
+    INSERT INTO
+      sessions (session_uuid, user_uuid, session_token, session_expiration)
+    VALUES
+      ($1 :: uuid, $2 :: uuid, $3 :: text, $4 :: timestamptz)
   |]
 
 
@@ -408,6 +419,34 @@ selectPolicy =
   |]
 
 
+selectSession :: Statement UUID (Maybe (UUID, Text, UTCTime))
+selectSession =
+  [maybeStatement|
+    SELECT
+      sessions.session_user :: uuid,
+      sessions.session_token :: text,
+      sessions.session_expiration :: timestamptz
+    FROM
+      sessions
+    WHERE
+      sessions.session_uuid = $1 :: uuid
+  |]
+
+
+selectUserSessions :: Statement UUID (Vector (UUID, Text, UTCTime))
+selectUserSessions =
+  [vectorStatement|
+    SELECT
+      sessions.session_uuid :: uuid,
+      sessions.session_token :: text,
+      sessions.session_expiration :: timestamptz
+    FROM
+      sessions
+    WHERE
+      sessions.session_user = $1 :: uuid
+  |]
+
+
 updatePolicy :: Statement (UUID, Value) ()
 updatePolicy =
   [resultlessStatement|
@@ -553,4 +592,28 @@ deleteGroupPolicyAttachment =
       group_uuid = $1 :: uuid
     AND
       policy_uuid = $2 :: uuid
+  |]
+
+
+deleteSession :: Statement UUID ()
+deleteSession =
+  [resultlessStatement|
+    DELETE FROM
+      sessions
+    WHERE
+      session_uuid = $1 :: uuid
+  |]
+
+
+replaceSession :: Statement (UUID, UUID, Text, UTCTime) ()
+replaceSession =
+  [resultlessStatement|
+    UPDATE
+      sessions
+    SET
+      "session_user" = $2 :: uuid,
+      session_token = $3 :: text,
+      session_expiration = $4 :: timestamptz
+    WHERE
+      session_uuid = $1 :: uuid
   |]

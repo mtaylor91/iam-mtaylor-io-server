@@ -23,6 +23,7 @@ import IAM.Identifiers
 import IAM.Server.Auth
 import IAM.Server.DB
 import IAM.Server.Handlers
+import IAM.Session
 import IAM.User
 
 
@@ -45,6 +46,7 @@ callerAPI db caller
   = getUserHandler db caller (UserId $ userId $ authUser $ authentication caller)
   :<|> deleteUserHandler db caller (UserId $ userId $ authUser $ authentication caller)
   :<|> userPolicyAPI db caller (UserId $ userId $ authUser $ authentication caller)
+  :<|> userSessionsAPI db caller (UserId $ userId $ authUser $ authentication caller)
 
 usersAPI :: DB db => db -> Auth -> Server UsersAPI
 usersAPI db caller
@@ -57,11 +59,24 @@ userAPI db caller uid
   = getUserHandler db caller uid
   :<|> deleteUserHandler db caller uid
   :<|> userPolicyAPI db caller uid
+  :<|> userSessionsAPI db caller uid
 
 userPolicyAPI :: DB db => db -> Auth -> UserIdentifier -> UUID -> Server UserPolicyAPI
 userPolicyAPI db caller uid pid
   = createUserPolicyAttachmentHandler db caller uid pid
   :<|> deleteUserPolicyAttachmentHandler db caller uid pid
+
+userSessionsAPI :: DB db => db -> Auth -> UserIdentifier -> Server UserSessionsAPI
+userSessionsAPI db caller uid
+  = listUserSessionsHandler db caller uid
+  :<|> userSessionAPI db caller uid
+
+userSessionAPI ::
+  DB db => db -> Auth -> UserIdentifier -> SessionId -> Server UserSessionAPI
+userSessionAPI db caller uid sid
+  = getUserSessionHandler db caller uid sid
+  :<|> deleteUserSessionHandler db caller uid sid
+  :<|> refreshUserSessionHandler db caller uid sid
 
 groupsAPI :: DB db => db -> Auth -> Server GroupsAPI
 groupsAPI db caller

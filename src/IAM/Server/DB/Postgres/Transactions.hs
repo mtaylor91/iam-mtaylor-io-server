@@ -19,6 +19,7 @@ import IAM.Policy
 import IAM.Membership
 import IAM.Server.DB.Postgres.Queries
 import IAM.Range
+import IAM.Session
 import IAM.User
 import IAM.UserPolicy
 
@@ -432,6 +433,57 @@ pgDeleteGroupPolicyAttachment groupIdentifier pid = do
       statement (gid, pid) deleteGroupPolicyAttachment
       return $ Right $ GroupPolicyAttachment (GroupUUID gid) pid
     Nothing -> return $ Left $ NotFound "group" $ groupIdentifierToText groupIdentifier
+
+
+pgCreateSession :: Session -> Transaction (Either Error Session)
+pgCreateSession session = do
+  let Session sid uid token expires = session
+  statement (unSessionId sid, unUserId uid, token, expires) insertSession
+  return $ Right session
+
+
+pgDeleteSession :: SessionId -> Transaction (Either Error Session)
+pgDeleteSession sid = do
+  result <- pgGetSession sid
+  case result of
+    Left e -> return $ Left e
+    Right session -> do
+      statement (unSessionId sid) deleteSession
+      return $ Right session
+
+
+pgReplaceSession :: Session -> Transaction (Either Error Session)
+pgReplaceSession session = do
+  let Session sid uid token expires = session
+  result <- pgGetSession sid
+  case result of
+    Left e -> return $ Left e
+    Right _ -> do
+      statement (unSessionId sid, unUserId uid, token, expires) replaceSession
+      return $ Right session
+
+
+pgGetSession :: SessionId -> Transaction (Either Error Session)
+pgGetSession sid = do
+  result <- statement (unSessionId sid) selectSession
+  case result of
+    Nothing ->
+      return $ Left $ NotFound "session" $ toText $ unSessionId sid
+    Just (uid, token, expires) ->
+      return $ Right $ Session sid (UserUUID uid) token expires
+
+
+pgListUserSessions :: UserIdentifier -> Transaction (Either Error [Session])
+pgListUserSessions userIdentifier = do
+  maybeUid <- resolveUserIdentifier userIdentifier
+  case maybeUid of
+    Just (UserUUID uid) -> do
+      result <- statement uid selectUserSessions
+      return $ Right $ map (session uid) $ toList result
+    Nothing -> return $ Left $ NotFound "user" $ userIdentifierToText userIdentifier
+  where
+    session uid (sid, token, expires) =
+      Session (SessionUUID sid) (UserUUID uid) token expires
 
 
 resolveUserIdentifier :: UserIdentifier -> Transaction (Maybe UserId)

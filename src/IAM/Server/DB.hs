@@ -15,6 +15,7 @@ import IAM.Membership
 import IAM.User
 import IAM.UserPolicy
 import IAM.Range
+import IAM.Session
 
 
 class DB db where
@@ -103,3 +104,23 @@ class DB db where
   -- | deleteGroupPolicyAttachment detaches a policy from a group.
   deleteGroupPolicyAttachment :: (MonadIO m, MonadError Error m) =>
     db -> GroupIdentifier -> UUID -> m GroupPolicyAttachment
+
+  -- | createSession adds a new session to the database.
+  createSession :: (MonadIO m, MonadError Error m) =>
+    db -> Session -> m Session
+
+  -- | getSession returns a session from the database by its id.
+  getSession :: (MonadIO m, MonadError Error m) =>
+    db -> SessionId -> m Session
+
+  -- | replaceSession updates an existing session in the database.
+  replaceSession :: (MonadIO m, MonadError Error m) =>
+    db -> Session -> m Session
+
+  -- | deleteSession removes a session from the database by its id.
+  deleteSession :: (MonadIO m, MonadError Error m) =>
+    db -> SessionId -> m Session
+
+  -- | listUserSessions returns a list of all sessions for a user.
+  listUserSessions :: (MonadIO m, MonadError Error m) =>
+    db -> UserIdentifier -> m [Session]

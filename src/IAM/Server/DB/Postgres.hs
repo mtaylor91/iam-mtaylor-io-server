@@ -103,3 +103,18 @@ instance DB PostgresDB where
 
   deleteGroupPolicyAttachment (PostgresDB pool) gid pid =
     runTransaction pool $ pgDeleteGroupPolicyAttachment gid pid
+
+  createSession (PostgresDB pool) s =
+    runTransaction pool $ pgCreateSession s
+
+  getSession (PostgresDB pool) sid =
+    runTransaction pool $ pgGetSession sid
+
+  deleteSession (PostgresDB pool) sid =
+    runTransaction pool $ pgDeleteSession sid
+
+  replaceSession (PostgresDB pool) s =
+    runTransaction pool $ pgReplaceSession s
+
+  listUserSessions (PostgresDB pool) uid =
+    runTransaction pool $ pgListUserSessions uid

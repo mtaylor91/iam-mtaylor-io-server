@@ -23,6 +23,14 @@ CREATE TABLE IF NOT EXISTS "policies" (
   "policy" JSONB NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS "sessions" (
+  "session_uuid" UUID PRIMARY KEY NOT NULL,
+  "session_user" UUID NOT NULL,
+  "session_token" TEXT NOT NULL,
+  "session_expires" TIMESTAMP NOT NULL,
+  FOREIGN KEY ("session_user") REFERENCES "users" ("user_uuid") ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS "users_groups" (
   "user_uuid" UUID NOT NULL,
   "group_uuid" UUID NOT NULL,

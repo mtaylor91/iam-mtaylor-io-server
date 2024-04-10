@@ -40,6 +40,7 @@ dependencies:
 - servant-server
 - stm
 - text
+- time
 - uuid
 - vector
 - wai
