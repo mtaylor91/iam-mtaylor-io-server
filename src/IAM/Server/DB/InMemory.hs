@@ -7,6 +7,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Except
 import Data.UUID (toText)
 
+import IAM.Error
 import IAM.Group
 import IAM.GroupPolicy
 import IAM.Identifiers

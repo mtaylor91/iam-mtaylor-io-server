@@ -52,6 +52,7 @@ library
       IAM.Command.List.Users
       IAM.Command.Server
       IAM.Config
+      IAM.Error
       IAM.Group
       IAM.GroupPolicy
       IAM.Identifiers

@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 module IAM.Server.Handlers
   ( getUserHandler
   , listUsersHandler
@@ -23,13 +22,12 @@ module IAM.Server.Handlers
 
 import Control.Monad.IO.Class
 import Control.Monad.Except
-import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe
-import Data.Text.Encoding
 import Data.UUID
 import Servant
 
 import IAM.Authorization
+import IAM.Error
 import IAM.Group
 import IAM.GroupPolicy
 import IAM.Identifiers
@@ -42,21 +40,12 @@ import IAM.User
 import IAM.UserPolicy
 
 
-dbError :: DBError -> ServerError
-dbError AlreadyExists  = err409
-dbError InternalError  = err500
-dbError NotImplemented = err501
-dbError (NotFound r n) = err404
-  { errBody = t r <> " " <> t n <> " not found" }
-  where t = fromStrict . encodeUtf8
-
-
 getUserHandler :: DB db => db -> Auth -> UserIdentifier -> Handler User
 getUserHandler db _ uid = do
   result <- liftIO $ runExceptT $ getUser db uid
   case result of
     Right user' -> return user'
-    Left err    -> throwError $ dbError err
+    Left err    -> errorHandler err
 
 
 listUsersHandler ::
@@ -66,7 +55,7 @@ listUsersHandler db _ maybeOffset maybeLimit = do
   result <- liftIO $ runExceptT $ listUsers db $ Range offset maybeLimit
   case result of
     Right users' -> return users'
-    Left err     -> throwError $ dbError err
+    Left err     -> errorHandler err
 
 
 createUserHandler :: DB db => db -> Auth -> User -> Handler User
@@ -74,7 +63,7 @@ createUserHandler db _ userPrincipal = do
   result <- liftIO $ runExceptT $ createUser db userPrincipal
   case result of
     Right user' -> return user'
-    Left err    -> throwError $ dbError err
+    Left err    -> errorHandler err
 
 
 deleteUserHandler :: DB db => db -> Auth -> UserIdentifier -> Handler User
@@ -82,7 +71,7 @@ deleteUserHandler db _ uid = do
   result <- liftIO $ runExceptT $ deleteUser db uid
   case result of
     Right user' -> return user'
-    Left err    -> throwError $ dbError err
+    Left err    -> errorHandler err
 
 
 getGroupHandler :: DB db => db -> Auth -> GroupIdentifier -> Handler Group
@@ -90,7 +79,7 @@ getGroupHandler db _ gid = do
   result <- liftIO $ runExceptT $ getGroup db gid
   case result of
     Right group' -> return group'
-    Left err     -> throwError $ dbError err
+    Left err     -> errorHandler err
 
 
 listGroupsHandler ::
@@ -100,7 +89,7 @@ listGroupsHandler db _ maybeOffset maybeLimit = do
   result <- liftIO $ runExceptT $ listGroups db $ Range offset maybeLimit
   case result of
     Right groups' -> return groups'
-    Left err      -> throwError $ dbError err
+    Left err      -> errorHandler err
 
 
 createGroupHandler :: DB db => db -> Auth -> Group -> Handler Group
@@ -108,7 +97,7 @@ createGroupHandler db _ group = do
   result <- liftIO $ runExceptT $ createGroup db group
   case result of
     Right group' -> return group'
-    Left err -> throwError $ dbError err
+    Left err -> errorHandler err
 
 
 deleteGroupHandler :: DB db => db -> Auth -> GroupIdentifier -> Handler Group
@@ -116,7 +105,7 @@ deleteGroupHandler db _ gid = do
   result <- liftIO $ runExceptT $ deleteGroup db gid
   case result of
     Right g -> return g
-    Left err -> throwError $ dbError err
+    Left err -> errorHandler err
 
 
 getPolicyHandler :: DB db => db -> Auth -> UUID -> Handler Policy
@@ -124,7 +113,7 @@ getPolicyHandler db _ policy = do
   result <- liftIO $ runExceptT $ getPolicy db policy
   case result of
     Right policy' -> return policy'
-    Left err      -> throwError $ dbError err
+    Left err      -> errorHandler err
 
 
 listPoliciesHandler :: DB db => db -> Auth -> Maybe Int -> Maybe Int -> Handler [UUID]
@@ -133,7 +122,7 @@ listPoliciesHandler db _ maybeOffset maybeLimit = do
   result <- liftIO $ runExceptT $ listPolicyIds db $ Range offset maybeLimit
   case result of
     Right pids -> return pids
-    Left err   -> throwError $ dbError err
+    Left err   -> errorHandler err
 
 
 createPolicyHandler :: DB db => db -> Auth -> Policy -> Handler Policy
@@ -147,7 +136,7 @@ createPolicyHandler db auth policy = do
       result <- liftIO $ runExceptT $ createPolicy db policy
       case result of
         Right policy' -> return policy'
-        Left err      -> throwError $ dbError err
+        Left err      -> errorHandler err
 
 
 deletePolicyHandler :: DB db => db -> Auth -> UUID -> Handler Policy
@@ -155,7 +144,7 @@ deletePolicyHandler db _ policy = do
   result <- liftIO $ runExceptT $ deletePolicy db policy
   case result of
     Right policy' -> return policy'
-    Left err      -> throwError $ dbError err
+    Left err      -> errorHandler err
 
 
 createMembershipHandler ::
@@ -164,7 +153,7 @@ createMembershipHandler db _ gid uid = do
   result <- liftIO $ runExceptT $ createMembership db uid gid
   case result of
     Right membership -> return membership
-    Left err         -> throwError $ dbError err
+    Left err         -> errorHandler err
 
 
 deleteMembershipHandler ::
@@ -173,7 +162,7 @@ deleteMembershipHandler db _ gid uid = do
   result <- liftIO $ runExceptT $ deleteMembership db uid gid
   case result of
     Right membership -> return membership
-    Left err         -> throwError $ dbError err
+    Left err         -> errorHandler err
 
 
 createUserPolicyAttachmentHandler :: DB db =>
@@ -185,14 +174,14 @@ createUserPolicyAttachmentHandler db auth uid pid = do
       if policy `isAllowedBy` policyRules callerPolicies
         then createUserPolicyAttachment'
         else throwError err403
-    Left err -> throwError $ dbError err
+    Left err -> errorHandler err
   where
     callerPolicies = authPolicies $ authorization auth
     createUserPolicyAttachment' = do
       result <- liftIO $ runExceptT $ createUserPolicyAttachment db uid pid
       case result of
         Right attachment -> return attachment
-        Left err         -> throwError $ dbError err
+        Left err         -> errorHandler err
 
 
 deleteUserPolicyAttachmentHandler :: DB db =>
@@ -201,7 +190,7 @@ deleteUserPolicyAttachmentHandler db _ uid pid = do
   result <- liftIO $ runExceptT $ deleteUserPolicyAttachment db uid pid
   case result of
     Right attachment -> return attachment
-    Left err         -> throwError $ dbError err
+    Left err         -> errorHandler err
 
 
 createGroupPolicyAttachmentHandler :: DB db =>
@@ -213,14 +202,14 @@ createGroupPolicyAttachmentHandler db auth gid pid = do
       if policy `isAllowedBy` policyRules callerPolicies
         then createGroupPolicyAttachment'
         else throwError err403
-    Left err -> throwError $ dbError err
+    Left err -> errorHandler err
   where
     callerPolicies = authPolicies $ authorization auth
     createGroupPolicyAttachment' = do
       result <- liftIO $ runExceptT $ createGroupPolicyAttachment db gid pid
       case result of
         Right attachment -> return attachment
-        Left err         -> throwError $ dbError err
+        Left err         -> errorHandler err
 
 
 deleteGroupPolicyAttachmentHandler :: DB db =>
@@ -229,7 +218,7 @@ deleteGroupPolicyAttachmentHandler db _ gid pid = do
   result <- liftIO $ runExceptT $ deleteGroupPolicyAttachment db gid pid
   case result of
     Right attachment -> return attachment
-    Left err         -> throwError $ dbError err
+    Left err         -> errorHandler err
 
 
 authorizeHandler :: DB db =>
@@ -237,13 +226,13 @@ authorizeHandler :: DB db =>
 authorizeHandler db req = do
   r0 <- liftIO $ runExceptT $ getUserId db userIdent
   uid <- case r0 of
-    Left e -> throwError $ dbError e
+    Left e -> throwError $ toServerError e
     Right uid' -> return uid'
 
   let host = authorizationRequestHost req
   result <- liftIO $ runExceptT $ listPoliciesForUser db uid host
   case result of
-    Left err -> throwError $ dbError err
+    Left err -> errorHandler err
     Right policies ->
       return $ AuthorizationResponse $
         if isAuthorized reqAction reqResource $ policyRules policies

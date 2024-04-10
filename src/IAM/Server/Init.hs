@@ -8,6 +8,7 @@ import Data.Text
 import Data.Text.Encoding
 import Data.UUID.V4
 
+import IAM.Error
 import IAM.Group
 import IAM.Identifiers
 import IAM.Policy

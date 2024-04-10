@@ -3,6 +3,7 @@ module IAM.Server.DB.Postgres ( connectToDatabase, PostgresDB(..) ) where
 
 import Control.Monad.Except
 import Data.ByteString (ByteString)
+import Data.Text (pack)
 import Data.Word (Word16)
 import Hasql.Pool (Pool)
 import Hasql.Transaction (Transaction)
@@ -10,6 +11,7 @@ import Hasql.Transaction.Sessions
 import qualified Hasql.Connection as Connection
 import qualified Hasql.Pool as Pool
 
+import IAM.Error
 import IAM.Server.DB
 import IAM.Server.DB.Postgres.Transactions
 
@@ -24,15 +26,15 @@ connectToDatabase host port database username password = do
   return $ PostgresDB pool
 
 
-runTransaction :: (MonadIO m, MonadError DBError m) =>
-  Pool -> Transaction (Either DBError a) -> m a
+runTransaction :: (MonadIO m, MonadError Error m) =>
+  Pool -> Transaction (Either Error a) -> m a
 runTransaction pool t = do
   result0 <- liftIO $ do
     result1 <- Pool.use pool $ transaction ReadCommitted Write t
     case result1 of
       Right (Right a) -> return $ Right a
       Right (Left err) -> return $ Left err
-      Left err -> print err >> return (Left InternalError)
+      Left err -> return (Left $ InternalError $ pack $ show err)
   either throwError return result0
 
 

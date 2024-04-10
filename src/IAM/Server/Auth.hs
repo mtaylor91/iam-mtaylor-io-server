@@ -28,6 +28,7 @@ import Servant.Server.Experimental.Auth
 
 import IAM.Authentication
 import IAM.Config (headerPrefix)
+import IAM.Error
 import IAM.Identifiers
 import IAM.Policy
 import IAM.Server.DB
@@ -94,7 +95,9 @@ authenticate host db req = do
             Nothing -> return (authReq, user)
             Just err -> throwError $ err401 { errBody = fromStrict $ encodeUtf8 err }
         Left (NotFound _ _) -> throwError $ err401 { errBody = "User not found" }
-        Left _ -> throwError err500
+        Left err -> do
+          liftIO $ print err
+          throwError err500
     Nothing -> do
       throwError $ err401 { errBody = "Missing or invalid authentication headers" }
   where
