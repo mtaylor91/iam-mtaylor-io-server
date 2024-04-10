@@ -17,7 +17,7 @@ trigger:
 ---
 kind: pipeline
 type: kubernetes
-name: build
+name: release
 steps:
 - name: version
   image: images.home.mtaylor.io/base:latest
