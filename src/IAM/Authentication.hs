@@ -19,7 +19,7 @@ actionFromMethod method = case parseMethod method of
     POST -> Write
     HEAD -> Read
     PUT -> Write
-    DELETE -> Delete
+    DELETE -> Write
     TRACE -> Read
     CONNECT -> Read
     OPTIONS -> Read

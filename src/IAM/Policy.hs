@@ -15,7 +15,7 @@ data Effect = Allow | Deny deriving (Eq, Show)
 $(deriveJSON defaultOptions ''Effect)
 
 
-data Action = Read | Write | Delete deriving (Eq, Show)
+data Action = Read | Write deriving (Eq, Show)
 
 $(deriveJSON defaultOptions ''Action)
 
