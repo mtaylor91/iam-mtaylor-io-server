@@ -20,10 +20,12 @@ import Network.Wai.Handler.Warp
 import Servant
 
 import IAM.API
+import IAM.Identifiers
 import IAM.Server.Auth
 import IAM.Server.DB
 import IAM.Server.Handlers
-import IAM.Types
+import IAM.User
+
 
 app :: DB db => Text -> db -> Application
 app host db = serveWithContext api (authContext host db) $ server db

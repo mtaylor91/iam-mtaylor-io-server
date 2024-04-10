@@ -15,7 +15,7 @@ import Data.UUID
 import Data.UUID.V4
 import Network.HTTP.Client
 
-import IAM.Auth
+import IAM.Authentication
 import IAM.Config (configEmail, configSecretKey, headerPrefix)
 
 

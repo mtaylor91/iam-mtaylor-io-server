@@ -19,7 +19,14 @@ module IAM.API
 import Data.UUID
 import Servant
 
-import IAM.Types
+import IAM.Authorization
+import IAM.Group
+import IAM.GroupPolicy
+import IAM.Identifiers
+import IAM.Membership
+import IAM.Policy
+import IAM.User
+import IAM.UserPolicy
 
 
 type API = AuthProtect "signature-auth" :> IAMAPI

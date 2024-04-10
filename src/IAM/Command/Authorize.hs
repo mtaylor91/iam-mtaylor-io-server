@@ -12,10 +12,11 @@ import Network.HTTP.Client.TLS
 import Servant.Client
 import Text.Read
 
-import IAM.Auth
+import IAM.Authentication
+import IAM.Authorization
 import IAM.Client.Auth
 import IAM.Client.Util
-import IAM.Types
+import IAM.Identifiers
 import qualified IAM.Client
 
 

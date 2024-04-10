@@ -28,7 +28,15 @@ import Servant
 import Servant.Client
 import Data.UUID (UUID)
 import IAM.API
-import IAM.Types
+
+import IAM.Authorization
+import IAM.Group
+import IAM.GroupPolicy
+import IAM.Identifiers
+import IAM.Membership
+import IAM.Policy
+import IAM.User
+import IAM.UserPolicy
 
 
 type UsersClientM

@@ -7,7 +7,10 @@ import Data.Maybe
 import Data.Text
 import Data.UUID
 
-import IAM.Types
+import IAM.Group
+import IAM.Identifiers
+import IAM.Policy
+import IAM.User
 
 
 data InMemoryState = InMemoryState

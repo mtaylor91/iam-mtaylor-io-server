@@ -29,10 +29,18 @@ import Data.Text.Encoding
 import Data.UUID
 import Servant
 
+import IAM.Authorization
+import IAM.Group
+import IAM.GroupPolicy
+import IAM.Identifiers
+import IAM.Membership
+import IAM.Policy
+import IAM.Range
 import IAM.Server.Auth
 import IAM.Server.DB
-import IAM.Server.Policy
-import IAM.Types
+import IAM.User
+import IAM.UserPolicy
+
 
 dbError :: DBError -> ServerError
 dbError AlreadyExists  = err409
@@ -43,12 +51,14 @@ dbError (NotFound r n) = err404
   where
     t = fromStrict . encodeUtf8
 
+
 getUserHandler :: DB db => db -> Auth -> UserIdentifier -> Handler User
 getUserHandler db _ uid = do
   result <- liftIO $ runExceptT $ getUser db uid
   case result of
     Right user' -> return user'
     Left err    -> throwError $ dbError err
+
 
 listUsersHandler ::
   DB db => db -> Auth -> Maybe Int -> Maybe Int -> Handler [UserIdentifier]
@@ -59,12 +69,14 @@ listUsersHandler db _ maybeOffset maybeLimit = do
     Right users' -> return users'
     Left err     -> throwError $ dbError err
 
+
 createUserHandler :: DB db => db -> Auth -> User -> Handler User
 createUserHandler db _ userPrincipal = do
   result <- liftIO $ runExceptT $ createUser db userPrincipal
   case result of
     Right user' -> return user'
     Left err    -> throwError $ dbError err
+
 
 deleteUserHandler :: DB db => db -> Auth -> UserIdentifier -> Handler User
 deleteUserHandler db _ uid = do
@@ -73,12 +85,14 @@ deleteUserHandler db _ uid = do
     Right user' -> return user'
     Left err    -> throwError $ dbError err
 
+
 getGroupHandler :: DB db => db -> Auth -> GroupIdentifier -> Handler Group
 getGroupHandler db _ gid = do
   result <- liftIO $ runExceptT $ getGroup db gid
   case result of
     Right group' -> return group'
     Left err     -> throwError $ dbError err
+
 
 listGroupsHandler ::
   DB db => db -> Auth -> Maybe Int -> Maybe Int -> Handler [GroupIdentifier]
@@ -89,12 +103,14 @@ listGroupsHandler db _ maybeOffset maybeLimit = do
     Right groups' -> return groups'
     Left err      -> throwError $ dbError err
 
+
 createGroupHandler :: DB db => db -> Auth -> Group -> Handler Group
 createGroupHandler db _ group = do
   result <- liftIO $ runExceptT $ createGroup db group
   case result of
     Right group' -> return group'
     Left err -> throwError $ dbError err
+
 
 deleteGroupHandler :: DB db => db -> Auth -> GroupIdentifier -> Handler Group
 deleteGroupHandler db _ gid = do
@@ -103,12 +119,14 @@ deleteGroupHandler db _ gid = do
     Right g -> return g
     Left err -> throwError $ dbError err
 
+
 getPolicyHandler :: DB db => db -> Auth -> UUID -> Handler Policy
 getPolicyHandler db _ policy = do
   result <- liftIO $ runExceptT $ getPolicy db policy
   case result of
     Right policy' -> return policy'
     Left err      -> throwError $ dbError err
+
 
 listPoliciesHandler :: DB db => db -> Auth -> Maybe Int -> Maybe Int -> Handler [UUID]
 listPoliciesHandler db _ maybeOffset maybeLimit = do
@@ -117,6 +135,7 @@ listPoliciesHandler db _ maybeOffset maybeLimit = do
   case result of
     Right pids -> return pids
     Left err   -> throwError $ dbError err
+
 
 createPolicyHandler :: DB db => db -> Auth -> Policy -> Handler Policy
 createPolicyHandler db auth policy = do
@@ -131,12 +150,14 @@ createPolicyHandler db auth policy = do
         Right policy' -> return policy'
         Left err      -> throwError $ dbError err
 
+
 deletePolicyHandler :: DB db => db -> Auth -> UUID -> Handler Policy
 deletePolicyHandler db _ policy = do
   result <- liftIO $ runExceptT $ deletePolicy db policy
   case result of
     Right policy' -> return policy'
     Left err      -> throwError $ dbError err
+
 
 createMembershipHandler :: DB db => db -> Auth -> Membership -> Handler Membership
 createMembershipHandler db _ (Membership uid gid) = do
@@ -145,6 +166,7 @@ createMembershipHandler db _ (Membership uid gid) = do
     Right membership -> return membership
     Left err         -> throwError $ dbError err
 
+
 deleteMembershipHandler ::
   DB db => db -> Auth -> GroupIdentifier -> UserIdentifier -> Handler Membership
 deleteMembershipHandler db _ gid uid = do
@@ -152,6 +174,7 @@ deleteMembershipHandler db _ gid uid = do
   case result of
     Right membership -> return membership
     Left err         -> throwError $ dbError err
+
 
 createUserPolicyAttachmentHandler :: DB db =>
   db -> Auth -> UserIdentifier -> UUID -> Handler UserPolicyAttachment
@@ -171,6 +194,7 @@ createUserPolicyAttachmentHandler db auth uid pid = do
         Right attachment -> return attachment
         Left err         -> throwError $ dbError err
 
+
 deleteUserPolicyAttachmentHandler :: DB db =>
   db -> Auth -> UserIdentifier -> UUID -> Handler UserPolicyAttachment
 deleteUserPolicyAttachmentHandler db _ uid pid = do
@@ -178,6 +202,7 @@ deleteUserPolicyAttachmentHandler db _ uid pid = do
   case result of
     Right attachment -> return attachment
     Left err         -> throwError $ dbError err
+
 
 createGroupPolicyAttachmentHandler :: DB db =>
   db -> Auth -> GroupIdentifier -> UUID -> Handler GroupPolicyAttachment
@@ -196,6 +221,7 @@ createGroupPolicyAttachmentHandler db auth gid pid = do
       case result of
         Right attachment -> return attachment
         Left err         -> throwError $ dbError err
+
 
 deleteGroupPolicyAttachmentHandler :: DB db =>
   db -> Auth -> GroupIdentifier -> UUID -> Handler GroupPolicyAttachment

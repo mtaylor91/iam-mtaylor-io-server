@@ -1,14 +1,54 @@
 {-# LANGUAGE OverloadedStrings #-}
-module IAM.Server.Policy
-  ( isAllowedBy
-  , isAuthorized
-  , policyRules
-  , resourceMatches
+{-# LANGUAGE TemplateHaskell #-}
+module IAM.Policy
+  ( module IAM.Policy
   ) where
 
+import Data.Aeson
+import Data.Aeson.TH
 import Data.Text hiding (any, all, concatMap)
+import Data.UUID
 
-import IAM.Types
+
+data Effect = Allow | Deny deriving (Eq, Show)
+
+$(deriveJSON defaultOptions ''Effect)
+
+
+data Action = Read | Write | Delete deriving (Eq, Show)
+
+$(deriveJSON defaultOptions ''Action)
+
+
+data Rule = Rule
+  { effect :: !Effect
+  , action :: !Action
+  , resource :: !Text
+  } deriving (Eq, Show)
+
+$(deriveJSON defaultOptions ''Rule)
+
+
+data Policy = Policy
+  { policyId :: !UUID
+  , hostname :: !Text
+  , statements :: ![Rule]
+  } deriving (Eq, Show)
+
+instance FromJSON Policy where
+  parseJSON (Object obj) = do
+    id' <- obj .: "id"
+    hostname' <- obj .: "hostname"
+    statements' <- obj .: "statements"
+    return $ Policy id' hostname' statements'
+  parseJSON _ = fail "Invalid JSON"
+
+instance ToJSON Policy where
+  toJSON (Policy id' hostname' statements') = object
+    [ "id" .= id'
+    , "hostname" .= hostname'
+    , "statements" .= statements'
+    ]
 
 
 -- | isAllowedBy returns whether a policy is allowed by a set of rules.

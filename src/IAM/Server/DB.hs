@@ -6,7 +6,14 @@ import Control.Monad.Except
 import Data.Text
 import Data.UUID
 
-import IAM.Types
+import IAM.Group
+import IAM.GroupPolicy
+import IAM.Identifiers
+import IAM.Policy
+import IAM.Membership
+import IAM.User
+import IAM.UserPolicy
+import IAM.Range
 
 
 data DBError

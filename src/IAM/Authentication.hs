@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-module IAM.Auth
-  ( module IAM.Auth
+module IAM.Authentication
+  ( module IAM.Authentication
   ) where
 
 import Data.ByteString (ByteString)
@@ -8,7 +8,7 @@ import Data.Text.Encoding (encodeUtf8)
 import Data.UUID (UUID, toText)
 import Network.HTTP.Types
 
-import IAM.Types
+import IAM.Policy (Action(..))
 
 
 -- | Action that the request is trying to perform
@@ -19,7 +19,7 @@ actionFromMethod method = case parseMethod method of
     POST -> Write
     HEAD -> Read
     PUT -> Write
-    DELETE -> Write
+    DELETE -> Delete
     TRACE -> Read
     CONNECT -> Read
     OPTIONS -> Read

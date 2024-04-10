@@ -7,9 +7,16 @@ import Control.Monad.IO.Class
 import Control.Monad.Except
 import Data.UUID (toText)
 
+import IAM.Group
+import IAM.GroupPolicy
+import IAM.Identifiers
+import IAM.Membership
+import IAM.Policy
+import IAM.Range
 import IAM.Server.DB
 import IAM.Server.DB.InMemory.State
-import IAM.Types
+import IAM.User
+import IAM.UserPolicy
 
 
 -- | InMemory is an in-memory implementation of the DB typeclass.

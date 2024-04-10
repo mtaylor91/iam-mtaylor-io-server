@@ -26,7 +26,8 @@ source-repository head
 library
   exposed-modules:
       IAM.API
-      IAM.Auth
+      IAM.Authentication
+      IAM.Authorization
       IAM.Client
       IAM.Client.Auth
       IAM.Client.Util
@@ -51,6 +52,12 @@ library
       IAM.Command.List.Users
       IAM.Command.Server
       IAM.Config
+      IAM.Group
+      IAM.GroupPolicy
+      IAM.Identifiers
+      IAM.Membership
+      IAM.Policy
+      IAM.Range
       IAM.Server.API
       IAM.Server.Auth
       IAM.Server.DB
@@ -61,8 +68,8 @@ library
       IAM.Server.DB.Postgres.Transactions
       IAM.Server.Handlers
       IAM.Server.Init
-      IAM.Server.Policy
-      IAM.Types
+      IAM.User
+      IAM.UserPolicy
       IAM.Util
   other-modules:
       Paths_iam_mtaylor_io

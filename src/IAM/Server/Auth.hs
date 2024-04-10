@@ -26,11 +26,12 @@ import Prelude hiding (takeWhile)
 import Servant
 import Servant.Server.Experimental.Auth
 
-import IAM.Auth
+import IAM.Authentication
 import IAM.Config (headerPrefix)
+import IAM.Identifiers
+import IAM.Policy
 import IAM.Server.DB
-import IAM.Server.Policy
-import IAM.Types
+import IAM.User
 
 
 data Auth = Auth

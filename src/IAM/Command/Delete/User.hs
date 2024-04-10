@@ -14,7 +14,7 @@ import Text.Read
 
 import IAM.Client.Auth
 import IAM.Client.Util
-import IAM.Types
+import IAM.Identifiers
 import qualified IAM.Client
 
 

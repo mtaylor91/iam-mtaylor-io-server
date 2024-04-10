@@ -11,9 +11,16 @@ import Data.UUID (UUID, toText)
 import Data.Vector (toList)
 import Hasql.Transaction (Transaction, statement)
 
+import IAM.Group
+import IAM.GroupPolicy
+import IAM.Identifiers
+import IAM.Policy
+import IAM.Membership
 import IAM.Server.DB (DBError(..))
 import IAM.Server.DB.Postgres.Queries
-import IAM.Types
+import IAM.Range
+import IAM.User
+import IAM.UserPolicy
 
 
 pgGetUser :: UserIdentifier -> Transaction (Either DBError User)
