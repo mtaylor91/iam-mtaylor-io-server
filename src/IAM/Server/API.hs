@@ -9,7 +9,6 @@ module IAM.Server.API
   , GroupsAPI
   , PolicyAPI
   , PoliciesAPI
-  , MembershipsAPI
   , UserPolicyAPI
   , GroupPolicyAPI
   ) where
@@ -39,7 +38,6 @@ server db caller
   :<|> usersAPI db caller
   :<|> groupsAPI db caller
   :<|> policiesAPI db caller
-  :<|> membershipsAPI db caller
   :<|> authorizeAPI db caller
 
 callerAPI :: DB db => db -> Auth -> Server UserAPI
@@ -76,11 +74,18 @@ groupAPI db caller gid
   = getGroupHandler db caller gid
   :<|> deleteGroupHandler db caller gid
   :<|> groupPolicyAPI db caller gid
+  :<|> groupMembershipAPI db caller gid
 
 groupPolicyAPI :: DB db => db -> Auth -> GroupIdentifier -> UUID -> Server GroupPolicyAPI
 groupPolicyAPI db caller gid pid
   = createGroupPolicyAttachmentHandler db caller gid pid
   :<|> deleteGroupPolicyAttachmentHandler db caller gid pid
+
+groupMembershipAPI ::
+  DB db => db -> Auth -> GroupIdentifier -> UserIdentifier -> Server MembershipAPI
+groupMembershipAPI db caller gid uid
+  = createMembershipHandler db caller gid uid
+  :<|> deleteMembershipHandler db caller gid uid
 
 policiesAPI :: DB db => db -> Auth -> Server PoliciesAPI
 policiesAPI db caller
@@ -92,11 +97,6 @@ policyAPI :: DB db => db -> Auth -> UUID -> Server PolicyAPI
 policyAPI db caller pid
   = getPolicyHandler db caller pid
   :<|> deletePolicyHandler db caller pid
-
-membershipsAPI :: DB db => db -> Auth -> Server MembershipsAPI
-membershipsAPI db caller
-  = createMembershipHandler db caller
-  :<|> deleteMembershipHandler db caller
 
 authorizeAPI :: DB db => db -> Auth -> Server AuthorizeAPI
 authorizeAPI db _ = authorizeHandler db

@@ -159,9 +159,10 @@ deletePolicyHandler db _ policy = do
     Left err      -> throwError $ dbError err
 
 
-createMembershipHandler :: DB db => db -> Auth -> Membership -> Handler Membership
-createMembershipHandler db _ (Membership uid gid) = do
-  result <- liftIO $ runExceptT $ createMembership db (UserId uid) (GroupId gid)
+createMembershipHandler ::
+  DB db => db -> Auth -> GroupIdentifier -> UserIdentifier -> Handler Membership
+createMembershipHandler db _ gid uid = do
+  result <- liftIO $ runExceptT $ createMembership db uid gid
   case result of
     Right membership -> return membership
     Left err         -> throwError $ dbError err

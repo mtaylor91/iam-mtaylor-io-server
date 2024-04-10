@@ -8,7 +8,7 @@ module IAM.API
   , GroupAPI
   , GroupsAPI
   , GroupPolicyAPI
-  , MembershipsAPI
+  , MembershipAPI
   , PolicyAPI
   , PoliciesAPI
   , AuthorizeAPI
@@ -37,7 +37,6 @@ type IAMAPI
   :<|> ("users" :> UsersAPI)
   :<|> ( "groups" :> GroupsAPI )
   :<|> ( "policies" :> PoliciesAPI )
-  :<|> ( "memberships" :> MembershipsAPI )
   :<|> ( "authorize" :> AuthorizeAPI )
     )
 
@@ -68,6 +67,7 @@ type GroupAPI
   = ( Get '[JSON] Group
   :<|> Delete '[JSON] Group
   :<|> "policies" :> Capture "policy" UUID :> GroupPolicyAPI
+  :<|> "members" :> Capture "user" UserIdentifier :> MembershipAPI
     )
 
 type GroupPolicyAPI
@@ -75,10 +75,10 @@ type GroupPolicyAPI
   :<|> Delete '[JSON] GroupPolicyAttachment
     )
 
-type MembershipsAPI
-  = ReqBody '[JSON] Membership :> PostCreated '[JSON] Membership
-  :<|> ( Capture "group" GroupIdentifier :> Capture "user" UserIdentifier
-    :> Delete '[JSON] Membership )
+type MembershipAPI
+  = ( PostCreated '[JSON] Membership
+  :<|> Delete '[JSON] Membership
+    )
 
 type PoliciesAPI
   = ( QueryParam "offset" Int :> QueryParam "limit" Int :> Get '[JSON] [UUID]
