@@ -48,8 +48,7 @@ dbError InternalError  = err500
 dbError NotImplemented = err501
 dbError (NotFound r n) = err404
   { errBody = t r <> " " <> t n <> " not found" }
-  where
-    t = fromStrict . encodeUtf8
+  where t = fromStrict . encodeUtf8
 
 
 getUserHandler :: DB db => db -> Auth -> UserIdentifier -> Handler User
