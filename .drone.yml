@@ -11,6 +11,8 @@ steps:
     username: anonymous
     password: anonymous
     registry: images.home.mtaylor.io
+    tags:
+    - ${DRONE_COMMIT_BRANCH}
 trigger:
   event:
   - push
