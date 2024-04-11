@@ -19,8 +19,8 @@ import qualified IAM.Client
 
 
 data ListUsersOptions = ListUsersOptions
-  { listUsersOffset :: Maybe Int
-  , listUsersLimit :: Maybe Int
+  { listUsersOffset :: !(Maybe Int)
+  , listUsersLimit :: !(Maybe Int)
   } deriving (Show)
 
 
