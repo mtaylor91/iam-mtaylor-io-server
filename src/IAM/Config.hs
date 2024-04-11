@@ -3,6 +3,7 @@ module IAM.Config
   , configPublicKey
   , configSecretKey
   , configMaybeSessionToken
+  , configSessionId
   , configURL
   , envPrefix
   , headerPrefix
@@ -16,6 +17,7 @@ import Data.UUID
 import System.Environment
 import qualified Data.Text as T
 
+import IAM.Session
 import IAM.Util
 
 
@@ -37,6 +39,14 @@ configPublicKey = loadNamespaceEnvConfig "PUBLIC_KEY"
 
 configSecretKey :: IO String
 configSecretKey = loadNamespaceEnvConfig "SECRET_KEY"
+
+
+configSessionId :: IO SessionId
+configSessionId = do
+  t <- loadNamespaceEnvConfig "SESSION_ID"
+  case fromText (T.pack t) of
+    Nothing -> throw $ userError "Invalid session ID"
+    Just uuid -> return $ SessionUUID uuid
 
 
 configMaybeSessionToken :: IO (Maybe String)

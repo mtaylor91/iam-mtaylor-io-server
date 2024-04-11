@@ -52,6 +52,7 @@ library
       IAM.Command.List.Sessions
       IAM.Command.List.Users
       IAM.Command.Login
+      IAM.Command.Logout
       IAM.Command.Server
       IAM.Config
       IAM.Error

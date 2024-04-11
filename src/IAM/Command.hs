@@ -9,6 +9,7 @@ import IAM.Command.Delete
 import IAM.Command.Get
 import IAM.Command.List
 import IAM.Command.Login
+import IAM.Command.Logout
 import IAM.Command.Keypair
 import IAM.Command.Server
 
@@ -20,6 +21,7 @@ data Command
   | Get !GetCommand
   | List !ListCommand
   | Login !LoginOptions
+  | Logout !LogoutOptions
   | Keypair !KeypairOptions
   | Server !ServerOptions
   deriving (Show)
@@ -43,6 +45,8 @@ options = Options <$> hsubparser
     (info (List <$> listCommand) (progDesc "List resources"))
   <> command "login"
     (info (Login <$> loginOptions) (progDesc "Login to the service"))
+  <> command "logout"
+    (info (Logout <$> logoutOptions) (progDesc "Logout of the service"))
   <> command "keypair"
     (info (Keypair <$> keypairOptions) (progDesc "Generate a keypair"))
   <> command "server"
@@ -65,6 +69,8 @@ runOptions opts =
       list cmd
     Options (Login opts') ->
       login opts'
+    Options (Logout opts') ->
+      logout opts'
     Options (Keypair opts') ->
       keypair opts'
     Options (Server opts') ->

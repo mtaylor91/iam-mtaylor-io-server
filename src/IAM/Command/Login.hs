@@ -5,6 +5,7 @@ module IAM.Command.Login
   ) where
 
 import Data.Text (unpack)
+import Data.UUID (toText)
 import Options.Applicative
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
@@ -30,9 +31,12 @@ login LoginOptions = do
   r <- runClientM createSession' $ mkClientEnv mgr url
   case r of
     Right session ->
-      let token = createSessionToken session
+      let sid = toText $ unSessionId $ createSessionId session
+          token = createSessionToken session
           prefix = "export " ++ envPrefix ++ "_"
-       in putStrLn $ prefix ++ "SESSION_TOKEN=\"" ++ unpack token ++ "\""
+       in do
+        putStrLn $ prefix ++ "SESSION_ID=\"" ++ unpack sid ++ "\""
+        putStrLn $ prefix ++ "SESSION_TOKEN=\"" ++ unpack token ++ "\""
     Left err ->
       handleClientError err
 
