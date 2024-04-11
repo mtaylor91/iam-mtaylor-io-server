@@ -32,6 +32,7 @@ import IAM.Error
 import IAM.Identifiers
 import IAM.Policy
 import IAM.Server.DB
+import IAM.Session
 import IAM.User
 
 
@@ -47,8 +48,9 @@ data Authentication = Authentication
   } deriving (Eq, Show)
 
 
-newtype Authorization = Authorization
+data Authorization = Authorization
   { authPolicies :: [Policy]
+  , authSession :: Maybe Session
   } deriving (Eq, Show)
 
 
@@ -137,11 +139,20 @@ authorize host db req authN = do
         Left (NotFound _ _) -> throwError $ err401 { errBody = "User not found" }
         Left _ -> throwError err500
 
+  maybeSession <- case authRequestSessionToken $ authRequest authN of
+    Nothing -> return Nothing
+    Just token -> do
+      result <- liftIO $ runExceptT $ getSessionByToken db (UserId callerUserId) token
+      case result of
+        Right session -> return $ Just session
+        Left (NotFound _ _) -> throwError $ err401 { errBody = "Session not found" }
+        Left _ -> throwError err500
+
   policiesResult <- liftIO $ runExceptT $ listPoliciesForUser db callerUserId host
   case policiesResult of
     Right policies -> do
       if authorized req policies
-        then let authZ = Authorization policies in return $ Auth authN authZ
+        then let authZ = Authorization policies maybeSession in return $ Auth authN authZ
         else throwError err403
     Left _ -> throwError err500
 
