@@ -34,15 +34,13 @@ instance ToHttpApiData SessionId where
 data Session = Session
   { sessionId :: !SessionId
   , sessionUser :: !UserId
-  , sessionToken :: !Text
   , sessionExpiration :: !UTCTime
   } deriving (Eq, Show)
 
 instance ToJSON Session where
-  toJSON (Session sid token user expiration) = object
+  toJSON (Session sid user expiration) = object
     [ "id" .= sid
     , "user" .= user
-    , "token" .= token
     , "expiration" .= expiration
     ]
 
@@ -50,19 +48,48 @@ instance FromJSON Session where
   parseJSON = withObject "Session" $ \o -> do
     sid <- o .: "id"
     user <- o .: "user"
-    token <- o .: "token"
     expiration <- o .: "expiration"
-    return $ Session sid user token expiration
-
-
-createSession :: UserId -> IO Session
-createSession uid = do
-  uuid <- nextRandom
-  now <- getCurrentTime
-  randomBytes <- getEntropy 32
-  let token = encodeBase64 randomBytes
-  return $ Session (SessionUUID uuid) uid token (addUTCTime 3600 now)
+    return $ Session sid user expiration
 
 
 refreshSession :: Session -> Session
 refreshSession s = s { sessionExpiration = addUTCTime 3600 $ sessionExpiration s }
+
+
+data CreateSession = CreateSession
+  { createSessionId :: !SessionId
+  , createSessionUser :: !UserId
+  , createSessionToken :: !Text
+  , createSessionExpiration :: !UTCTime
+  } deriving (Eq, Show)
+
+instance ToJSON CreateSession where
+  toJSON (CreateSession sid user token expiration) = object
+    [ "id" .= sid
+    , "user" .= user
+    , "token" .= token
+    , "expiration" .= expiration
+    ]
+
+instance FromJSON CreateSession where
+  parseJSON = withObject "CreateSession" $ \o -> do
+    sid <- o .: "id"
+    user <- o .: "user"
+    token <- o .: "token"
+    expiration <- o .: "expiration"
+    return $ CreateSession sid user token expiration
+
+
+createSession :: UserId -> IO CreateSession
+createSession uid = do
+  uuid <- nextRandom
+  now <- getCurrentTime
+  randomBytes <- getEntropy 32
+  let sid = SessionUUID uuid
+  let token = encodeBase64 randomBytes
+  let expiration = addUTCTime 3600 now
+  return $ CreateSession sid uid token expiration
+
+
+toSession :: CreateSession -> Session
+toSession (CreateSession sid uid _ expiration) = Session sid uid expiration

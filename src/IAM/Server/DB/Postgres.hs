@@ -14,6 +14,7 @@ import qualified Hasql.Pool as Pool
 import IAM.Error
 import IAM.Server.DB
 import IAM.Server.DB.Postgres.Transactions
+import IAM.Session
 
 
 newtype PostgresDB = PostgresDB Pool
@@ -104,7 +105,8 @@ instance DB PostgresDB where
   deleteGroupPolicyAttachment (PostgresDB pool) gid pid =
     runTransaction pool $ pgDeleteGroupPolicyAttachment gid pid
 
-  createSession (PostgresDB pool) s =
+  createSession (PostgresDB pool) uid = do
+    s <- liftIO $ IAM.Session.createSession uid
     runTransaction pool $ pgCreateSession s
 
   getSessionById (PostgresDB pool) uid sid =
@@ -116,8 +118,8 @@ instance DB PostgresDB where
   deleteSession (PostgresDB pool) uid sid =
     runTransaction pool $ pgDeleteSession uid sid
 
-  replaceSession (PostgresDB pool) uid s =
-    runTransaction pool $ pgReplaceSession uid s
+  refreshSession (PostgresDB pool) uid sid =
+    runTransaction pool $ pgRefreshSession uid sid
 
   listUserSessions (PostgresDB pool) uid range =
     runTransaction pool $ pgListUserSessions uid range

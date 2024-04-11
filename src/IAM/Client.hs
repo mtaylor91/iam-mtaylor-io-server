@@ -62,7 +62,7 @@ type UserPolicyClientM
 
 
 type UserSessionsClientM
-  = ClientM Session
+  = ClientM CreateSession
   :<|> (Maybe Int -> Maybe Int -> ClientM [Session])
   :<|> (SessionId -> UserSessionClientM)
 
@@ -125,7 +125,7 @@ data UserPolicyClient = UserPolicyClient
 
 
 data UserSessionsClient = UserSessionsClient
-  { createSession :: !(ClientM Session)
+  { createSession :: !(ClientM CreateSession)
   , listSessions :: !(Maybe Int -> Maybe Int -> ClientM [Session])
   , sessionClient :: !(SessionId -> UserSessionClient)
   }

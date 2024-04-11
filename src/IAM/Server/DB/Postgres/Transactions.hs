@@ -435,9 +435,9 @@ pgDeleteGroupPolicyAttachment groupIdentifier pid = do
     Nothing -> return $ Left $ NotFound "group" $ groupIdentifierToText groupIdentifier
 
 
-pgCreateSession :: Session -> Transaction (Either Error Session)
+pgCreateSession :: CreateSession -> Transaction (Either Error CreateSession)
 pgCreateSession session = do
-  let Session sid uid token expires = session
+  let CreateSession sid uid token expires = session
   statement (unSessionId sid, unUserId uid, token, expires) insertSession
   return $ Right session
 
@@ -452,15 +452,15 @@ pgDeleteSession uid sid = do
       return $ Right session
 
 
-pgReplaceSession :: UserIdentifier -> Session -> Transaction (Either Error Session)
-pgReplaceSession uid session = do
-  let Session sid uid' token expires = session
+pgRefreshSession :: UserIdentifier -> SessionId -> Transaction (Either Error Session)
+pgRefreshSession uid sid = do
   result <- pgGetSessionById uid sid
   case result of
     Left e -> return $ Left e
-    Right _ -> do
-      statement (unSessionId sid, unUserId uid', token, expires) replaceSession
-      return $ Right session
+    Right session -> do
+      let session' = refreshSession session
+      statement (unSessionId sid, sessionExpiration session') updateSessionExpiration
+      return $ Right session'
 
 
 pgGetSessionById :: UserIdentifier -> SessionId -> Transaction (Either Error Session)
@@ -472,8 +472,8 @@ pgGetSessionById uid sid = do
       case result of
         Nothing ->
           return $ Left $ NotFound "session" $ toText $ unSessionId sid
-        Just (token, expires) ->
-          return $ Right $ Session sid (UserUUID uuid) token expires
+        Just (_, expires) ->
+          return $ Right $ Session sid (UserUUID uuid) expires
     Nothing -> return $ Left $ NotFound "user" $ userIdentifierToText uid
 
 
@@ -486,7 +486,7 @@ pgGetSessionByToken uid token = do
       case result of
         Nothing -> return $ Left $ NotFound "session" token
         Just (sid, expires) ->
-          return $ Right $ Session (SessionUUID sid) (UserUUID uuid) token expires
+          return $ Right $ Session (SessionUUID sid) (UserUUID uuid) expires
     Nothing -> return $ Left $ NotFound "user" $ userIdentifierToText uid
 
 
@@ -501,8 +501,7 @@ pgListUserSessions userIdentifier (Range offset maybeLimit) = do
       return $ Right $ map (session uid) $ toList result
     Nothing -> return $ Left $ NotFound "user" $ userIdentifierToText userIdentifier
   where
-    session uid (sid, token, expires) =
-      Session (SessionUUID sid) (UserUUID uid) token expires
+    session uid (sid, _, expires) = Session (SessionUUID sid) (UserUUID uid) expires
 
 
 resolveUserIdentifier :: UserIdentifier -> Transaction (Maybe UserId)

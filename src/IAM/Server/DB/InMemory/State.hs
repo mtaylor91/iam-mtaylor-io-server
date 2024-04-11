@@ -18,7 +18,7 @@ data InMemoryState = InMemoryState
   { users :: ![UserId]
   , groups :: ![GroupId]
   , policies :: ![Policy]
-  , sessions :: ![Session]
+  , sessions :: ![(Text, Session)]
   , usersEmails :: ![(UserId, Text)]
   , groupsNames :: ![(GroupId, Text)]
   , memberships :: ![(UserId, GroupId)]
@@ -107,12 +107,20 @@ policyState pid f s =
   where p = updatePolicyState s pid
 
 
-sessionState :: forall f. Functor f =>
+sessionStateById :: forall f. Functor f =>
   SessionId -> (Maybe Session -> f (Maybe Session)) -> InMemoryState -> f InMemoryState
-sessionState sid f s =
-  case Prelude.filter ((== sid) . sessionId) $ sessions s of
-    [] -> updateSessionState s sid <$> f Nothing
-    session:_ -> updateSessionState s sid <$> f (Just session)
+sessionStateById sid f s =
+  case Prelude.filter ((== sid) . sessionId . snd) $ sessions s of
+    [] -> s <$ f Nothing
+    (_, session):_ -> s <$ f (Just session)
+
+
+sessionStateByToken :: forall f. Functor f =>
+  Text -> (Maybe Session -> f (Maybe Session)) -> InMemoryState -> f InMemoryState
+sessionStateByToken token f s =
+  case Prelude.filter ((== token) . fst) $ sessions s of
+    [] -> s <$ f Nothing
+    (_, session):_ -> s <$ f (Just session)
 
 
 updateUserState :: InMemoryState -> UserId -> Maybe User -> InMemoryState
@@ -185,9 +193,9 @@ updatePolicyState s pid Nothing = s
 
 updateSessionState :: InMemoryState -> SessionId -> Maybe Session -> InMemoryState
 updateSessionState s sid (Just session) = s
-  { sessions = session : Prelude.filter ((/= sid) . sessionId) (sessions s) }
+  { sessions = (pack $ show sid, session) : Prelude.filter ((/= sid) . sessionId . snd) (sessions s) }
 updateSessionState s sid Nothing = s
-  { sessions = Prelude.filter ((/= sid) . sessionId) (sessions s) }
+  { sessions = Prelude.filter ((/= sid) . sessionId . snd) (sessions s) }
 
 
 resolveUserIdentifier :: InMemoryState -> UserIdentifier -> Maybe UserId

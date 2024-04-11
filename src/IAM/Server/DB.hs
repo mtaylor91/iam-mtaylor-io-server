@@ -107,7 +107,7 @@ class DB db where
 
   -- | createSession adds a new session to the database.
   createSession :: (MonadIO m, MonadError Error m) =>
-    db -> Session -> m Session
+    db -> UserId -> m CreateSession
 
   -- | getSessionById returns a session from the database by its id.
   getSessionById :: (MonadIO m, MonadError Error m) =>
@@ -117,9 +117,9 @@ class DB db where
   getSessionByToken :: (MonadIO m, MonadError Error m) =>
     db -> UserIdentifier -> Text -> m Session
 
-  -- | replaceSession updates an existing session in the database.
-  replaceSession :: (MonadIO m, MonadError Error m) =>
-    db -> UserIdentifier -> Session -> m Session
+  -- | refreshSession updates the expiration time of a session.
+  refreshSession :: (MonadIO m, MonadError Error m) =>
+    db -> UserIdentifier -> SessionId -> m Session
 
   -- | deleteSession removes a session from the database by its id.
   deleteSession :: (MonadIO m, MonadError Error m) =>

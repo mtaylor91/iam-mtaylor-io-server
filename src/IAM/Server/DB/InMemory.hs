@@ -258,16 +258,17 @@ instance DB InMemory where
           return $ Left $ NotFound "group" $ groupIdentifierToText gid
     either throwError return result
 
-  createSession (InMemory tvar) s = do
+  createSession (InMemory tvar) uid = do
+    s <- liftIO $ IAM.Session.createSession uid
     liftIO $ atomically $ do
       s' <- readTVar tvar
-      writeTVar tvar $ s' & sessionState (sessionId s) ?~ s
+      writeTVar tvar $ s' & sessionStateById (createSessionId s) ?~ toSession s
     return s
 
   getSessionById (InMemory tvar) uid sid = do
     s <- liftIO $ readTVarIO tvar
     let maybeUid = resolveUserIdentifier s uid
-    case (s ^. sessionState sid, maybeUid) of
+    case (s ^. sessionStateById sid, maybeUid) of
       (Just session, Just uid') -> do
         if sessionUser session == uid'
           then return session
@@ -284,41 +285,38 @@ instance DB InMemory where
       Nothing ->
         throwError $ NotFound "user" $ userIdentifierToText uid
       Just uid' ->
-        let results =
-              [ session | session <- sessions s
-              , sessionUser session == uid'
-              , sessionToken session == token ]
-         in case results of
-          [] ->
-            throwError $ NotFound "session" $ userIdentifierToText uid <> " " <> token
-          [session] ->
-            return session
-          _:_ ->
-            throwError $ InternalError "Multiple sessions found"
+        case s ^. sessionStateByToken token of
+          Just session ->
+            if sessionUser session == uid'
+              then return session
+              else throwError $ NotFound "session" $ toText $ unSessionId $ sessionId session
+          Nothing ->
+            throwError $ NotFound "session" token
 
-  replaceSession (InMemory tvar) uid s = do
-    result <- liftIO $ atomically $ do
-      s' <- readTVar tvar
-      let maybeUid = resolveUserIdentifier s' uid
-      case maybeUid of
+  refreshSession (InMemory tvar) uid s = do
+    result <- liftIO $ atomically $
+      readTVar tvar >>= \s' -> case s' ^. sessionStateById s of
+        Just session ->
+          let maybeUid = resolveUserIdentifier s' uid
+           in if Just (sessionUser session) == maybeUid
+            then do
+              let session' = IAM.Session.refreshSession session
+              writeTVar tvar $ s' & sessionStateById s ?~ session'
+              return $ Right session'
+            else
+              return $ Left $ NotFound "session" $ toText $ unSessionId s
         Nothing ->
-          return $ Left $ NotFound "user" $ userIdentifierToText uid
-        Just uid' -> do
-          if sessionUser s /= uid'
-            then return $ Left $ NotFound "session" $ toText $ unSessionId $ sessionId s
-            else do
-              writeTVar tvar $ s' & sessionState (sessionId s) ?~ s
-              return $ Right s
+          return $ Left $ NotFound "session" $ toText $ unSessionId s
     either throwError return result
 
   deleteSession (InMemory tvar) uid sid = do
     result <- liftIO $ atomically $
-      readTVar tvar >>= \s -> case s ^. sessionState sid of
+      readTVar tvar >>= \s -> case s ^. sessionStateById sid of
         Just session ->
           let maybeUid = resolveUserIdentifier s uid
            in if Just (sessionUser session) == maybeUid
             then do
-              writeTVar tvar $ s & sessionState sid .~ Nothing
+              writeTVar tvar $ s & sessionStateById sid .~ Nothing
               return $ Right session
             else
               return $ Left $ NotFound "session" $ toText $ unSessionId sid
@@ -332,8 +330,8 @@ instance DB InMemory where
     case maybeUid of
       Nothing ->
         throwError $ NotFound "user" $ userIdentifierToText uid
-      Just uid' ->
-        let results = [ session | session <- sessions s, sessionUser session == uid' ]
-         in return $ case maybeLimit of
-          Just limit -> Prelude.take limit $ Prelude.drop offset results
-          Nothing -> Prelude.drop offset results
+      Just uid' -> do
+        let sessions' = [s' | (_, s') <- sessions s, sessionUser s' == uid']
+        case maybeLimit of
+          Just limit -> return $ Prelude.take limit $ Prelude.drop offset sessions'
+          Nothing -> return $ Prelude.drop offset sessions'

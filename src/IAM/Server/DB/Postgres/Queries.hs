@@ -479,6 +479,18 @@ updatePolicy =
   |]
 
 
+updateSessionExpiration :: Statement (UUID, UTCTime) ()
+updateSessionExpiration =
+  [resultlessStatement|
+    UPDATE
+      sessions
+    SET
+      session_expiration = $2 :: timestamptz
+    WHERE
+      session_uuid = $1 :: uuid
+  |]
+
+
 deleteUserId :: Statement UUID ()
 deleteUserId =
   [resultlessStatement|

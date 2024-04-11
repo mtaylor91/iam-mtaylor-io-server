@@ -227,14 +227,13 @@ deleteGroupPolicyAttachmentHandler db _ gid pid = do
     Left err         -> errorHandler err
 
 
-createSessionHandler :: DB db => db -> Auth -> UserIdentifier -> Handler Session
+createSessionHandler :: DB db => db -> Auth -> UserIdentifier -> Handler CreateSession
 createSessionHandler db _ uid = do
   r0 <- liftIO $ runExceptT $ getUserId db uid
   case r0 of
     Left e -> throwError $ toServerError e
     Right uid' -> do
-      session <- liftIO $ IAM.Session.createSession uid'
-      result <- liftIO $ runExceptT $ IAM.Server.DB.createSession db session
+      result <- liftIO $ runExceptT $ IAM.Server.DB.createSession db uid'
       case result of
         Right session' -> return session'
         Left err       -> errorHandler err
@@ -271,15 +270,10 @@ deleteUserSessionHandler db _ uid sid = do
 refreshUserSessionHandler :: DB db =>
   db -> Auth -> UserIdentifier -> SessionId -> Handler Session
 refreshUserSessionHandler db _ uid sid = do
-  result <- liftIO $ runExceptT $ getSessionById db uid sid
-  case result of
-    Right session -> do
-      let updatedSession = refreshSession session
-      result' <- liftIO $ runExceptT $ replaceSession db uid updatedSession
-      case result' of
-        Right session' -> return session'
-        Left err       -> errorHandler err
-    Left err -> errorHandler err
+  result' <- liftIO $ runExceptT $ IAM.Server.DB.refreshSession db uid sid
+  case result' of
+    Right session' -> return session'
+    Left err       -> errorHandler err
 
 
 authorizeHandler :: DB db =>
