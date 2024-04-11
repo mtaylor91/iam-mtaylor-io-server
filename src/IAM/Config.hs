@@ -2,6 +2,7 @@ module IAM.Config
   ( configEmail
   , configPublicKey
   , configSecretKey
+  , configMaybeSessionToken
   , configURL
   , envPrefix
   , headerPrefix
@@ -36,6 +37,10 @@ configPublicKey = loadNamespaceEnvConfig "PUBLIC_KEY"
 
 configSecretKey :: IO String
 configSecretKey = loadNamespaceEnvConfig "SECRET_KEY"
+
+
+configMaybeSessionToken :: IO (Maybe String)
+configMaybeSessionToken = lookupNamespaceEnvConfig "SESSION_TOKEN"
 
 
 configURL :: IO String

@@ -16,7 +16,7 @@ import Data.UUID.V4
 import Network.HTTP.Client
 
 import IAM.Authentication
-import IAM.Config (configEmail, configSecretKey, headerPrefix)
+import IAM.Config (configEmail, configSecretKey, configMaybeSessionToken,  headerPrefix)
 
 
 newtype ClientAuth = ClientAuth { clientAuth :: Request -> IO Request }
@@ -26,31 +26,28 @@ clientAuthInfo :: IO ClientAuth
 clientAuthInfo = do
   email <- configEmail
   secretKey <- configSecretKey
+  maybeSessionToken <- configMaybeSessionToken
   case decodeSecretKey $ pack secretKey of
     Nothing ->
       throw $ userError "Invalid secret key"
     Just secretKey' ->
-      return $ mkClientAuth email secretKey'
+      return $ mkClientAuth email secretKey' $ pack <$> maybeSessionToken
 
 
-mkClientAuth :: String -> SecretKey -> ClientAuth
-mkClientAuth email secretKey = ClientAuth $ \req -> do
+mkClientAuth :: String -> SecretKey -> Maybe Text -> ClientAuth
+mkClientAuth email secretKey maybeSessionToken = ClientAuth $ \req -> do
   case lookup "Authorization" $ requestHeaders req of
     Just _ -> return req
     Nothing -> do
       requestId <- nextRandom
-      let publicKey = encodePublicKey secretKey
+      let email' = pack email
+          publicKey = encodePublicKey secretKey
           authorization = authHeader reqStringToSign secretKey
-          reqStringToSign = authStringToSign req requestId
+          reqStringToSign = authStringToSign req requestId maybeSessionToken
       return $ req
-        { requestHeaders = requestHeaders req
-          ++ [ ("Authorization", authorization)
-             , (headerPrefix' <> "-User-Id", encodeUtf8 $ pack email)
-             , (headerPrefix' <> "-Public-Key", encodeUtf8 publicKey)
-             , (headerPrefix' <> "-Request-Id", encodeUtf8 $ pack $ toString requestId)
-             ]
+        { requestHeaders = requestHeaders req ++
+          authReqHeaders authorization email' publicKey requestId maybeSessionToken
         }
-  where headerPrefix' = mk (encodeUtf8 $ pack headerPrefix)
 
 
 encodePublicKey :: SecretKey -> Text
@@ -69,10 +66,27 @@ authHeader reqStringToSign secretKey = "Signature " <> encodeUtf8 (encodeBase64 
   where Signature sig = dsign secretKey (encodeUtf8 reqStringToSign)
 
 
-authStringToSign :: Request -> UUID -> Text
-authStringToSign req reqId
-  = decodeUtf8 $ stringToSign m h p q reqId Nothing
+authStringToSign :: Request -> UUID -> Maybe Text -> Text
+authStringToSign req reqId maybeSessionToken
+  = decodeUtf8 $ stringToSign m h p q reqId maybeSessionToken
   where m = method req
         h = host req
         p = path req
         q = queryString req
+
+
+authReqHeaders ::
+  ByteString -> Text -> Text -> UUID -> Maybe Text ->  [(CI ByteString, ByteString)]
+authReqHeaders authorization email publicKey requestId Nothing =
+  [ ("Authorization", authorization)
+  , (headerPrefix' <> "-User-Id", encodeUtf8 email)
+  , (headerPrefix' <> "-Public-Key", encodeUtf8 publicKey)
+  , (headerPrefix' <> "-Request-Id", encodeUtf8 $ pack $ toString requestId)
+  ]
+authReqHeaders authorization email publicKey requestId (Just token) =
+  (headerPrefix' <> "-Session-Token", encodeUtf8 token) :
+  authReqHeaders authorization email publicKey requestId Nothing
+
+
+headerPrefix' :: CI ByteString
+headerPrefix' = mk (encodeUtf8 $ pack headerPrefix)
