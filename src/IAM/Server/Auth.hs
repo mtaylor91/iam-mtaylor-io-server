@@ -15,7 +15,6 @@ import Control.Monad.Except
 import Crypto.Sign.Ed25519
 import Data.ByteString (ByteString, splitAt, takeWhile)
 import Data.ByteString.Base64
-import Data.ByteString.Lazy (fromStrict)
 import Data.CaseInsensitive
 import Data.Text (Text, pack, unpack)
 import Data.Text.Encoding
@@ -25,6 +24,7 @@ import Network.Wai
 import Prelude hiding (takeWhile)
 import Servant
 import Servant.Server.Experimental.Auth
+import qualified Data.ByteString.Lazy as LBS
 
 import IAM.Authentication
 import IAM.Config (headerPrefix)
@@ -99,7 +99,7 @@ authenticate host db req = do
         Right user -> do
           case authReqError authReq user of
             Nothing -> return (authReq, user)
-            Just err -> throwError $ err401 { errBody = fromStrict $ encodeUtf8 err }
+            Just err -> throwError $ err401 { errBody = LBS.fromStrict $ encodeUtf8 err }
         Left (NotFound _ _) -> throwError $ err401 { errBody = "User not found" }
         Left err -> do
           liftIO $ print err
@@ -135,18 +135,26 @@ authorize host db req authN = do
     UserEmail email -> do
       result <- liftIO $ runExceptT $ getUserId db $ UserEmail email
       case result of
-        Right uid -> return uid
-        Left (NotFound _ _) -> throwError $ err401 { errBody = "User not found" }
-        Left _ -> throwError err500
+        Right uid ->
+          return uid
+        Left (NotFound r n) ->
+          throwError $ err401 { errBody = t r <> " " <> t n <> " not found" }
+        Left e -> do
+          liftIO $ print e
+          throwError err500
 
   maybeSession <- case authRequestSessionToken $ authRequest authN of
     Nothing -> return Nothing
     Just token -> do
       result <- liftIO $ runExceptT $ getSessionByToken db (UserId callerUserId) token
       case result of
-        Right session -> return $ Just session
-        Left (NotFound _ _) -> throwError $ err401 { errBody = "Session not found" }
-        Left _ -> throwError err500
+        Right session ->
+          return $ Just session
+        Left (NotFound r n) ->
+          throwError $ err401 { errBody = t r <> " " <> t n <> " not found" }
+        Left e -> do
+          liftIO $ print e
+          throwError err500
 
   policiesResult <- liftIO $ runExceptT $ listPoliciesForUser db callerUserId host
   case policiesResult of
@@ -154,7 +162,14 @@ authorize host db req authN = do
       if authorized req policies
         then let authZ = Authorization policies maybeSession in return $ Auth authN authZ
         else throwError err403
-    Left _ -> throwError err500
+    Left e -> do
+      liftIO $ print e
+      throwError err500
+
+  where
+
+  t :: Text -> LBS.ByteString
+  t = LBS.fromStrict . encodeUtf8
 
 
 authorized :: Request ->  [Policy] -> Bool
