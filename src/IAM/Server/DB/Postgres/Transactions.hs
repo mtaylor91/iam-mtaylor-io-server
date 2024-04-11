@@ -444,7 +444,7 @@ pgCreateSession session = do
 
 pgDeleteSession :: UserIdentifier -> SessionId -> Transaction (Either Error Session)
 pgDeleteSession uid sid = do
-  result <- pgGetSession uid sid
+  result <- pgGetSessionById uid sid
   case result of
     Left e -> return $ Left e
     Right session -> do
@@ -455,7 +455,7 @@ pgDeleteSession uid sid = do
 pgReplaceSession :: UserIdentifier -> Session -> Transaction (Either Error Session)
 pgReplaceSession uid session = do
   let Session sid uid' token expires = session
-  result <- pgGetSession uid sid
+  result <- pgGetSessionById uid sid
   case result of
     Left e -> return $ Left e
     Right _ -> do
@@ -463,17 +463,30 @@ pgReplaceSession uid session = do
       return $ Right session
 
 
-pgGetSession :: UserIdentifier -> SessionId -> Transaction (Either Error Session)
-pgGetSession uid sid = do
+pgGetSessionById :: UserIdentifier -> SessionId -> Transaction (Either Error Session)
+pgGetSessionById uid sid = do
   maybeUid <- resolveUserIdentifier uid
   case maybeUid of
     Just (UserUUID uuid) -> do
-      result <- statement (uuid, unSessionId sid) selectSession
+      result <- statement (uuid, unSessionId sid) selectSessionById
       case result of
         Nothing ->
           return $ Left $ NotFound "session" $ toText $ unSessionId sid
         Just (token, expires) ->
           return $ Right $ Session sid (UserUUID uuid) token expires
+    Nothing -> return $ Left $ NotFound "user" $ userIdentifierToText uid
+
+
+pgGetSessionByToken :: UserIdentifier -> Text -> Transaction (Either Error Session)
+pgGetSessionByToken uid token = do
+  maybeUid <- resolveUserIdentifier uid
+  case maybeUid of
+    Just (UserUUID uuid) -> do
+      result <- statement (uuid, token) selectSessionByToken
+      case result of
+        Nothing -> return $ Left $ NotFound "session" token
+        Just (sid, expires) ->
+          return $ Right $ Session (SessionUUID sid) (UserUUID uuid) token expires
     Nothing -> return $ Left $ NotFound "user" $ userIdentifierToText uid
 
 

@@ -56,6 +56,7 @@ data AuthRequest = AuthRequest
   { authRequestAuthorization :: !ByteString
   , authRequestHost :: !ByteString
   , authRequestPublicKey :: !PublicKey
+  , authRequestSessionToken :: !(Maybe Text)
   , authRequestUserId :: !UserIdentifier
   , authRequestId :: !UUID
   } deriving (Eq, Show)
@@ -76,6 +77,9 @@ authHandler host db = mkAuthHandler $ \req -> do
 
 authenticate :: DB db => Text -> db -> Request -> Handler (AuthRequest, User)
 authenticate host db req = do
+  let maybeSessionToken = do
+        token <- lookupHeader req "Session-Token"
+        return $ decodeUtf8 token
   let maybeAuth = do
         authHeader <- lookup "Authorization" (requestHeaders req)
         hostHeader <- lookup "Host" (requestHeaders req)
@@ -85,7 +89,7 @@ authenticate host db req = do
         uid <- parseUserId $ decodeUtf8 userIdString
         pk <- parsePublicKey publicKeyBase64
         requestId <- fromString $ unpack $ decodeUtf8 requestIdString
-        return $ AuthRequest authHeader hostHeader pk uid requestId
+        return $ AuthRequest authHeader hostHeader pk maybeSessionToken uid requestId
    in case maybeAuth of
     Just authReq -> do
       result <- liftIO $ runExceptT $ getUser db $ authRequestUserId authReq
@@ -109,11 +113,12 @@ authenticate host db req = do
           query = rawQueryString req
           reqHost = removeHostPort $ authRequestHost authReq
           requestId = authRequestId authReq
+          maybeSessionToken = authRequestSessionToken authReq
           pk = authRequestPublicKey authReq
-          authStringToSign = stringToSign method reqHost path query requestId
+          signed = stringToSign method reqHost path query requestId maybeSessionToken
        in if reqHost /= encodeUtf8 host
             then Just "Invalid host"
-            else if not $ verifySignature user pk authHeader authStringToSign
+            else if not $ verifySignature user pk authHeader signed
               then Just "Invalid signature"
               else Nothing
     removeHostPort :: ByteString -> ByteString

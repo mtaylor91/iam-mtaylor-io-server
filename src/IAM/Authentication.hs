@@ -4,6 +4,7 @@ module IAM.Authentication
   ) where
 
 import Data.ByteString (ByteString)
+import Data.Text (Text)
 import Data.Text.Encoding (encodeUtf8)
 import Data.UUID (UUID, toText)
 import Network.HTTP.Types
@@ -28,10 +29,24 @@ actionFromMethod method = case parseMethod method of
 
 
 -- | String to sign to authenticate the request
-stringToSign :: Method -> ByteString -> ByteString -> ByteString -> UUID -> ByteString
-stringToSign method host path query requestId
+stringToSign ::
+  Method ->
+  ByteString ->
+  ByteString ->
+  ByteString ->
+  UUID ->
+  Maybe Text ->
+  ByteString
+stringToSign method host path query requestId Nothing
   = method <> "\n"
   <> host <> "\n"
   <> path <> "\n"
   <> query <> "\n"
   <> encodeUtf8 (toText requestId)
+stringToSign method host path query requestId (Just token)
+  = method <> "\n"
+  <> host <> "\n"
+  <> path <> "\n"
+  <> query <> "\n"
+  <> encodeUtf8 (toText requestId) <> "\n"
+  <> encodeUtf8 token

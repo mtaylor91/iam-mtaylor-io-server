@@ -107,8 +107,11 @@ instance DB PostgresDB where
   createSession (PostgresDB pool) s =
     runTransaction pool $ pgCreateSession s
 
-  getSession (PostgresDB pool) uid sid =
-    runTransaction pool $ pgGetSession uid sid
+  getSessionById (PostgresDB pool) uid sid =
+    runTransaction pool $ pgGetSessionById uid sid
+
+  getSessionByToken (PostgresDB pool) uid t =
+    runTransaction pool $ pgGetSessionByToken uid t
 
   deleteSession (PostgresDB pool) uid sid =
     runTransaction pool $ pgDeleteSession uid sid

@@ -419,8 +419,8 @@ selectPolicy =
   |]
 
 
-selectSession :: Statement (UUID, UUID) (Maybe (Text, UTCTime))
-selectSession =
+selectSessionById :: Statement (UUID, UUID) (Maybe (Text, UTCTime))
+selectSessionById =
   [maybeStatement|
     SELECT
       sessions.session_token :: text,
@@ -431,6 +431,21 @@ selectSession =
       sessions.session_user = $1 :: uuid
     AND
       sessions.session_uuid = $2 :: uuid
+  |]
+
+
+selectSessionByToken :: Statement (UUID, Text) (Maybe (UUID, UTCTime))
+selectSessionByToken =
+  [maybeStatement|
+    SELECT
+      sessions.session_user :: uuid,
+      sessions.session_expiration :: timestamptz
+    FROM
+      sessions
+    WHERE
+      sessions.session_user = $1 :: uuid
+    AND
+      sessions.session_token = $2 :: text
   |]
 
 

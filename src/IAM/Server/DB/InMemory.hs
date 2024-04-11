@@ -264,7 +264,7 @@ instance DB InMemory where
       writeTVar tvar $ s' & sessionState (sessionId s) ?~ s
     return s
 
-  getSession (InMemory tvar) uid sid = do
+  getSessionById (InMemory tvar) uid sid = do
     s <- liftIO $ readTVarIO tvar
     let maybeUid = resolveUserIdentifier s uid
     case (s ^. sessionState sid, maybeUid) of
@@ -276,6 +276,25 @@ instance DB InMemory where
         throwError $ NotFound "session" $ toText $ unSessionId sid
       (_, Nothing) ->
         throwError $ NotFound "user" $ userIdentifierToText uid
+
+  getSessionByToken (InMemory tvar) uid token = do
+    s <- liftIO $ readTVarIO tvar
+    let maybeUid = resolveUserIdentifier s uid
+    case maybeUid of
+      Nothing ->
+        throwError $ NotFound "user" $ userIdentifierToText uid
+      Just uid' ->
+        let results =
+              [ session | session <- sessions s
+              , sessionUser session == uid'
+              , sessionToken session == token ]
+         in case results of
+          [] ->
+            throwError $ NotFound "session" $ userIdentifierToText uid <> " " <> token
+          [session] ->
+            return session
+          _:_ ->
+            throwError $ InternalError "Multiple sessions found"
 
   replaceSession (InMemory tvar) uid s = do
     result <- liftIO $ atomically $ do

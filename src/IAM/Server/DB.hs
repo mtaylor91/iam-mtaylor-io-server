@@ -109,9 +109,13 @@ class DB db where
   createSession :: (MonadIO m, MonadError Error m) =>
     db -> Session -> m Session
 
-  -- | getSession returns a session from the database by its id.
-  getSession :: (MonadIO m, MonadError Error m) =>
+  -- | getSessionById returns a session from the database by its id.
+  getSessionById :: (MonadIO m, MonadError Error m) =>
     db -> UserIdentifier -> SessionId -> m Session
+
+  -- | getSessionByToken returns a session from the database by its token.
+  getSessionByToken :: (MonadIO m, MonadError Error m) =>
+    db -> UserIdentifier -> Text -> m Session
 
   -- | replaceSession updates an existing session in the database.
   replaceSession :: (MonadIO m, MonadError Error m) =>

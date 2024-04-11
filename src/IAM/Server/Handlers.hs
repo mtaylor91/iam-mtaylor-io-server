@@ -253,7 +253,7 @@ listUserSessionsHandler db _ uid maybeOffset maybeLimit = do
 getUserSessionHandler :: DB db =>
   db -> Auth -> UserIdentifier -> SessionId -> Handler Session
 getUserSessionHandler db _ uid sid = do
-  result <- liftIO $ runExceptT $ getSession db uid sid
+  result <- liftIO $ runExceptT $ getSessionById db uid sid
   case result of
     Right session -> return session
     Left err      -> errorHandler err
@@ -271,7 +271,7 @@ deleteUserSessionHandler db _ uid sid = do
 refreshUserSessionHandler :: DB db =>
   db -> Auth -> UserIdentifier -> SessionId -> Handler Session
 refreshUserSessionHandler db _ uid sid = do
-  result <- liftIO $ runExceptT $ getSession db uid sid
+  result <- liftIO $ runExceptT $ getSessionById db uid sid
   case result of
     Right session -> do
       let updatedSession = refreshSession session
