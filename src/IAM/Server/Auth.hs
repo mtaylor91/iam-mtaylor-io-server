@@ -49,8 +49,8 @@ data Authentication = Authentication
 
 
 data Authorization = Authorization
-  { authPolicies :: [Policy]
-  , authSession :: Maybe Session
+  { authPolicies :: ![Policy]
+  , authSession :: !(Maybe Session)
   } deriving (Eq, Show)
 
 

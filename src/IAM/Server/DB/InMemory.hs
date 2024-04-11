@@ -262,7 +262,8 @@ instance DB InMemory where
     s <- liftIO $ IAM.Session.createSession uid
     liftIO $ atomically $ do
       s' <- readTVar tvar
-      writeTVar tvar $ s' & sessionStateById (createSessionId s) ?~ toSession s
+      let newSession = (createSessionToken s, toSession s)
+      writeTVar tvar $ s' { sessions = newSession : sessions s' }
     return s
 
   getSessionById (InMemory tvar) uid sid = do
