@@ -50,6 +50,7 @@ library
       IAM.Command.List.Groups
       IAM.Command.List.Policies
       IAM.Command.List.Users
+      IAM.Command.Login
       IAM.Command.Server
       IAM.Config
       IAM.Error

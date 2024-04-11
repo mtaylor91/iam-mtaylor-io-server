@@ -150,7 +150,7 @@ insertSession :: Statement (UUID, UUID, Text, UTCTime) ()
 insertSession =
   [resultlessStatement|
     INSERT INTO
-      sessions (session_uuid, user_uuid, session_token, session_expiration)
+      sessions (session_uuid, user_uuid, session_token, session_expires)
     VALUES
       ($1 :: uuid, $2 :: uuid, $3 :: text, $4 :: timestamptz)
   |]
@@ -424,11 +424,11 @@ selectSessionById =
   [maybeStatement|
     SELECT
       sessions.session_token :: text,
-      sessions.session_expiration :: timestamptz
+      sessions.session_expires :: timestamptz
     FROM
       sessions
     WHERE
-      sessions.session_user = $1 :: uuid
+      sessions.user_uuid = $1 :: uuid
     AND
       sessions.session_uuid = $2 :: uuid
   |]
@@ -438,12 +438,12 @@ selectSessionByToken :: Statement (UUID, Text) (Maybe (UUID, UTCTime))
 selectSessionByToken =
   [maybeStatement|
     SELECT
-      sessions.session_user :: uuid,
-      sessions.session_expiration :: timestamptz
+      sessions.user_uuid :: uuid,
+      sessions.session_expires :: timestamptz
     FROM
       sessions
     WHERE
-      sessions.session_user = $1 :: uuid
+      sessions.user_uuid = $1 :: uuid
     AND
       sessions.session_token = $2 :: text
   |]
@@ -455,11 +455,11 @@ selectUserSessions =
     SELECT
       sessions.session_uuid :: uuid,
       sessions.session_token :: text,
-      sessions.session_expiration :: timestamptz
+      sessions.session_expires :: timestamptz
     FROM
       sessions
     WHERE
-      sessions.session_user = $1 :: uuid
+      sessions.user_uuid = $1 :: uuid
     OFFSET
       $2 :: int
     LIMIT
@@ -485,7 +485,7 @@ updateSessionExpiration =
     UPDATE
       sessions
     SET
-      session_expiration = $2 :: timestamptz
+      session_expires = $2 :: timestamptz
     WHERE
       session_uuid = $1 :: uuid
   |]
@@ -643,9 +643,9 @@ replaceSession =
     UPDATE
       sessions
     SET
-      "session_user" = $2 :: uuid,
+      user_uuid = $2 :: uuid,
       session_token = $3 :: text,
-      session_expiration = $4 :: timestamptz
+      session_expires = $4 :: timestamptz
     WHERE
       session_uuid = $1 :: uuid
   |]
