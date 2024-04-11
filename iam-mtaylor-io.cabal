@@ -49,6 +49,7 @@ library
       IAM.Command.List
       IAM.Command.List.Groups
       IAM.Command.List.Policies
+      IAM.Command.List.Sessions
       IAM.Command.List.Users
       IAM.Command.Login
       IAM.Command.Server
