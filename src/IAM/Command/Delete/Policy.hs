@@ -4,7 +4,6 @@ module IAM.Command.Delete.Policy
   , DeletePolicy(..)
   ) where
 
-import Control.Exception
 import Data.Text
 import Data.UUID
 import Network.HTTP.Client
@@ -28,16 +27,24 @@ deletePolicy :: DeletePolicy -> IO ()
 deletePolicy deletePolicyInfo = do
   case readMaybe (unpack $ deletePolicyPolicyId deletePolicyInfo) of
     Just uuid -> deletePolicyByUUID uuid
-    Nothing -> throw $ userError "Policy id must be a valid UUID."
+    Nothing -> deletePolicyByName $ deletePolicyPolicyId deletePolicyInfo
+
+
+deletePolicyByName :: Text -> IO ()
+deletePolicyByName polName = deletePolicyByIdentifier $ PolicyName polName
 
 
 deletePolicyByUUID :: UUID -> IO ()
-deletePolicyByUUID polId = do
+deletePolicyByUUID polId = deletePolicyByIdentifier $ PolicyId $ PolicyUUID polId
+
+
+deletePolicyByIdentifier :: PolicyIdentifier -> IO ()
+deletePolicyByIdentifier polId = do
   url <- serverUrl
   auth <- clientAuthInfo
   mgr <- newManager tlsManagerSettings { managerModifyRequest = clientAuth auth }
 
-  let polClient = IAM.Client.mkPolicyClient $ PolicyUUID polId
+  let polClient = IAM.Client.mkPolicyClient polId
   res <- runClientM (IAM.Client.deletePolicy polClient) $ mkClientEnv mgr url
   case res of
     Left err -> handleClientError err

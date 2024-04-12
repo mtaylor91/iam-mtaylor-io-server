@@ -1,33 +1,48 @@
 
 CREATE TABLE IF NOT EXISTS "users" (
-  "user_uuid" UUID PRIMARY KEY NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS "users_emails" (
-  "user_uuid" UUID PRIMARY KEY NOT NULL REFERENCES "users" ("user_uuid"),
-  "user_email" TEXT NOT NULL UNIQUE
+  "user_uuid" UUID NOT NULL,
+  PRIMARY KEY ("user_uuid")
 );
 
 CREATE TABLE IF NOT EXISTS "groups" (
-  "group_uuid" UUID PRIMARY KEY NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS "groups_names" (
-  "group_uuid" UUID PRIMARY KEY NOT NULL REFERENCES "groups" ("group_uuid"),
-  "group_name" TEXT NOT NULL UNIQUE
+  "group_uuid" UUID NOT NULL,
+  PRIMARY KEY ("group_uuid")
 );
 
 CREATE TABLE IF NOT EXISTS "policies" (
-  "policy_uuid" UUID PRIMARY KEY NOT NULL,
+  "policy_uuid" UUID NOT NULL,
   "policy_host" TEXT NOT NULL,
-  "policy" JSONB NOT NULL
+  "policy" JSONB NOT NULL,
+  PRIMARY KEY ("policy_uuid")
+);
+
+CREATE TABLE IF NOT EXISTS "users_emails" (
+  "user_uuid" UUID NOT NULL,
+  "user_email" TEXT NOT NULL UNIQUE,
+  PRIMARY KEY ("user_uuid"),
+  FOREIGN KEY ("user_uuid") REFERENCES "users" ("user_uuid") ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS "groups_names" (
+  "group_uuid" UUID NOT NULL,
+  "group_name" TEXT NOT NULL UNIQUE,
+  PRIMARY KEY ("group_uuid"),
+  FOREIGN KEY ("group_uuid") REFERENCES "groups" ("group_uuid") ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS "policies_names" (
+  "policy_uuid" UUID NOT NULL,
+  "policy_name" TEXT NOT NULL UNIQUE,
+  PRIMARY KEY ("policy_uuid"),
+  FOREIGN KEY ("policy_uuid") REFERENCES "policies" ("policy_uuid") ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS "sessions" (
-  "session_uuid" UUID PRIMARY KEY NOT NULL,
+  "session_uuid" UUID NOT NULL,
   "user_uuid" UUID NOT NULL,
   "session_token" TEXT NOT NULL,
   "session_expires" TIMESTAMP NOT NULL,
+  PRIMARY KEY ("session_uuid"),
   FOREIGN KEY ("user_uuid") REFERENCES "users" ("user_uuid") ON DELETE CASCADE
 );
 

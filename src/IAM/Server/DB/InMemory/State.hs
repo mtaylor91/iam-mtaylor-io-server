@@ -54,6 +54,16 @@ lookupUserIdentifier s uid = case lookup uid $ usersEmails s of
   Nothing -> UserId uid
 
 
+lookupPolicyIdentifier :: InMemoryState -> PolicyId -> PolicyIdentifier
+lookupPolicyIdentifier s pid =
+  case Prelude.filter ((== pid) . policyId) $ policies s of
+    [] -> PolicyId pid
+    policy:_ ->
+      case policyName policy of
+        Just name -> PolicyIdAndName pid name
+        Nothing -> PolicyId pid
+
+
 lookupUser :: InMemoryState -> UserId -> Maybe Text -> User
 lookupUser s uid maybeEmail =
   let gs = [lookupGroupIdentifier s gid | (uid', gid) <- memberships s, uid' == uid]
@@ -229,3 +239,16 @@ resolveGroupIdentifier s (GroupId gid) =
   case Prelude.filter (== gid) $ groups s of
     [] -> Nothing
     _: _ -> Just gid
+
+
+resolvePolicyIdentifier :: InMemoryState -> PolicyIdentifier -> Maybe PolicyId
+resolvePolicyIdentifier s (PolicyIdAndName pid _) =
+  resolvePolicyIdentifier s (PolicyId pid)
+resolvePolicyIdentifier s (PolicyName name) =
+  case Prelude.filter ((== Just name) . policyName) $ policies s of
+    [] -> Nothing
+    policy:_ -> Just $ policyId policy
+resolvePolicyIdentifier s (PolicyId pid) =
+  case Prelude.filter ((== pid) . policyId) $ policies s of
+    [] -> Nothing
+    _: _ -> Just pid

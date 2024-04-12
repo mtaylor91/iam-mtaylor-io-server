@@ -51,7 +51,7 @@ type UsersClientM
 type UserClientM =
     ClientM User
     :<|> ClientM User
-    :<|> (PolicyId -> UserPolicyClientM)
+    :<|> (PolicyIdentifier -> UserPolicyClientM)
     :<|> UserSessionsClientM
 
 
@@ -81,7 +81,7 @@ type GroupsClientM
 type GroupClientM =
     ClientM Group
     :<|> ClientM Group
-    :<|> (PolicyId -> GroupPolicyClientM)
+    :<|> (PolicyIdentifier -> GroupPolicyClientM)
     :<|> (UserIdentifier -> GroupMembershipClientM)
 
 
@@ -95,9 +95,9 @@ type GroupMembershipClientM
 
 
 type PoliciesClientM
-  = (Maybe Int -> Maybe Int -> ClientM [PolicyId])
+  = (Maybe Int -> Maybe Int -> ClientM [PolicyIdentifier])
   :<|> (Policy -> ClientM Policy)
-  :<|> (PolicyId -> PolicyClientM)
+  :<|> (PolicyIdentifier -> PolicyClientM)
 
 
 type PolicyClientM =
@@ -112,7 +112,7 @@ type AuthorizationClientM
 data UserClient = UserClient
   { getUser :: !(ClientM User)
   , deleteUser :: !(ClientM User)
-  , userPolicyClient :: !(PolicyId -> UserPolicyClient)
+  , userPolicyClient :: !(PolicyIdentifier -> UserPolicyClient)
   , userSessionsClient :: !UserSessionsClient
   }
 
@@ -140,7 +140,7 @@ data UserSessionClient = UserSessionClient
 data GroupClient = GroupClient
   { getGroup :: !(ClientM Group)
   , deleteGroup :: !(ClientM Group)
-  , groupPolicyClient :: !(PolicyId -> GroupPolicyClient)
+  , groupPolicyClient :: !(PolicyIdentifier -> GroupPolicyClient)
   , memberClient :: !(UserIdentifier -> MembershipClient)
   }
 
@@ -180,7 +180,7 @@ callerClient
 
 getCaller :: ClientM User
 deleteCaller :: ClientM User
-callerPolicyClient :: PolicyId -> UserPolicyClientM
+callerPolicyClient :: PolicyIdentifier -> UserPolicyClientM
 callerSessionClient :: UserSessionsClientM
 
 
@@ -188,7 +188,7 @@ callerSessionClient :: UserSessionsClientM
   callerClient
 
 
-mkCallerPolicyClient :: PolicyId -> UserPolicyClient
+mkCallerPolicyClient :: PolicyIdentifier -> UserPolicyClient
 mkCallerPolicyClient pid =
   let (attachUserPolicy' :<|> detachUserPolicy') = callerPolicyClient pid
   in UserPolicyClient attachUserPolicy' detachUserPolicy'
@@ -225,7 +225,8 @@ mkUserClient uid =
 
   where
 
-  mkUserPolicyClient :: (PolicyId -> UserPolicyClientM) -> PolicyId -> UserPolicyClient
+  mkUserPolicyClient ::
+    (PolicyIdentifier -> UserPolicyClientM) -> PolicyIdentifier -> UserPolicyClient
   mkUserPolicyClient userPolicyClient' pid =
     let (attachUserPolicy' :<|> detachUserPolicy') = userPolicyClient' pid
     in UserPolicyClient attachUserPolicy' detachUserPolicy'
@@ -260,7 +261,7 @@ mkGroupClient gid =
   in GroupClient getGroup' deleteGroup' groupPolicyClient'' memberClient''
   where
   mkGroupPolicyClient ::
-    (PolicyId -> GroupPolicyClientM) -> PolicyId -> GroupPolicyClient
+    (PolicyIdentifier -> GroupPolicyClientM) -> PolicyIdentifier -> GroupPolicyClient
   mkGroupPolicyClient groupPolicyClient' pid =
     let (attachGroupPolicy' :<|> detachGroupPolicy') = groupPolicyClient' pid
     in GroupPolicyClient attachGroupPolicy' detachGroupPolicy'
@@ -271,15 +272,15 @@ mkGroupClient gid =
     in MembershipClient createMembership' deleteMembership'
 
 
-listPolicies :: Maybe Int -> Maybe Int -> ClientM [PolicyId]
+listPolicies :: Maybe Int -> Maybe Int -> ClientM [PolicyIdentifier]
 createPolicy :: Policy -> ClientM Policy
-policyClient :: PolicyId -> PolicyClientM
+policyClient :: PolicyIdentifier -> PolicyClientM
 
 
 listPolicies :<|> createPolicy :<|> policyClient = policiesClient
 
 
-mkPolicyClient :: PolicyId -> PolicyClient
+mkPolicyClient :: PolicyIdentifier -> PolicyClient
 mkPolicyClient pid =
   let (getPolicy' :<|> deletePolicy') = policyClient pid
   in PolicyClient getPolicy' deletePolicy'

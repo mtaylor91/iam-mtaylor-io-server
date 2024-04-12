@@ -63,7 +63,7 @@ userAPI ctx caller uid
   :<|> userSessionsAPI ctx caller uid
 
 userPolicyAPI ::
-  DB db => Ctx db -> Auth -> UserIdentifier -> PolicyId -> Server UserPolicyAPI
+  DB db => Ctx db -> Auth -> UserIdentifier -> PolicyIdentifier -> Server UserPolicyAPI
 userPolicyAPI ctx caller uid pid
   = createUserPolicyAttachmentHandler ctx caller uid pid
   :<|> deleteUserPolicyAttachmentHandler ctx caller uid pid
@@ -95,7 +95,7 @@ groupAPI ctx caller gid
   :<|> groupMembershipAPI ctx caller gid
 
 groupPolicyAPI ::
-  DB db => Ctx db -> Auth -> GroupIdentifier -> PolicyId -> Server GroupPolicyAPI
+  DB db => Ctx db -> Auth -> GroupIdentifier -> PolicyIdentifier -> Server GroupPolicyAPI
 groupPolicyAPI ctx caller gid pid
   = createGroupPolicyAttachmentHandler ctx caller gid pid
   :<|> deleteGroupPolicyAttachmentHandler ctx caller gid pid
@@ -112,7 +112,7 @@ policiesAPI ctx caller
   :<|> createPolicyHandler ctx caller
   :<|> policyAPI ctx caller
 
-policyAPI :: DB db => Ctx db -> Auth -> PolicyId -> Server PolicyAPI
+policyAPI :: DB db => Ctx db -> Auth -> PolicyIdentifier -> Server PolicyAPI
 policyAPI ctx caller pid
   = getPolicyHandler ctx caller pid
   :<|> deletePolicyHandler ctx caller pid

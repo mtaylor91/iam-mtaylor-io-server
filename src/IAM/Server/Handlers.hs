@@ -123,7 +123,7 @@ deleteGroupHandler ctx auth gid = do
     Left err -> errorHandler err
 
 
-getPolicyHandler :: DB db => Ctx db -> Auth -> PolicyId -> Handler Policy
+getPolicyHandler :: DB db => Ctx db -> Auth -> PolicyIdentifier -> Handler Policy
 getPolicyHandler ctx auth policy = do
   requireSession auth
   result <- liftIO $ runExceptT $ getPolicy (ctxDB ctx) policy
@@ -133,7 +133,7 @@ getPolicyHandler ctx auth policy = do
 
 
 listPoliciesHandler ::
-  DB db => Ctx db -> Auth -> Maybe Int -> Maybe Int -> Handler [PolicyId]
+  DB db => Ctx db -> Auth -> Maybe Int -> Maybe Int -> Handler [PolicyIdentifier]
 listPoliciesHandler ctx auth maybeOffset maybeLimit = do
   requireSession auth
   let offset = fromMaybe 0 maybeOffset
@@ -158,7 +158,7 @@ createPolicyHandler ctx auth policy = do
         Left err      -> errorHandler err
 
 
-deletePolicyHandler :: DB db => Ctx db -> Auth -> PolicyId -> Handler Policy
+deletePolicyHandler :: DB db => Ctx db -> Auth -> PolicyIdentifier -> Handler Policy
 deletePolicyHandler ctx auth policy = do
   requireSession auth
   result <- liftIO $ runExceptT $ deletePolicy (ctxDB ctx) policy
@@ -188,7 +188,7 @@ deleteMembershipHandler ctx auth gid uid = do
 
 
 createUserPolicyAttachmentHandler :: DB db =>
-  Ctx db -> Auth -> UserIdentifier -> PolicyId -> Handler UserPolicyAttachment
+  Ctx db -> Auth -> UserIdentifier -> PolicyIdentifier -> Handler UserPolicyAttachment
 createUserPolicyAttachmentHandler ctx auth uid pid = do
   requireSession auth
   result0 <- liftIO $ runExceptT $ getPolicy (ctxDB ctx) pid
@@ -208,7 +208,7 @@ createUserPolicyAttachmentHandler ctx auth uid pid = do
 
 
 deleteUserPolicyAttachmentHandler :: DB db =>
-  Ctx db -> Auth -> UserIdentifier -> PolicyId -> Handler UserPolicyAttachment
+  Ctx db -> Auth -> UserIdentifier -> PolicyIdentifier -> Handler UserPolicyAttachment
 deleteUserPolicyAttachmentHandler ctx auth uid pid = do
   requireSession auth
   result <- liftIO $ runExceptT $ deleteUserPolicyAttachment (ctxDB ctx) uid pid
@@ -218,7 +218,7 @@ deleteUserPolicyAttachmentHandler ctx auth uid pid = do
 
 
 createGroupPolicyAttachmentHandler :: DB db =>
-  Ctx db -> Auth -> GroupIdentifier -> PolicyId -> Handler GroupPolicyAttachment
+  Ctx db -> Auth -> GroupIdentifier -> PolicyIdentifier -> Handler GroupPolicyAttachment
 createGroupPolicyAttachmentHandler ctx auth gid pid = do
   requireSession auth
   result <- liftIO $ runExceptT $ getPolicy (ctxDB ctx) pid
@@ -238,7 +238,7 @@ createGroupPolicyAttachmentHandler ctx auth gid pid = do
 
 
 deleteGroupPolicyAttachmentHandler :: DB db =>
-  Ctx db -> Auth -> GroupIdentifier -> PolicyId -> Handler GroupPolicyAttachment
+  Ctx db -> Auth -> GroupIdentifier -> PolicyIdentifier -> Handler GroupPolicyAttachment
 deleteGroupPolicyAttachmentHandler ctx auth gid pid = do
   requireSession auth
   result <- liftIO $ runExceptT $ deleteGroupPolicyAttachment (ctxDB ctx) gid pid

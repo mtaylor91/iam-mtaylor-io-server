@@ -57,11 +57,11 @@ class DB db where
 
   -- | getPolicy returns a policy from the database by its id.
   getPolicy :: (MonadIO m, MonadError Error m) =>
-    db -> PolicyId -> m Policy
+    db -> PolicyIdentifier -> m Policy
 
   -- | listPolicyIds returns a list of all policies in the database.
   listPolicyIds :: (MonadIO m, MonadError Error m) =>
-    db -> Range -> m [PolicyId]
+    db -> Range -> m [PolicyIdentifier]
 
   -- | listPoliciesForUser returns a list of all policies attached
   -- | to a user and its groups.
@@ -78,7 +78,7 @@ class DB db where
 
   -- | deletePolicy removes a policy from the database by its name.
   deletePolicy :: (MonadIO m, MonadError Error m) =>
-    db -> PolicyId -> m Policy
+    db -> PolicyIdentifier -> m Policy
 
   -- | createMembership adds a user to a group.
   createMembership :: (MonadIO m, MonadError Error m) =>
@@ -90,19 +90,19 @@ class DB db where
 
   -- | createUserPolicyAttachment attaches a policy to a user.
   createUserPolicyAttachment :: (MonadIO m, MonadError Error m) =>
-    db -> UserIdentifier -> PolicyId -> m UserPolicyAttachment
+    db -> UserIdentifier -> PolicyIdentifier -> m UserPolicyAttachment
 
   -- | deleteUserPolicyAttachment detaches a policy from a user.
   deleteUserPolicyAttachment :: (MonadIO m, MonadError Error m) =>
-    db -> UserIdentifier -> PolicyId -> m UserPolicyAttachment
+    db -> UserIdentifier -> PolicyIdentifier -> m UserPolicyAttachment
 
   -- | createGroupPolicyAttachment attaches a policy to a group.
   createGroupPolicyAttachment :: (MonadIO m, MonadError Error m) =>
-    db -> GroupIdentifier -> PolicyId -> m GroupPolicyAttachment
+    db -> GroupIdentifier -> PolicyIdentifier -> m GroupPolicyAttachment
 
   -- | deleteGroupPolicyAttachment detaches a policy from a group.
   deleteGroupPolicyAttachment :: (MonadIO m, MonadError Error m) =>
-    db -> GroupIdentifier -> PolicyId -> m GroupPolicyAttachment
+    db -> GroupIdentifier -> PolicyIdentifier -> m GroupPolicyAttachment
 
   -- | createSession adds a new session to the database.
   createSession :: (MonadIO m, MonadError Error m) =>

@@ -51,7 +51,7 @@ type UsersAPI
 type UserAPI
   = ( Get '[JSON] User
   :<|> Delete '[JSON] User
-  :<|> "policies" :> Capture "policy" PolicyId :> UserPolicyAPI
+  :<|> "policies" :> Capture "policy" PolicyIdentifier :> UserPolicyAPI
   :<|> "sessions" :> UserSessionsAPI
     )
 
@@ -81,7 +81,7 @@ type GroupsAPI
 type GroupAPI
   = ( Get '[JSON] Group
   :<|> Delete '[JSON] Group
-  :<|> "policies" :> Capture "policy" PolicyId :> GroupPolicyAPI
+  :<|> "policies" :> Capture "policy" PolicyIdentifier :> GroupPolicyAPI
   :<|> "members" :> Capture "user" UserIdentifier :> MembershipAPI
     )
 
@@ -96,9 +96,9 @@ type MembershipAPI
     )
 
 type PoliciesAPI
-  = ( QueryParam "offset" Int :> QueryParam "limit" Int :> Get '[JSON] [PolicyId]
+  = ( QueryParam "offset" Int :> QueryParam "limit" Int :> Get '[JSON] [PolicyIdentifier]
   :<|> ( ReqBody '[JSON] Policy :> PostCreated '[JSON] Policy )
-  :<|> ( Capture "policy" PolicyId :> PolicyAPI )
+  :<|> ( Capture "policy" PolicyIdentifier :> PolicyAPI )
     )
 
 type PolicyAPI

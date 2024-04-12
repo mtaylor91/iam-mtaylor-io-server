@@ -112,15 +112,18 @@ instance DB InMemory where
           return $ Left $ NotFound "group" $ groupIdentifierToText gid
     either throwError return result
 
-  getPolicy (InMemory tvar) pid = do
+  getPolicy (InMemory tvar) pident = do
     s <- liftIO $ readTVarIO tvar
-    case s ^. policyState pid of
-      Just p -> return p
-      Nothing -> throwError $ NotFound "policy" $ toText $ unPolicyId pid
+    case resolvePolicyIdentifier s pident of
+      Nothing -> throwError $ NotFound "policy" $ policyIdentifierToText pident
+      Just pid ->
+        case s ^. policyState pid of
+          Just p -> return p
+          Nothing -> throwError $ NotFound "policy" $ toText $ unPolicyId pid
 
   listPolicyIds (InMemory tvar) (Range offset maybeLimit) = do
     s <- liftIO $ readTVarIO tvar
-    let policyIds = policyId <$> policies s
+    let policyIds = lookupPolicyIdentifier s . policyId <$> policies s
     case maybeLimit of
       Just limit -> return $ Prelude.take limit $ Prelude.drop offset policyIds
       Nothing -> return $ Prelude.drop offset policyIds
@@ -149,14 +152,18 @@ instance DB InMemory where
       writeTVar tvar $ s & policyState (policyId p) ?~ p
       return p
 
-  deletePolicy (InMemory tvar) pid = do
+  deletePolicy (InMemory tvar) pident = do
     result <- liftIO $ atomically $
-      readTVar tvar >>= \s -> case s ^. policyState pid of
-        Just p -> do
-          writeTVar tvar $ s & policyState pid .~ Nothing
-          return $ Right p
+      readTVar tvar >>= \s -> case resolvePolicyIdentifier s pident of
         Nothing ->
-          return $ Left $ NotFound "policy" $ toText $ unPolicyId pid
+          return $ Left $ NotFound "policy" $ policyIdentifierToText pident
+        Just pid -> do
+          case s ^. policyState pid of
+            Just p -> do
+              writeTVar tvar $ s & policyState pid .~ Nothing
+              return $ Right p
+            Nothing ->
+              return $ Left $ NotFound "policy" $ toText $ unPolicyId pid
     either throwError return result
 
   createMembership (InMemory tvar) uid gid = do
@@ -195,65 +202,81 @@ instance DB InMemory where
           return $ Left $ NotFound "group" $ groupIdentifierToText gid
     either throwError return result
 
-  createUserPolicyAttachment (InMemory tvar) uid pid = do
+  createUserPolicyAttachment (InMemory tvar) uid pident = do
     result <- liftIO $ atomically $ do
       s <- readTVar tvar
       case resolveUserIdentifier s uid of
         Just uid' -> do
-          case Prelude.filter (== (uid', pid)) $ userPolicyAttachments s of
-            [] -> do
-              writeTVar tvar $ s { userPolicyAttachments =
-                (uid', pid) : userPolicyAttachments s }
-              return $ Right $ UserPolicyAttachment uid' pid
-            _:_ ->
-              return $ Left AlreadyExists
+          case resolvePolicyIdentifier s pident of
+            Just pid -> do
+              case Prelude.filter (== (uid', pid)) $ userPolicyAttachments s of
+                [] -> do
+                  writeTVar tvar $ s
+                    { userPolicyAttachments = (uid', pid) : userPolicyAttachments s }
+                  return $ Right $ UserPolicyAttachment uid' pid
+                _:_ ->
+                  return $ Left AlreadyExists
+            Nothing ->
+              return $ Left $ NotFound "policy" $ policyIdentifierToText pident
         Nothing ->
           return $ Left $ NotFound "user" $ userIdentifierToText uid
     either throwError return result
 
-  deleteUserPolicyAttachment (InMemory tvar) uid pid = do
+  deleteUserPolicyAttachment (InMemory tvar) uid pident = do
     result <- liftIO $ atomically $
       readTVar tvar >>= \s -> case resolveUserIdentifier s uid of
         Just uid' -> do
-          case Prelude.filter (== (uid', pid)) $ userPolicyAttachments s of
-            [] ->
-              return $ Left $ NotFound "user policy attachment" $
-                userIdentifierToText uid <> " " <> toText (unPolicyId pid)
-            _:_ -> do
-              writeTVar tvar $ s { userPolicyAttachments =
-                Prelude.filter (/= (uid', pid)) $ userPolicyAttachments s }
-              return $ Right $ UserPolicyAttachment uid' pid
+          case resolvePolicyIdentifier s pident of
+            Just pid' -> do
+              case Prelude.filter (== (uid', pid')) $ userPolicyAttachments s of
+                [] ->
+                  return $ Left $ NotFound "user policy attachment" $
+                    userIdentifierToText uid <> " " <> policyIdentifierToText pident
+                _:_ -> do
+                  writeTVar tvar $ s { userPolicyAttachments =
+                    Prelude.filter (/= (uid', pid')) $ userPolicyAttachments s }
+                  return $ Right $ UserPolicyAttachment uid' pid'
+            Nothing ->
+              return $ Left $ NotFound "policy" $ policyIdentifierToText pident
         Nothing ->
           return $ Left $ NotFound "user" $ userIdentifierToText uid
     either throwError return result
 
-  createGroupPolicyAttachment (InMemory tvar) gid pid = do
+  createGroupPolicyAttachment (InMemory tvar) gid pident = do
     result <- liftIO $ atomically $
       readTVar tvar >>= \s -> case resolveGroupIdentifier s gid of
         Just gid' -> do
-          case Prelude.filter (== (gid', pid)) $ groupPolicyAttachments s of
-            [] -> do
-              writeTVar tvar $ s { groupPolicyAttachments =
-                (gid', pid) : groupPolicyAttachments s }
-              return $ Right $ GroupPolicyAttachment gid' pid
-            _:_ ->
-              return $ Left AlreadyExists
+          case resolvePolicyIdentifier s pident of
+            Just pid -> do
+              case Prelude.filter (== (gid', pid)) $ groupPolicyAttachments s of
+                [] -> do
+                  writeTVar tvar $ s
+                    { groupPolicyAttachments = (gid', pid) : groupPolicyAttachments s }
+                  return $ Right $ GroupPolicyAttachment gid' pid
+                _:_ ->
+                  return $ Left AlreadyExists
+            Nothing ->
+              return $ Left $ NotFound "policy" $ policyIdentifierToText pident
         Nothing ->
           return $ Left $ NotFound "group" $ groupIdentifierToText gid
     either throwError return result
 
-  deleteGroupPolicyAttachment (InMemory tvar) gid pid = do
+  deleteGroupPolicyAttachment (InMemory tvar) gid pident = do
     result <- liftIO $ atomically $
       readTVar tvar >>= \s -> case resolveGroupIdentifier s gid of
         Just gid' -> do
-          case Prelude.filter (== (gid', pid)) $ groupPolicyAttachments s of
-            [] ->
-              return $ Left $ NotFound "group policy attachment" $
-                groupIdentifierToText gid <> " " <> toText (unPolicyId pid)
-            _:_ -> do
-              writeTVar tvar $ s { groupPolicyAttachments =
-                Prelude.filter (/= (gid', pid)) $ groupPolicyAttachments s }
-              return $ Right $ GroupPolicyAttachment gid' pid
+          case resolvePolicyIdentifier s pident of
+            Just pid' -> do
+              case Prelude.filter (== (gid', pid')) $ groupPolicyAttachments s of
+                [] ->
+                  return $ Left $ NotFound "group policy attachment" $
+                    groupIdentifierToText gid <> " " <> policyIdentifierToText pident
+                _:_ -> do
+                  writeTVar tvar $ s { groupPolicyAttachments =
+                    Prelude.filter (/= (gid', pid')) $ groupPolicyAttachments s }
+                  return $ Right $ GroupPolicyAttachment gid' pid'
+            Nothing ->
+              return $ Left $ NotFound "policy" $ policyIdentifierToText pident
         Nothing ->
           return $ Left $ NotFound "group" $ groupIdentifierToText gid
     either throwError return result

@@ -116,6 +116,16 @@ insertPolicy =
   |]
 
 
+insertPolicyName :: Statement (UUID, Text) ()
+insertPolicyName =
+  [resultlessStatement|
+    INSERT INTO
+      policies_names (policy_uuid, policy_name)
+    VALUES
+      ($1 :: uuid, $2 :: text)
+  |]
+
+
 insertMembership :: Statement (UUID, UUID) ()
 insertMembership =
   [resultlessStatement|
@@ -404,6 +414,37 @@ selectPolicyIds =
       $1 :: int
     LIMIT
       $2 :: int
+  |]
+
+
+selectPolicyIdentifiers :: Statement (Int32, Int32) (Vector (UUID, Maybe Text))
+selectPolicyIdentifiers =
+  [vectorStatement|
+    SELECT
+      policies.policy_uuid :: uuid,
+      policies_names.policy_name :: text?
+    FROM
+      policies
+    LEFT JOIN
+      policies_names
+    ON
+      policies.policy_uuid = policies_names.policy_uuid
+    OFFSET
+      $1 :: int
+    LIMIT
+      $2 :: int
+  |]
+
+
+selectPolicyIdByName :: Statement Text (Maybe UUID)
+selectPolicyIdByName =
+  [maybeStatement|
+    SELECT
+      policies_names.policy_uuid :: uuid
+    FROM
+      policies_names
+    WHERE
+      policies_names.policy_name = $1 :: text
   |]
 
 
