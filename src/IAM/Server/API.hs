@@ -21,100 +21,101 @@ import IAM.API
 import IAM.Identifiers
 import IAM.Policy
 import IAM.Server.Auth
+import IAM.Server.Context
 import IAM.Server.DB
 import IAM.Server.Handlers
 import IAM.Session
 import IAM.User
 
 
-app :: DB db => Text -> db -> Application
-app host db = serveWithContext api (authContext host db) $ server db
+app :: DB db => Text -> Ctx db -> Application
+app host ctx = serveWithContext api (authContext host ctx) $ server ctx
 
-startApp :: DB db => Int -> Text -> db -> IO ()
-startApp port host db = run port $ app host db
+startApp :: DB db => Int -> Text -> Ctx db -> IO ()
+startApp port host ctx = run port $ app host ctx
 
-server :: DB db => db -> Server API
-server db caller
-  = callerAPI db caller
-  :<|> usersAPI db caller
-  :<|> groupsAPI db caller
-  :<|> policiesAPI db caller
-  :<|> authorizeAPI db caller
+server :: DB db => Ctx db -> Server API
+server ctx caller
+  = callerAPI ctx caller
+  :<|> usersAPI ctx caller
+  :<|> groupsAPI ctx caller
+  :<|> policiesAPI ctx caller
+  :<|> authorizeAPI ctx caller
 
-callerAPI :: DB db => db -> Auth -> Server UserAPI
-callerAPI db caller
-  = getUserHandler db caller (UserId $ userId $ authUser $ authentication caller)
-  :<|> deleteUserHandler db caller (UserId $ userId $ authUser $ authentication caller)
-  :<|> userPolicyAPI db caller (UserId $ userId $ authUser $ authentication caller)
-  :<|> userSessionsAPI db caller (UserId $ userId $ authUser $ authentication caller)
+callerAPI :: DB db => Ctx db -> Auth -> Server UserAPI
+callerAPI ctx caller
+  = getUserHandler ctx caller (UserId $ userId $ authUser $ authentication caller)
+  :<|> deleteUserHandler ctx caller (UserId $ userId $ authUser $ authentication caller)
+  :<|> userPolicyAPI ctx caller (UserId $ userId $ authUser $ authentication caller)
+  :<|> userSessionsAPI ctx caller (UserId $ userId $ authUser $ authentication caller)
 
-usersAPI :: DB db => db -> Auth -> Server UsersAPI
-usersAPI db caller
-  = listUsersHandler db caller
-  :<|> createUserHandler db caller
-  :<|> userAPI db caller
+usersAPI :: DB db => Ctx db -> Auth -> Server UsersAPI
+usersAPI ctx caller
+  = listUsersHandler ctx caller
+  :<|> createUserHandler ctx caller
+  :<|> userAPI ctx caller
 
-userAPI :: DB db => db -> Auth -> UserIdentifier -> Server UserAPI
-userAPI db caller uid
-  = getUserHandler db caller uid
-  :<|> deleteUserHandler db caller uid
-  :<|> userPolicyAPI db caller uid
-  :<|> userSessionsAPI db caller uid
+userAPI :: DB db => Ctx db -> Auth -> UserIdentifier -> Server UserAPI
+userAPI ctx caller uid
+  = getUserHandler ctx caller uid
+  :<|> deleteUserHandler ctx caller uid
+  :<|> userPolicyAPI ctx caller uid
+  :<|> userSessionsAPI ctx caller uid
 
 userPolicyAPI ::
-  DB db => db -> Auth -> UserIdentifier -> PolicyId -> Server UserPolicyAPI
-userPolicyAPI db caller uid pid
-  = createUserPolicyAttachmentHandler db caller uid pid
-  :<|> deleteUserPolicyAttachmentHandler db caller uid pid
+  DB db => Ctx db -> Auth -> UserIdentifier -> PolicyId -> Server UserPolicyAPI
+userPolicyAPI ctx caller uid pid
+  = createUserPolicyAttachmentHandler ctx caller uid pid
+  :<|> deleteUserPolicyAttachmentHandler ctx caller uid pid
 
-userSessionsAPI :: DB db => db -> Auth -> UserIdentifier -> Server UserSessionsAPI
-userSessionsAPI db caller uid
-  = createSessionHandler db caller uid
-  :<|> listUserSessionsHandler db caller uid
-  :<|> userSessionAPI db caller uid
+userSessionsAPI :: DB db => Ctx db -> Auth -> UserIdentifier -> Server UserSessionsAPI
+userSessionsAPI ctx caller uid
+  = createSessionHandler ctx caller uid
+  :<|> listUserSessionsHandler ctx caller uid
+  :<|> userSessionAPI ctx caller uid
 
 userSessionAPI ::
-  DB db => db -> Auth -> UserIdentifier -> SessionId -> Server UserSessionAPI
-userSessionAPI db caller uid sid
-  = getUserSessionHandler db caller uid sid
-  :<|> deleteUserSessionHandler db caller uid sid
-  :<|> refreshUserSessionHandler db caller uid sid
+  DB db => Ctx db -> Auth -> UserIdentifier -> SessionId -> Server UserSessionAPI
+userSessionAPI ctx caller uid sid
+  = getUserSessionHandler ctx caller uid sid
+  :<|> deleteUserSessionHandler ctx caller uid sid
+  :<|> refreshUserSessionHandler ctx caller uid sid
 
-groupsAPI :: DB db => db -> Auth -> Server GroupsAPI
-groupsAPI db caller
-  = listGroupsHandler db caller
-  :<|> createGroupHandler db caller
-  :<|> groupAPI db caller
+groupsAPI :: DB db => Ctx db -> Auth -> Server GroupsAPI
+groupsAPI ctx caller
+  = listGroupsHandler ctx caller
+  :<|> createGroupHandler ctx caller
+  :<|> groupAPI ctx caller
 
-groupAPI :: DB db => db -> Auth -> GroupIdentifier -> Server GroupAPI
-groupAPI db caller gid
-  = getGroupHandler db caller gid
-  :<|> deleteGroupHandler db caller gid
-  :<|> groupPolicyAPI db caller gid
-  :<|> groupMembershipAPI db caller gid
+groupAPI :: DB db => Ctx db -> Auth -> GroupIdentifier -> Server GroupAPI
+groupAPI ctx caller gid
+  = getGroupHandler ctx caller gid
+  :<|> deleteGroupHandler ctx caller gid
+  :<|> groupPolicyAPI ctx caller gid
+  :<|> groupMembershipAPI ctx caller gid
 
 groupPolicyAPI ::
-  DB db => db -> Auth -> GroupIdentifier -> PolicyId -> Server GroupPolicyAPI
-groupPolicyAPI db caller gid pid
-  = createGroupPolicyAttachmentHandler db caller gid pid
-  :<|> deleteGroupPolicyAttachmentHandler db caller gid pid
+  DB db => Ctx db -> Auth -> GroupIdentifier -> PolicyId -> Server GroupPolicyAPI
+groupPolicyAPI ctx caller gid pid
+  = createGroupPolicyAttachmentHandler ctx caller gid pid
+  :<|> deleteGroupPolicyAttachmentHandler ctx caller gid pid
 
 groupMembershipAPI ::
-  DB db => db -> Auth -> GroupIdentifier -> UserIdentifier -> Server MembershipAPI
-groupMembershipAPI db caller gid uid
-  = createMembershipHandler db caller gid uid
-  :<|> deleteMembershipHandler db caller gid uid
+  DB db => Ctx db -> Auth -> GroupIdentifier -> UserIdentifier -> Server MembershipAPI
+groupMembershipAPI ctx caller gid uid
+  = createMembershipHandler ctx caller gid uid
+  :<|> deleteMembershipHandler ctx caller gid uid
 
-policiesAPI :: DB db => db -> Auth -> Server PoliciesAPI
-policiesAPI db caller
-  = listPoliciesHandler db caller
-  :<|> createPolicyHandler db caller
-  :<|> policyAPI db caller
+policiesAPI :: DB db => Ctx db -> Auth -> Server PoliciesAPI
+policiesAPI ctx caller
+  = listPoliciesHandler ctx caller
+  :<|> createPolicyHandler ctx caller
+  :<|> policyAPI ctx caller
 
-policyAPI :: DB db => db -> Auth -> PolicyId -> Server PolicyAPI
-policyAPI db caller pid
-  = getPolicyHandler db caller pid
-  :<|> deletePolicyHandler db caller pid
+policyAPI :: DB db => Ctx db -> Auth -> PolicyId -> Server PolicyAPI
+policyAPI ctx caller pid
+  = getPolicyHandler ctx caller pid
+  :<|> deletePolicyHandler ctx caller pid
 
-authorizeAPI :: DB db => db -> Auth -> Server AuthorizeAPI
-authorizeAPI db _ = authorizeHandler db
+authorizeAPI :: DB db => Ctx db -> Auth -> Server AuthorizeAPI
+authorizeAPI ctx _ = authorizeHandler ctx

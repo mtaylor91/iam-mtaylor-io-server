@@ -64,6 +64,7 @@ library
       IAM.Range
       IAM.Server.API
       IAM.Server.Auth
+      IAM.Server.Context
       IAM.Server.DB
       IAM.Server.DB.InMemory
       IAM.Server.DB.InMemory.State

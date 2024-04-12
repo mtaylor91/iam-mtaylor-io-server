@@ -40,110 +40,111 @@ import IAM.Membership
 import IAM.Policy
 import IAM.Range
 import IAM.Server.Auth
+import IAM.Server.Context
 import IAM.Server.DB
 import IAM.Session
 import IAM.User
 import IAM.UserPolicy
 
 
-getUserHandler :: DB db => db -> Auth -> UserIdentifier -> Handler User
-getUserHandler db auth uid = do
+getUserHandler :: DB db => Ctx db -> Auth -> UserIdentifier -> Handler User
+getUserHandler ctx auth uid = do
   requireSession auth
-  result <- liftIO $ runExceptT $ getUser db uid
+  result <- liftIO $ runExceptT $ getUser (ctxDB ctx) uid
   case result of
     Right user' -> return user'
     Left err    -> errorHandler err
 
 
 listUsersHandler ::
-  DB db => db -> Auth -> Maybe Int -> Maybe Int -> Handler [UserIdentifier]
-listUsersHandler db auth maybeOffset maybeLimit = do
+  DB db => Ctx db -> Auth -> Maybe Int -> Maybe Int -> Handler [UserIdentifier]
+listUsersHandler ctx auth maybeOffset maybeLimit = do
   requireSession auth
   let offset = fromMaybe 0 maybeOffset
-  result <- liftIO $ runExceptT $ listUsers db $ Range offset maybeLimit
+  result <- liftIO $ runExceptT $ listUsers (ctxDB ctx) $ Range offset maybeLimit
   case result of
     Right users' -> return users'
     Left err     -> errorHandler err
 
 
-createUserHandler :: DB db => db -> Auth -> User -> Handler User
-createUserHandler db auth userPrincipal = do
+createUserHandler :: DB db => Ctx db -> Auth -> User -> Handler User
+createUserHandler ctx auth userPrincipal = do
   requireSession auth
-  result <- liftIO $ runExceptT $ createUser db userPrincipal
+  result <- liftIO $ runExceptT $ createUser (ctxDB ctx) userPrincipal
   case result of
     Right user' -> return user'
     Left err    -> errorHandler err
 
 
-deleteUserHandler :: DB db => db -> Auth -> UserIdentifier -> Handler User
-deleteUserHandler db auth uid = do
+deleteUserHandler :: DB db => Ctx db -> Auth -> UserIdentifier -> Handler User
+deleteUserHandler ctx auth uid = do
   requireSession auth
-  result <- liftIO $ runExceptT $ deleteUser db uid
+  result <- liftIO $ runExceptT $ deleteUser (ctxDB ctx) uid
   case result of
     Right user' -> return user'
     Left err    -> errorHandler err
 
 
-getGroupHandler :: DB db => db -> Auth -> GroupIdentifier -> Handler Group
-getGroupHandler db auth gid = do
+getGroupHandler :: DB db => Ctx db -> Auth -> GroupIdentifier -> Handler Group
+getGroupHandler ctx auth gid = do
   requireSession auth
-  result <- liftIO $ runExceptT $ getGroup db gid
+  result <- liftIO $ runExceptT $ getGroup (ctxDB ctx) gid
   case result of
     Right group' -> return group'
     Left err     -> errorHandler err
 
 
 listGroupsHandler ::
-  DB db => db -> Auth -> Maybe Int -> Maybe Int -> Handler [GroupIdentifier]
-listGroupsHandler db auth maybeOffset maybeLimit = do
+  DB db => Ctx db -> Auth -> Maybe Int -> Maybe Int -> Handler [GroupIdentifier]
+listGroupsHandler ctx auth maybeOffset maybeLimit = do
   requireSession auth
   let offset = fromMaybe 0 maybeOffset
-  result <- liftIO $ runExceptT $ listGroups db $ Range offset maybeLimit
+  result <- liftIO $ runExceptT $ listGroups (ctxDB ctx) $ Range offset maybeLimit
   case result of
     Right groups' -> return groups'
     Left err      -> errorHandler err
 
 
-createGroupHandler :: DB db => db -> Auth -> Group -> Handler Group
-createGroupHandler db auth group = do
+createGroupHandler :: DB db => Ctx db -> Auth -> Group -> Handler Group
+createGroupHandler ctx auth group = do
   requireSession auth
-  result <- liftIO $ runExceptT $ createGroup db group
+  result <- liftIO $ runExceptT $ createGroup (ctxDB ctx) group
   case result of
     Right group' -> return group'
     Left err -> errorHandler err
 
 
-deleteGroupHandler :: DB db => db -> Auth -> GroupIdentifier -> Handler Group
-deleteGroupHandler db auth gid = do
+deleteGroupHandler :: DB db => Ctx db -> Auth -> GroupIdentifier -> Handler Group
+deleteGroupHandler ctx auth gid = do
   requireSession auth
-  result <- liftIO $ runExceptT $ deleteGroup db gid
+  result <- liftIO $ runExceptT $ deleteGroup (ctxDB ctx) gid
   case result of
     Right g -> return g
     Left err -> errorHandler err
 
 
-getPolicyHandler :: DB db => db -> Auth -> PolicyId -> Handler Policy
-getPolicyHandler db auth policy = do
+getPolicyHandler :: DB db => Ctx db -> Auth -> PolicyId -> Handler Policy
+getPolicyHandler ctx auth policy = do
   requireSession auth
-  result <- liftIO $ runExceptT $ getPolicy db policy
+  result <- liftIO $ runExceptT $ getPolicy (ctxDB ctx) policy
   case result of
     Right policy' -> return policy'
     Left err      -> errorHandler err
 
 
 listPoliciesHandler ::
-  DB db => db -> Auth -> Maybe Int -> Maybe Int -> Handler [PolicyId]
-listPoliciesHandler db auth maybeOffset maybeLimit = do
+  DB db => Ctx db -> Auth -> Maybe Int -> Maybe Int -> Handler [PolicyId]
+listPoliciesHandler ctx auth maybeOffset maybeLimit = do
   requireSession auth
   let offset = fromMaybe 0 maybeOffset
-  result <- liftIO $ runExceptT $ listPolicyIds db $ Range offset maybeLimit
+  result <- liftIO $ runExceptT $ listPolicyIds (ctxDB ctx) $ Range offset maybeLimit
   case result of
     Right pids -> return pids
     Left err   -> errorHandler err
 
 
-createPolicyHandler :: DB db => db -> Auth -> Policy -> Handler Policy
-createPolicyHandler db auth policy = do
+createPolicyHandler :: DB db => Ctx db -> Auth -> Policy -> Handler Policy
+createPolicyHandler ctx auth policy = do
   requireSession auth
   let callerPolicies = authPolicies $ authorization auth
   if policy `isAllowedBy` policyRules callerPolicies
@@ -151,46 +152,46 @@ createPolicyHandler db auth policy = do
     else throwError err403
   where
     createPolicy' = do
-      result <- liftIO $ runExceptT $ createPolicy db policy
+      result <- liftIO $ runExceptT $ createPolicy (ctxDB ctx) policy
       case result of
         Right policy' -> return policy'
         Left err      -> errorHandler err
 
 
-deletePolicyHandler :: DB db => db -> Auth -> PolicyId -> Handler Policy
-deletePolicyHandler db auth policy = do
+deletePolicyHandler :: DB db => Ctx db -> Auth -> PolicyId -> Handler Policy
+deletePolicyHandler ctx auth policy = do
   requireSession auth
-  result <- liftIO $ runExceptT $ deletePolicy db policy
+  result <- liftIO $ runExceptT $ deletePolicy (ctxDB ctx) policy
   case result of
     Right policy' -> return policy'
     Left err      -> errorHandler err
 
 
 createMembershipHandler ::
-  DB db => db -> Auth -> GroupIdentifier -> UserIdentifier -> Handler Membership
-createMembershipHandler db auth gid uid = do
+  DB db => Ctx db -> Auth -> GroupIdentifier -> UserIdentifier -> Handler Membership
+createMembershipHandler ctx auth gid uid = do
   requireSession auth
-  result <- liftIO $ runExceptT $ createMembership db uid gid
+  result <- liftIO $ runExceptT $ createMembership (ctxDB ctx) uid gid
   case result of
     Right membership -> return membership
     Left err         -> errorHandler err
 
 
 deleteMembershipHandler ::
-  DB db => db -> Auth -> GroupIdentifier -> UserIdentifier -> Handler Membership
-deleteMembershipHandler db auth gid uid = do
+  DB db => Ctx db -> Auth -> GroupIdentifier -> UserIdentifier -> Handler Membership
+deleteMembershipHandler ctx auth gid uid = do
   requireSession auth
-  result <- liftIO $ runExceptT $ deleteMembership db uid gid
+  result <- liftIO $ runExceptT $ deleteMembership (ctxDB ctx) uid gid
   case result of
     Right membership -> return membership
     Left err         -> errorHandler err
 
 
 createUserPolicyAttachmentHandler :: DB db =>
-  db -> Auth -> UserIdentifier -> PolicyId -> Handler UserPolicyAttachment
-createUserPolicyAttachmentHandler db auth uid pid = do
+  Ctx db -> Auth -> UserIdentifier -> PolicyId -> Handler UserPolicyAttachment
+createUserPolicyAttachmentHandler ctx auth uid pid = do
   requireSession auth
-  result0 <- liftIO $ runExceptT $ getPolicy db pid
+  result0 <- liftIO $ runExceptT $ getPolicy (ctxDB ctx) pid
   case result0 of
     Right policy -> do
       if policy `isAllowedBy` policyRules callerPolicies
@@ -200,27 +201,27 @@ createUserPolicyAttachmentHandler db auth uid pid = do
   where
     callerPolicies = authPolicies $ authorization auth
     createUserPolicyAttachment' = do
-      result <- liftIO $ runExceptT $ createUserPolicyAttachment db uid pid
+      result <- liftIO $ runExceptT $ createUserPolicyAttachment (ctxDB ctx) uid pid
       case result of
         Right attachment -> return attachment
         Left err         -> errorHandler err
 
 
 deleteUserPolicyAttachmentHandler :: DB db =>
-  db -> Auth -> UserIdentifier -> PolicyId -> Handler UserPolicyAttachment
-deleteUserPolicyAttachmentHandler db auth uid pid = do
+  Ctx db -> Auth -> UserIdentifier -> PolicyId -> Handler UserPolicyAttachment
+deleteUserPolicyAttachmentHandler ctx auth uid pid = do
   requireSession auth
-  result <- liftIO $ runExceptT $ deleteUserPolicyAttachment db uid pid
+  result <- liftIO $ runExceptT $ deleteUserPolicyAttachment (ctxDB ctx) uid pid
   case result of
     Right attachment -> return attachment
     Left err         -> errorHandler err
 
 
 createGroupPolicyAttachmentHandler :: DB db =>
-  db -> Auth -> GroupIdentifier -> PolicyId -> Handler GroupPolicyAttachment
-createGroupPolicyAttachmentHandler db auth gid pid = do
+  Ctx db -> Auth -> GroupIdentifier -> PolicyId -> Handler GroupPolicyAttachment
+createGroupPolicyAttachmentHandler ctx auth gid pid = do
   requireSession auth
-  result <- liftIO $ runExceptT $ getPolicy db pid
+  result <- liftIO $ runExceptT $ getPolicy (ctxDB ctx) pid
   case result of
     Right policy -> do
       if policy `isAllowedBy` policyRules callerPolicies
@@ -230,85 +231,87 @@ createGroupPolicyAttachmentHandler db auth gid pid = do
   where
     callerPolicies = authPolicies $ authorization auth
     createGroupPolicyAttachment' = do
-      result <- liftIO $ runExceptT $ createGroupPolicyAttachment db gid pid
+      result <- liftIO $ runExceptT $ createGroupPolicyAttachment (ctxDB ctx) gid pid
       case result of
         Right attachment -> return attachment
         Left err         -> errorHandler err
 
 
 deleteGroupPolicyAttachmentHandler :: DB db =>
-  db -> Auth -> GroupIdentifier -> PolicyId -> Handler GroupPolicyAttachment
-deleteGroupPolicyAttachmentHandler db auth gid pid = do
+  Ctx db -> Auth -> GroupIdentifier -> PolicyId -> Handler GroupPolicyAttachment
+deleteGroupPolicyAttachmentHandler ctx auth gid pid = do
   requireSession auth
-  result <- liftIO $ runExceptT $ deleteGroupPolicyAttachment db gid pid
+  result <- liftIO $ runExceptT $ deleteGroupPolicyAttachment (ctxDB ctx) gid pid
   case result of
     Right attachment -> return attachment
     Left err         -> errorHandler err
 
 
-createSessionHandler :: DB db => db -> Auth -> UserIdentifier -> Handler CreateSession
-createSessionHandler db _ uid = do
-  r0 <- liftIO $ runExceptT $ getUserId db uid
+createSessionHandler :: DB db =>
+  Ctx db -> Auth -> UserIdentifier -> Handler CreateSession
+createSessionHandler ctx _ uid = do
+  r0 <- liftIO $ runExceptT $ getUserId (ctxDB ctx) uid
   case r0 of
     Left e -> throwError $ toServerError e
     Right uid' -> do
-      result <- liftIO $ runExceptT $ IAM.Server.DB.createSession db uid'
+      result <- liftIO $ runExceptT $ IAM.Server.DB.createSession (ctxDB ctx) uid'
       case result of
         Right session' -> return session'
         Left err       -> errorHandler err
 
 
 listUserSessionsHandler :: DB db =>
-  db -> Auth -> UserIdentifier -> Maybe Int -> Maybe Int -> Handler [Session]
-listUserSessionsHandler db auth uid maybeOffset maybeLimit = do
+  Ctx db -> Auth -> UserIdentifier -> Maybe Int -> Maybe Int -> Handler [Session]
+listUserSessionsHandler ctx auth uid maybeOffset maybeLimit = do
   requireSession auth
   let offset = fromMaybe 0 maybeOffset
-  result <- liftIO $ runExceptT $ listUserSessions db uid $ Range offset maybeLimit
+  let dbOp = listUserSessions (ctxDB ctx) uid $ Range offset maybeLimit
+  result <- liftIO $ runExceptT dbOp
   case result of
     Right sessions -> return sessions
     Left err       -> errorHandler err
 
 
 getUserSessionHandler :: DB db =>
-  db -> Auth -> UserIdentifier -> SessionId -> Handler Session
-getUserSessionHandler db auth uid sid = do
+  Ctx db -> Auth -> UserIdentifier -> SessionId -> Handler Session
+getUserSessionHandler ctx auth uid sid = do
   requireSession auth
-  result <- liftIO $ runExceptT $ getSessionById db uid sid
+  result <- liftIO $ runExceptT $ getSessionById (ctxDB ctx) uid sid
   case result of
     Right session -> return session
     Left err      -> errorHandler err
 
 
 deleteUserSessionHandler :: DB db =>
-  db -> Auth -> UserIdentifier -> SessionId -> Handler Session
-deleteUserSessionHandler db auth uid sid = do
+  Ctx db -> Auth -> UserIdentifier -> SessionId -> Handler Session
+deleteUserSessionHandler ctx auth uid sid = do
   requireSession auth
-  result <- liftIO $ runExceptT $ deleteSession db uid sid
+  result <- liftIO $ runExceptT $ deleteSession (ctxDB ctx) uid sid
   case result of
     Right session -> return session
     Left err      -> errorHandler err
 
 
 refreshUserSessionHandler :: DB db =>
-  db -> Auth -> UserIdentifier -> SessionId -> Handler Session
-refreshUserSessionHandler db auth uid sid = do
+  Ctx db -> Auth -> UserIdentifier -> SessionId -> Handler Session
+refreshUserSessionHandler ctx auth uid sid = do
   requireSession auth
-  result' <- liftIO $ runExceptT $ IAM.Server.DB.refreshSession db uid sid
+  result' <- liftIO $ runExceptT $ IAM.Server.DB.refreshSession (ctxDB ctx) uid sid
   case result' of
     Right session' -> return session'
     Left err       -> errorHandler err
 
 
 authorizeHandler :: DB db =>
-  db ->  AuthorizationRequest -> Handler AuthorizationResponse
-authorizeHandler db req = do
-  r0 <- liftIO $ runExceptT $ getUserId db userIdent
+  Ctx db ->  AuthorizationRequest -> Handler AuthorizationResponse
+authorizeHandler ctx req = do
+  r0 <- liftIO $ runExceptT $ getUserId (ctxDB ctx) userIdent
   uid <- case r0 of
     Left e -> throwError $ toServerError e
     Right uid' -> return uid'
 
   let host = authorizationRequestHost req
-  result <- liftIO $ runExceptT $ listPoliciesForUser db uid host
+  result <- liftIO $ runExceptT $ listPoliciesForUser (ctxDB ctx) uid host
   case result of
     Left err -> errorHandler err
     Right policies ->

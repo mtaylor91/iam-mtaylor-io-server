@@ -15,6 +15,8 @@ import Text.Read
 
 import IAM.Config
 import IAM.Server.API
+import IAM.Server.Context
+import IAM.Server.DB
 import IAM.Server.DB.InMemory
 import IAM.Server.DB.Postgres
 import IAM.Server.Init
@@ -28,12 +30,9 @@ data ServerOptions = ServerOptions
 
 server :: ServerOptions -> IO ()
 server opts = do
-  adminEmail <- T.pack <$> configEmail
-  adminPublicKey <- T.pack <$> configPublicKey
-  host <- decodeUtf8 <$> loadEnvConfig "HOST"
   if postgres opts
-    then startApp (port opts) host =<< initDB host adminEmail adminPublicKey =<< pgDB
-    else startApp (port opts) host =<< initDB host adminEmail adminPublicKey =<< inMemory
+    then pgDB >>= startServer opts
+    else inMemory >>= startServer opts
   where
     pgDB = do
       pgHost <- loadEnvConfig "POSTGRES_HOST"
@@ -42,6 +41,15 @@ server opts = do
       pgUserName <- loadEnvConfig "POSTGRES_USER"
       pgPassword <- loadEnvConfig "POSTGRES_PASSWORD"
       connectToDatabase pgHost pgPort pgDatabase pgUserName pgPassword
+
+
+startServer :: DB db => ServerOptions -> db -> IO ()
+startServer opts db = do
+  adminEmail <- T.pack <$> configEmail
+  adminPublicKey <- T.pack <$> configPublicKey
+  host <- decodeUtf8 <$> loadEnvConfig "HOST"
+  db' <- initDB host adminEmail adminPublicKey db
+  startApp (port opts) host $ Ctx db'
 
 
 serverOptions :: Parser ServerOptions
