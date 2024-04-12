@@ -48,15 +48,17 @@ pgGetUserById (UserUUID uuid) = do
     Just _ -> do
       maybeEmail <- statement uuid selectUserEmail
       r0 <- statement uuid selectUserGroups
-      r1 <- statement uuid selectUserPolicyIds
+      r1 <- statement uuid selectUserPolicyIdentifiers
       r2 <- statement uuid selectUserPublicKeys
       let groups = map group $ toList r0
       let publicKeys = map pk $ toList r2
-      let policies = PolicyUUID <$> toList r1
+      let policies = map pid $ toList r1
       return $ Right $ User (UserUUID uuid) maybeEmail groups policies publicKeys
   where
     group (guuid, Nothing) = GroupId $ GroupUUID guuid
     group (guuid, Just name) = GroupIdAndName (GroupUUID guuid) name
+    pid (pid', Nothing) = PolicyId $ PolicyUUID pid'
+    pid (pid', Just name) = PolicyIdAndName (PolicyUUID pid') name
     pk (pkBytes, pkDescription) = UserPublicKey (PublicKey pkBytes) pkDescription
 
 
@@ -98,15 +100,20 @@ pgCreateUser (User (UserUUID uuid) maybeEmail groups policies publicKeys) = do
         Just email -> do
           statement (uuid, email) insertUserEmail
 
-      result <- resolveUserGroups groups
-      case result of
+      result2 <- resolveUserGroups groups
+      case result2 of
         Left e -> return $ Left e
         Right gids -> do
-          mapM_ insertUserGroup' gids
-          mapM_ insertUserPolicy' $ fmap unPolicyId policies
-          mapM_ insertUserPublicKey' publicKeys
 
-          return $ Right $ User (UserUUID uuid) maybeEmail groups policies publicKeys
+          result3 <- resolvePolicies policies
+          case result3 of
+            Left e -> return $ Left e
+            Right pids -> do
+              mapM_ insertUserGroup' gids
+              mapM_ insertUserPolicy' $ fmap unPolicyId pids
+              mapM_ insertUserPublicKey' publicKeys
+
+              return $ Right $ User (UserUUID uuid) maybeEmail groups policies publicKeys
 
   where
 
@@ -181,12 +188,15 @@ pgGetGroupById (GroupUUID uuid) = do
     Just _ -> do
       maybeName <- statement uuid selectGroupName
       r0 <- statement uuid selectGroupUsers
-      policies <- fmap PolicyUUID . toList <$> statement uuid selectGroupPolicyIds
+      r1 <- statement uuid selectGroupPolicyIdentifiers
       let users = map user $ toList r0
+      let policies = map pid $ toList r1
       return $ Right $ Group (GroupUUID uuid) maybeName users policies
   where
     user (uuuid, Nothing) = UserId $ UserUUID uuuid
     user (uuuid, Just email) = UserIdAndEmail (UserUUID uuuid) email
+    pid (pid', Nothing) = PolicyId $ PolicyUUID pid'
+    pid (pid', Just name) = PolicyIdAndName (PolicyUUID pid') name
 
 
 pgListGroups :: Range -> Transaction (Either Error [GroupIdentifier])
@@ -218,10 +228,14 @@ pgCreateGroup (Group (GroupUUID uuid) maybeName users policies) = do
       case result2 of
         Left e -> return $ Left e
         Right uids -> do
-          mapM_ insertGroupUser' uids
-          mapM_ insertGroupPolicy' $ fmap unPolicyId policies
 
-          return $ Right $ Group (GroupUUID uuid) maybeName users policies
+          result3 <- resolvePolicies policies
+          case result3 of
+            Left e -> return $ Left e
+            Right pids -> do
+              mapM_ insertGroupUser' uids
+              mapM_ insertGroupPolicy' pids
+              return $ Right $ Group (GroupUUID uuid) maybeName users policies
 
   where
 
@@ -236,8 +250,8 @@ pgCreateGroup (Group (GroupUUID uuid) maybeName users policies) = do
   insertGroupUser' :: UserId -> Transaction ()
   insertGroupUser' (UserUUID uuuid) = statement (uuid, uuuid) insertGroupUser
 
-  insertGroupPolicy' :: UUID -> Transaction ()
-  insertGroupPolicy' pid = statement (uuid, pid) insertGroupPolicy
+  insertGroupPolicy' :: PolicyId -> Transaction ()
+  insertGroupPolicy' (PolicyUUID pid) = statement (uuid, pid) insertGroupPolicy
 
   resolveGroupUsers :: [UserIdentifier] -> Transaction (Either Error [UserId])
   resolveGroupUsers [] = return $ Right []
@@ -575,6 +589,18 @@ resolveGroupIdentifier groupIdentifier =
     Right (GroupUUID uuid) -> return $ Just $ GroupUUID uuid
 
 
+resolvePolicyIdentifier :: PolicyIdentifier -> Transaction (Maybe PolicyId)
+resolvePolicyIdentifier (PolicyName name) = do
+  result <- statement name selectPolicyIdByName
+  case result of
+    Nothing -> return Nothing
+    Just pid -> return $ Just $ PolicyUUID pid
+resolvePolicyIdentifier (PolicyId (PolicyUUID pid)) = do
+  return $ Just $ PolicyUUID pid
+resolvePolicyIdentifier (PolicyIdAndName (PolicyUUID pid) _) =
+  return $ Just $ PolicyUUID pid
+
+
 resolveUserGroups :: [GroupIdentifier] -> Transaction (Either Error [GroupId])
 resolveUserGroups [] = return $ Right []
 resolveUserGroups (gident:rest) = do
@@ -587,3 +613,17 @@ resolveUserGroups (gident:rest) = do
       case result' of
         Left e -> return $ Left e
         Right gids -> return $ Right $ GroupUUID guuid : gids
+
+
+resolvePolicies :: [PolicyIdentifier] -> Transaction (Either Error [PolicyId])
+resolvePolicies [] = return $ Right []
+resolvePolicies (pident:rest) = do
+  result <- resolvePolicyIdentifier pident
+  case result of
+    Nothing ->
+      return $ Left $ NotFound "policy" $ policyIdentifierToText pident
+    Just (PolicyUUID pid) -> do
+      result' <- resolvePolicies rest
+      case result' of
+        Left e -> return $ Left e
+        Right pids -> return $ Right $ PolicyUUID pid : pids

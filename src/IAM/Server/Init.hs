@@ -27,9 +27,10 @@ createAdmin host adminEmail adminPublicKeyBase64 db = do
   adminPolicyId <- PolicyUUID <$> nextRandom
 
   -- Create the admin policy
-  let allowReads = Rule Allow Read "*"
+  let name = "iam-admin"
+      allowReads = Rule Allow Read "*"
       allowWrites = Rule Allow Write "*"
-      adminPolicy = Policy adminPolicyId (Just "admin") host [allowReads, allowWrites]
+      adminPolicy = Policy adminPolicyId (Just name) host [allowReads, allowWrites]
   r0 <- runExceptT $ createPolicy db adminPolicy
   case r0 of
     Left AlreadyExists -> return ()
@@ -38,7 +39,7 @@ createAdmin host adminEmail adminPublicKeyBase64 db = do
 
   -- Create the admins group
   adminsGroupId <- GroupUUID <$> nextRandom
-  let adminsGroup = Group adminsGroupId (Just "admins") [] [adminPolicyId]
+  let adminsGroup = Group adminsGroupId (Just "admins") [] [PolicyId adminPolicyId]
   r1 <- runExceptT $ createGroup db adminsGroup
   case r1 of
     Left AlreadyExists -> return ()

@@ -66,16 +66,20 @@ lookupPolicyIdentifier s pid =
 
 lookupUser :: InMemoryState -> UserId -> Maybe Text -> User
 lookupUser s uid maybeEmail =
-  let gs = [lookupGroupIdentifier s gid | (uid', gid) <- memberships s, uid' == uid]
-      ps = [pid | (uid', pid) <- userPolicyAttachments s, uid' == uid]
+  let gs = [lookupGroupIdentifier s gid |
+            (uid', gid) <- memberships s, uid' == uid]
+      ps = [lookupPolicyIdentifier s pid |
+            (uid', pid) <- userPolicyAttachments s, uid' == uid]
       pks = [pk | (uid', pk) <- usersPublicKeys s, uid' == uid]
    in User uid maybeEmail gs ps pks
 
 
 lookupGroup :: InMemoryState -> GroupId -> Maybe Text -> Group
 lookupGroup s gid maybeName =
-  let ps = [pid | (gid', pid) <- groupPolicyAttachments s, gid' == gid]
-      us = [lookupUserIdentifier s uid | (uid, gid') <- memberships s, gid' == gid]
+  let ps = [lookupPolicyIdentifier s pid |
+            (gid', pid) <- groupPolicyAttachments s, gid' == gid]
+      us = [lookupUserIdentifier s uid |
+            (uid, gid') <- memberships s, gid' == gid]
    in Group gid maybeName us ps
 
 
@@ -141,8 +145,8 @@ updateUserState s uid (Just (User _ Nothing gs ps pks)) = s
     (\gid -> (:) (uid, gid) . Prelude.filter (/= (uid, gid)))
     (memberships s) (mapMaybe (resolveGroupIdentifier s) gs)
   , userPolicyAttachments = Prelude.foldr
-    (\(uid', pid) -> (:) (uid', pid) . Prelude.filter (/= (uid', pid)))
-    (userPolicyAttachments s) [(uid, pid) | pid <- ps]
+    (\pid -> (:) (uid, pid) . Prelude.filter (/= (uid, pid)))
+    (userPolicyAttachments s) (mapMaybe (resolvePolicyIdentifier s) ps)
   , usersPublicKeys = Prelude.foldr
     (\pk -> (:) (uid, pk) . Prelude.filter (/= (uid, pk))) (usersPublicKeys s) pks
   }
@@ -153,8 +157,8 @@ updateUserState s uid (Just (User _ (Just email) gs ps pks)) = s
     (\gid -> (:) (uid, gid) . Prelude.filter (/= (uid, gid)))
     (memberships s) (mapMaybe (resolveGroupIdentifier s) gs)
   , userPolicyAttachments = Prelude.foldr
-    (\(uid', pid) -> (:) (uid', pid) . Prelude.filter (/= (uid', pid)))
-    (userPolicyAttachments s) [(uid, pid) | pid <- ps]
+    (\pid -> (:) (uid, pid) . Prelude.filter (/= (uid, pid)))
+    (userPolicyAttachments s) (mapMaybe (resolvePolicyIdentifier s) ps)
   , usersPublicKeys = Prelude.foldr
     (\pk -> (:) (uid, pk) . Prelude.filter (/= (uid, pk))) (usersPublicKeys s) pks
   }
@@ -174,8 +178,8 @@ updateGroupState s gid (Just (Group _ Nothing us ps)) = s
     (\uid -> (:) (uid, gid) . Prelude.filter (/= (uid, gid)))
     (memberships s) (mapMaybe (resolveUserIdentifier s) us)
   , groupPolicyAttachments = Prelude.foldr
-    (\(gid', pid) -> (:) (gid', pid) . Prelude.filter (/= (gid', pid)))
-    (groupPolicyAttachments s) [(gid, pid) | pid <- ps]
+    (\pid -> (:) (gid, pid) . Prelude.filter (/= (gid, pid)))
+    (groupPolicyAttachments s) (mapMaybe (resolvePolicyIdentifier s) ps)
   }
 updateGroupState s gid (Just (Group _ (Just name) us ps)) = s
   { groups = gid : Prelude.filter (/= gid) (groups s)
@@ -184,8 +188,8 @@ updateGroupState s gid (Just (Group _ (Just name) us ps)) = s
     (\uid -> (:) (uid, gid) . Prelude.filter (/= (uid, gid)))
     (memberships s) (mapMaybe (resolveUserIdentifier s) us)
   , groupPolicyAttachments = Prelude.foldr
-    (\(gid', pid) -> (:) (gid', pid) . Prelude.filter (/= (gid', pid)))
-    (groupPolicyAttachments s) [(gid, pid) | pid <- ps]
+    (\pid -> (:) (gid, pid) . Prelude.filter (/= (gid, pid)))
+    (groupPolicyAttachments s) (mapMaybe (resolvePolicyIdentifier s) ps)
   }
 updateGroupState s gid Nothing = s
   { groups = Prelude.filter (/= gid) (groups s)

@@ -15,7 +15,7 @@ data Group = Group
   { groupId :: !GroupId
   , groupName :: !(Maybe Text)
   , groupUsers :: ![UserIdentifier]
-  , groupPolicies :: ![PolicyId]
+  , groupPolicies :: ![PolicyIdentifier]
   } deriving (Eq, Show)
 
 instance FromJSON Group where

@@ -22,6 +22,7 @@ import IAM.Client.Auth
 import IAM.Client.Util
 import IAM.Config
 import IAM.Identifiers
+import IAM.Policy
 import IAM.User
 import qualified IAM.Client
 
@@ -30,6 +31,7 @@ data CreateUser = CreateUser
   { createUserUUIDOrEmail :: !Text
   , createUserDescription :: !(Maybe Text)
   , createUserPublicKey :: !(Maybe Text)
+  , createUserPolicies :: ![Text]
   , createUserGroups :: ![Text]
   } deriving (Show)
 
@@ -71,7 +73,9 @@ createUserById' createUserInfo uid maybeEmail pk = do
       putStrLn "Invalid public key: base64 decoding failed"
     Right pk' -> do
       let upk' = upk (PublicKey pk') (createUserDescription createUserInfo)
-      let user = User uid maybeEmail (gid <$> createUserGroups createUserInfo) [] [upk']
+      let gs = gid <$> createUserGroups createUserInfo
+      let ps = pid <$> createUserPolicies createUserInfo
+      let user = User uid maybeEmail gs ps [upk']
       let clientCommand = IAM.Client.createUser user
       result <- runClientM clientCommand $ mkClientEnv mgr url
       case result of
@@ -82,6 +86,10 @@ createUserById' createUserInfo uid maybeEmail pk = do
     gid t = case readMaybe (unpack t) of
       Just uuid -> GroupId $ GroupUUID uuid
       Nothing -> GroupName t
+    pid :: Text -> PolicyIdentifier
+    pid t = case readMaybe (unpack t) of
+      Just uuid -> PolicyId $ PolicyUUID uuid
+      Nothing -> PolicyName t
     upk :: PublicKey -> Maybe Text -> UserPublicKey
     upk pk' = UserPublicKey pk' . fromMaybe "CLI"
 
@@ -100,6 +108,11 @@ createUserOptions = CreateUser
       ( long "public-key"
      <> metavar "PUBLIC_KEY"
      <> help "Public key for user"
+      ) )
+  <*> many ( strOption
+      ( long "policy"
+      <> metavar "POLICY"
+      <> help "Policy for user"
       ) )
   <*> many ( strOption
       ( long "group"

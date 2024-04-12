@@ -17,7 +17,7 @@ data User = User
   { userId :: !UserId
   , userEmail :: !(Maybe Text)
   , userGroups :: ![GroupIdentifier]
-  , userPolicies :: ![PolicyId]
+  , userPolicies :: ![PolicyIdentifier]
   , userPublicKeys :: ![UserPublicKey]
   } deriving (Eq, Show)
 

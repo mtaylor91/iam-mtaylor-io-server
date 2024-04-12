@@ -255,13 +255,18 @@ selectUserPublicKeys =
   |]
 
 
-selectUserPolicyIds :: Statement UUID (Vector UUID)
-selectUserPolicyIds =
+selectUserPolicyIdentifiers :: Statement UUID (Vector (UUID, Maybe Text))
+selectUserPolicyIdentifiers =
   [vectorStatement|
     SELECT
-      users_policies.policy_uuid :: uuid
+      users_policies.policy_uuid :: uuid,
+      policies_names.policy_name :: text?
     FROM
       users_policies
+    LEFT JOIN
+      policies_names
+    ON
+      users_policies.policy_uuid = policies_names.policy_uuid
     WHERE
       users_policies.user_uuid = $1 :: uuid
   |]
@@ -373,13 +378,18 @@ selectGroupUsers =
   |]
 
 
-selectGroupPolicyIds :: Statement UUID (Vector UUID)
-selectGroupPolicyIds =
+selectGroupPolicyIdentifiers :: Statement UUID (Vector (UUID, Maybe Text))
+selectGroupPolicyIdentifiers =
   [vectorStatement|
     SELECT
-      groups_policies.policy_uuid :: uuid
+      groups_policies.policy_uuid :: uuid,
+      policies_names.policy_name :: text?
     FROM
       groups_policies
+    LEFT JOIN
+      policies_names
+    ON
+      groups_policies.policy_uuid = policies_names.policy_uuid
     WHERE
       groups_policies.group_uuid = $1 :: uuid
   |]

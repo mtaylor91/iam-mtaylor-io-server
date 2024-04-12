@@ -4,7 +4,6 @@ module IAM.Command.Create.Group
   , CreateGroup(..)
   ) where
 
-import Control.Exception
 import Data.Text
 import Data.UUID
 import Data.UUID.V4
@@ -57,7 +56,7 @@ createGroupById createGroupInfo gident = do
     Left _email -> GroupUUID <$> nextRandom
 
   let maybeName = unGroupIdentifierName gident
-  let grp = Group gid maybeName users $ fmap PolicyUUID policies
+  let grp = Group gid maybeName users policies
   res <- runClientM (IAM.Client.createGroup grp) $ mkClientEnv mgr url
   case res of
     Left err -> handleClientError err
@@ -65,11 +64,11 @@ createGroupById createGroupInfo gident = do
 
   where
 
-    translatePolicyId :: Text -> IO UUID
+    translatePolicyId :: Text -> IO PolicyIdentifier
     translatePolicyId pid = do
       case readMaybe (unpack pid) of
-        Just uuid -> return uuid
-        Nothing -> throw $ userError $ "Invalid policy ID: " ++ show pid
+        Just uuid -> return $ PolicyId $ PolicyUUID uuid
+        Nothing -> return $ PolicyName pid
 
     translateUserId :: Text -> IO UserIdentifier
     translateUserId uid = do
