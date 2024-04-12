@@ -15,6 +15,7 @@ import Text.Read
 
 import IAM.Client.Auth
 import IAM.Client.Util
+import IAM.Policy
 import qualified IAM.Client
 
 
@@ -36,7 +37,7 @@ deletePolicyByUUID polId = do
   auth <- clientAuthInfo
   mgr <- newManager tlsManagerSettings { managerModifyRequest = clientAuth auth }
 
-  let polClient = IAM.Client.mkPolicyClient polId
+  let polClient = IAM.Client.mkPolicyClient $ PolicyUUID polId
   res <- runClientM (IAM.Client.deletePolicy polClient) $ mkClientEnv mgr url
   case res of
     Left err -> handleClientError err

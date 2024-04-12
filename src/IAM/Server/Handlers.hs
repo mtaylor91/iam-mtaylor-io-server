@@ -29,7 +29,6 @@ module IAM.Server.Handlers
 import Control.Monad.IO.Class
 import Control.Monad.Except
 import Data.Maybe
-import Data.UUID
 import Servant
 
 import IAM.Authorization
@@ -123,7 +122,7 @@ deleteGroupHandler db auth gid = do
     Left err -> errorHandler err
 
 
-getPolicyHandler :: DB db => db -> Auth -> UUID -> Handler Policy
+getPolicyHandler :: DB db => db -> Auth -> PolicyId -> Handler Policy
 getPolicyHandler db auth policy = do
   requireSession auth
   result <- liftIO $ runExceptT $ getPolicy db policy
@@ -132,7 +131,8 @@ getPolicyHandler db auth policy = do
     Left err      -> errorHandler err
 
 
-listPoliciesHandler :: DB db => db -> Auth -> Maybe Int -> Maybe Int -> Handler [UUID]
+listPoliciesHandler ::
+  DB db => db -> Auth -> Maybe Int -> Maybe Int -> Handler [PolicyId]
 listPoliciesHandler db auth maybeOffset maybeLimit = do
   requireSession auth
   let offset = fromMaybe 0 maybeOffset
@@ -157,7 +157,7 @@ createPolicyHandler db auth policy = do
         Left err      -> errorHandler err
 
 
-deletePolicyHandler :: DB db => db -> Auth -> UUID -> Handler Policy
+deletePolicyHandler :: DB db => db -> Auth -> PolicyId -> Handler Policy
 deletePolicyHandler db auth policy = do
   requireSession auth
   result <- liftIO $ runExceptT $ deletePolicy db policy
@@ -187,7 +187,7 @@ deleteMembershipHandler db auth gid uid = do
 
 
 createUserPolicyAttachmentHandler :: DB db =>
-  db -> Auth -> UserIdentifier -> UUID -> Handler UserPolicyAttachment
+  db -> Auth -> UserIdentifier -> PolicyId -> Handler UserPolicyAttachment
 createUserPolicyAttachmentHandler db auth uid pid = do
   requireSession auth
   result0 <- liftIO $ runExceptT $ getPolicy db pid
@@ -207,7 +207,7 @@ createUserPolicyAttachmentHandler db auth uid pid = do
 
 
 deleteUserPolicyAttachmentHandler :: DB db =>
-  db -> Auth -> UserIdentifier -> UUID -> Handler UserPolicyAttachment
+  db -> Auth -> UserIdentifier -> PolicyId -> Handler UserPolicyAttachment
 deleteUserPolicyAttachmentHandler db auth uid pid = do
   requireSession auth
   result <- liftIO $ runExceptT $ deleteUserPolicyAttachment db uid pid
@@ -217,7 +217,7 @@ deleteUserPolicyAttachmentHandler db auth uid pid = do
 
 
 createGroupPolicyAttachmentHandler :: DB db =>
-  db -> Auth -> GroupIdentifier -> UUID -> Handler GroupPolicyAttachment
+  db -> Auth -> GroupIdentifier -> PolicyId -> Handler GroupPolicyAttachment
 createGroupPolicyAttachmentHandler db auth gid pid = do
   requireSession auth
   result <- liftIO $ runExceptT $ getPolicy db pid
@@ -237,7 +237,7 @@ createGroupPolicyAttachmentHandler db auth gid pid = do
 
 
 deleteGroupPolicyAttachmentHandler :: DB db =>
-  db -> Auth -> GroupIdentifier -> UUID -> Handler GroupPolicyAttachment
+  db -> Auth -> GroupIdentifier -> PolicyId -> Handler GroupPolicyAttachment
 deleteGroupPolicyAttachmentHandler db auth gid pid = do
   requireSession auth
   result <- liftIO $ runExceptT $ deleteGroupPolicyAttachment db gid pid

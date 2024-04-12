@@ -5,7 +5,6 @@ module IAM.Server.DB.InMemory.State
 
 import Data.Maybe
 import Data.Text
-import Data.UUID
 
 import IAM.Group
 import IAM.Identifiers
@@ -22,8 +21,8 @@ data InMemoryState = InMemoryState
   , usersEmails :: ![(UserId, Text)]
   , groupsNames :: ![(GroupId, Text)]
   , memberships :: ![(UserId, GroupId)]
-  , userPolicyAttachments :: ![(UserId, UUID)]
-  , groupPolicyAttachments :: ![(GroupId, UUID)]
+  , userPolicyAttachments :: ![(UserId, PolicyId)]
+  , groupPolicyAttachments :: ![(GroupId, PolicyId)]
   , usersPublicKeys :: ![(UserId, UserPublicKey)]
   } deriving (Show)
 
@@ -99,7 +98,7 @@ groupState (GroupId gid) f s =
 
 
 policyState :: forall f. Functor f =>
-  UUID -> (Maybe Policy -> f (Maybe Policy)) -> InMemoryState -> f InMemoryState
+  PolicyId -> (Maybe Policy -> f (Maybe Policy)) -> InMemoryState -> f InMemoryState
 policyState pid f s =
   case Prelude.filter ((== pid) . policyId) $ policies s of
     [] -> p <$> f Nothing
@@ -186,7 +185,7 @@ updateGroupState s gid Nothing = s
   }
 
 
-updatePolicyState :: InMemoryState -> UUID -> Maybe Policy -> InMemoryState
+updatePolicyState :: InMemoryState -> PolicyId -> Maybe Policy -> InMemoryState
 updatePolicyState s pid (Just p) = s
   { policies = p : Prelude.filter ((/= pid) . policyId) (policies s) }
 updatePolicyState s pid Nothing = s

@@ -43,7 +43,7 @@ createPolicy createPolicyInfo =
 
 createPolicyWithUUID :: CreatePolicy -> UUID -> IO ()
 createPolicyWithUUID createPolicyInfo uuid =
-  createPolicy' $ Policy uuid host' stmts
+  createPolicy' $ Policy (PolicyUUID uuid) Nothing host' stmts
   where
   host' = createPolicyHost createPolicyInfo
   stmts = allowStmts ++ denyStmts
@@ -63,7 +63,7 @@ createPolicy' policy = do
   result <- runClientM (IAM.Client.createPolicy policy) $ mkClientEnv mgr url
   case result of
     Right _ ->
-      putStrLn $ unpack $ toText $ policyId policy
+      putStrLn $ unpack $ toText $ unPolicyId $ policyId policy
     Left err ->
       handleClientError err
 

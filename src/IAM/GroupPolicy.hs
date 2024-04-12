@@ -4,14 +4,14 @@ module IAM.GroupPolicy
   ) where
 
 import Data.Aeson
-import Data.UUID
 
 import IAM.Identifiers
+import IAM.Policy
 
 
 data GroupPolicyAttachment = GroupPolicyAttachment
   { groupPolicyAttachmentGroupId :: !GroupId
-  , groupPolicyAttachmentPolicyId :: !UUID
+  , groupPolicyAttachmentPolicyId :: !PolicyId
   } deriving (Eq, Show)
 
 instance FromJSON GroupPolicyAttachment where

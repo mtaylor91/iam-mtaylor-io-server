@@ -24,12 +24,12 @@ initDB host adminEmail adminPublicKeyBase64 db = do
 
 createAdmin :: DB db => Text -> Text -> Text -> db -> IO ()
 createAdmin host adminEmail adminPublicKeyBase64 db = do
-  adminPolicyId <- nextRandom
+  adminPolicyId <- PolicyUUID <$> nextRandom
 
   -- Create the admin policy
   let allowReads = Rule Allow Read "*"
       allowWrites = Rule Allow Write "*"
-      adminPolicy = Policy adminPolicyId host [allowReads, allowWrites]
+      adminPolicy = Policy adminPolicyId (Just "admin") host [allowReads, allowWrites]
   r0 <- runExceptT $ createPolicy db adminPolicy
   case r0 of
     Left AlreadyExists -> return ()

@@ -18,7 +18,6 @@ module IAM.API
   , iamAPI
   ) where
 
-import Data.UUID
 import Servant
 
 import IAM.Authorization
@@ -52,7 +51,7 @@ type UsersAPI
 type UserAPI
   = ( Get '[JSON] User
   :<|> Delete '[JSON] User
-  :<|> "policies" :> Capture "policy" UUID :> UserPolicyAPI
+  :<|> "policies" :> Capture "policy" PolicyId :> UserPolicyAPI
   :<|> "sessions" :> UserSessionsAPI
     )
 
@@ -82,7 +81,7 @@ type GroupsAPI
 type GroupAPI
   = ( Get '[JSON] Group
   :<|> Delete '[JSON] Group
-  :<|> "policies" :> Capture "policy" UUID :> GroupPolicyAPI
+  :<|> "policies" :> Capture "policy" PolicyId :> GroupPolicyAPI
   :<|> "members" :> Capture "user" UserIdentifier :> MembershipAPI
     )
 
@@ -97,9 +96,9 @@ type MembershipAPI
     )
 
 type PoliciesAPI
-  = ( QueryParam "offset" Int :> QueryParam "limit" Int :> Get '[JSON] [UUID]
+  = ( QueryParam "offset" Int :> QueryParam "limit" Int :> Get '[JSON] [PolicyId]
   :<|> ( ReqBody '[JSON] Policy :> PostCreated '[JSON] Policy )
-  :<|> ( Capture "policy" UUID :> PolicyAPI )
+  :<|> ( Capture "policy" PolicyId :> PolicyAPI )
     )
 
 type PolicyAPI

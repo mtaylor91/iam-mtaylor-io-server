@@ -4,7 +4,6 @@ module IAM.Server.DB ( DB(..) ) where
 import Control.Monad.IO.Class
 import Control.Monad.Except
 import Data.Text
-import Data.UUID
 
 import IAM.Error
 import IAM.Group
@@ -58,11 +57,11 @@ class DB db where
 
   -- | getPolicy returns a policy from the database by its id.
   getPolicy :: (MonadIO m, MonadError Error m) =>
-    db -> UUID -> m Policy
+    db -> PolicyId -> m Policy
 
   -- | listPolicyIds returns a list of all policies in the database.
   listPolicyIds :: (MonadIO m, MonadError Error m) =>
-    db -> Range -> m [UUID]
+    db -> Range -> m [PolicyId]
 
   -- | listPoliciesForUser returns a list of all policies attached
   -- | to a user and its groups.
@@ -79,7 +78,7 @@ class DB db where
 
   -- | deletePolicy removes a policy from the database by its name.
   deletePolicy :: (MonadIO m, MonadError Error m) =>
-    db -> UUID -> m Policy
+    db -> PolicyId -> m Policy
 
   -- | createMembership adds a user to a group.
   createMembership :: (MonadIO m, MonadError Error m) =>
@@ -91,19 +90,19 @@ class DB db where
 
   -- | createUserPolicyAttachment attaches a policy to a user.
   createUserPolicyAttachment :: (MonadIO m, MonadError Error m) =>
-    db -> UserIdentifier -> UUID -> m UserPolicyAttachment
+    db -> UserIdentifier -> PolicyId -> m UserPolicyAttachment
 
   -- | deleteUserPolicyAttachment detaches a policy from a user.
   deleteUserPolicyAttachment :: (MonadIO m, MonadError Error m) =>
-    db -> UserIdentifier -> UUID -> m UserPolicyAttachment
+    db -> UserIdentifier -> PolicyId -> m UserPolicyAttachment
 
   -- | createGroupPolicyAttachment attaches a policy to a group.
   createGroupPolicyAttachment :: (MonadIO m, MonadError Error m) =>
-    db -> GroupIdentifier -> UUID -> m GroupPolicyAttachment
+    db -> GroupIdentifier -> PolicyId -> m GroupPolicyAttachment
 
   -- | deleteGroupPolicyAttachment detaches a policy from a group.
   deleteGroupPolicyAttachment :: (MonadIO m, MonadError Error m) =>
-    db -> GroupIdentifier -> UUID -> m GroupPolicyAttachment
+    db -> GroupIdentifier -> PolicyId -> m GroupPolicyAttachment
 
   -- | createSession adds a new session to the database.
   createSession :: (MonadIO m, MonadError Error m) =>

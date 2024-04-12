@@ -6,16 +6,16 @@ module IAM.Group
 import Data.Aeson
 import Data.Maybe
 import Data.Text
-import Data.UUID
 
 import IAM.Identifiers
+import IAM.Policy
 
 
 data Group = Group
   { groupId :: !GroupId
   , groupName :: !(Maybe Text)
   , groupUsers :: ![UserIdentifier]
-  , groupPolicies :: ![UUID]
+  , groupPolicies :: ![PolicyId]
   } deriving (Eq, Show)
 
 instance FromJSON Group where

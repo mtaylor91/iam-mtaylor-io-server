@@ -8,6 +8,21 @@ import Data.Aeson
 import Data.Aeson.TH
 import Data.Text hiding (any, all, concatMap)
 import Data.UUID
+import Servant
+import Text.Read (readMaybe)
+
+
+newtype PolicyId = PolicyUUID { unPolicyId :: UUID } deriving (Eq, Show)
+
+$(deriveJSON defaultOptions { unwrapUnaryRecords = True } ''PolicyId)
+
+instance FromHttpApiData PolicyId where
+  parseUrlPiece s = case readMaybe $ unpack s of
+    Just uuid -> Right $ PolicyUUID uuid
+    Nothing -> Left "Invalid UUID"
+
+instance ToHttpApiData PolicyId where
+  toUrlPiece (PolicyUUID uuid) = toText uuid
 
 
 data Effect = Allow | Deny deriving (Eq, Show)
@@ -30,7 +45,8 @@ $(deriveJSON defaultOptions ''Rule)
 
 
 data Policy = Policy
-  { policyId :: !UUID
+  { policyId :: !PolicyId
+  , policyName :: !(Maybe Text)
   , hostname :: !Text
   , statements :: ![Rule]
   } deriving (Eq, Show)
@@ -38,14 +54,21 @@ data Policy = Policy
 instance FromJSON Policy where
   parseJSON (Object obj) = do
     id' <- obj .: "id"
+    name' <- obj .:? "name"
     hostname' <- obj .: "hostname"
     statements' <- obj .: "statements"
-    return $ Policy id' hostname' statements'
+    return $ Policy id' name' hostname' statements'
   parseJSON _ = fail "Invalid JSON"
 
 instance ToJSON Policy where
-  toJSON (Policy id' hostname' statements') = object
+  toJSON (Policy id' Nothing hostname' statements') = object
     [ "id" .= id'
+    , "hostname" .= hostname'
+    , "statements" .= statements'
+    ]
+  toJSON (Policy id' (Just name) hostname' statements') = object
+    [ "id" .= id'
+    , "name" .= name
     , "hostname" .= hostname'
     , "statements" .= statements'
     ]

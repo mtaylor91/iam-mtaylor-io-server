@@ -116,7 +116,7 @@ instance DB InMemory where
     s <- liftIO $ readTVarIO tvar
     case s ^. policyState pid of
       Just p -> return p
-      Nothing -> throwError $ NotFound "policy" $ toText pid
+      Nothing -> throwError $ NotFound "policy" $ toText $ unPolicyId pid
 
   listPolicyIds (InMemory tvar) (Range offset maybeLimit) = do
     s <- liftIO $ readTVarIO tvar
@@ -156,7 +156,7 @@ instance DB InMemory where
           writeTVar tvar $ s & policyState pid .~ Nothing
           return $ Right p
         Nothing ->
-          return $ Left $ NotFound "policy" $ toText pid
+          return $ Left $ NotFound "policy" $ toText $ unPolicyId pid
     either throwError return result
 
   createMembership (InMemory tvar) uid gid = do
@@ -218,7 +218,7 @@ instance DB InMemory where
           case Prelude.filter (== (uid', pid)) $ userPolicyAttachments s of
             [] ->
               return $ Left $ NotFound "user policy attachment" $
-                userIdentifierToText uid <> " " <> toText pid
+                userIdentifierToText uid <> " " <> toText (unPolicyId pid)
             _:_ -> do
               writeTVar tvar $ s { userPolicyAttachments =
                 Prelude.filter (/= (uid', pid)) $ userPolicyAttachments s }
@@ -249,7 +249,7 @@ instance DB InMemory where
           case Prelude.filter (== (gid', pid)) $ groupPolicyAttachments s of
             [] ->
               return $ Left $ NotFound "group policy attachment" $
-                groupIdentifierToText gid <> " " <> toText pid
+                groupIdentifierToText gid <> " " <> toText (unPolicyId pid)
             _:_ -> do
               writeTVar tvar $ s { groupPolicyAttachments =
                 Prelude.filter (/= (gid', pid)) $ groupPolicyAttachments s }

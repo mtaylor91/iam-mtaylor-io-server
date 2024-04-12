@@ -8,16 +8,16 @@ import Data.Aeson
 import Data.ByteString.Base64
 import Data.Text
 import Data.Text.Encoding
-import Data.UUID
 
 import IAM.Identifiers
+import IAM.Policy
 
 
 data User = User
   { userId :: !UserId
   , userEmail :: !(Maybe Text)
   , userGroups :: ![GroupIdentifier]
-  , userPolicies :: ![UUID]
+  , userPolicies :: ![PolicyId]
   , userPublicKeys :: ![UserPublicKey]
   } deriving (Eq, Show)
 

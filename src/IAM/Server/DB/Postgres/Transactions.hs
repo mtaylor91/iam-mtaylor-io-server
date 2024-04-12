@@ -52,7 +52,7 @@ pgGetUserById (UserUUID uuid) = do
       r2 <- statement uuid selectUserPublicKeys
       let groups = map group $ toList r0
       let publicKeys = map pk $ toList r2
-      let policies = toList r1
+      let policies = PolicyUUID <$> toList r1
       return $ Right $ User (UserUUID uuid) maybeEmail groups policies publicKeys
   where
     group (guuid, Nothing) = GroupId $ GroupUUID guuid
@@ -103,7 +103,7 @@ pgCreateUser (User (UserUUID uuid) maybeEmail groups policies publicKeys) = do
         Left e -> return $ Left e
         Right gids -> do
           mapM_ insertUserGroup' gids
-          mapM_ insertUserPolicy' policies
+          mapM_ insertUserPolicy' $ fmap unPolicyId policies
           mapM_ insertUserPublicKey' publicKeys
 
           return $ Right $ User (UserUUID uuid) maybeEmail groups policies publicKeys
@@ -181,7 +181,7 @@ pgGetGroupById (GroupUUID uuid) = do
     Just _ -> do
       maybeName <- statement uuid selectGroupName
       r0 <- statement uuid selectGroupUsers
-      policies <- toList <$> statement uuid selectGroupPolicyIds
+      policies <- fmap PolicyUUID . toList <$> statement uuid selectGroupPolicyIds
       let users = map user $ toList r0
       return $ Right $ Group (GroupUUID uuid) maybeName users policies
   where
@@ -219,7 +219,7 @@ pgCreateGroup (Group (GroupUUID uuid) maybeName users policies) = do
         Left e -> return $ Left e
         Right uids -> do
           mapM_ insertGroupUser' uids
-          mapM_ insertGroupPolicy' policies
+          mapM_ insertGroupPolicy' $ fmap unPolicyId policies
 
           return $ Right $ Group (GroupUUID uuid) maybeName users policies
 
@@ -281,8 +281,8 @@ pgDeleteGroupById (GroupUUID uuid) = do
       return $ Right group
 
 
-pgGetPolicy :: UUID -> Transaction (Either Error Policy)
-pgGetPolicy pid = do
+pgGetPolicy :: PolicyId -> Transaction (Either Error Policy)
+pgGetPolicy (PolicyUUID pid) = do
   result <- statement pid selectPolicy
   case result of
     Nothing -> return $ Left $ NotFound "policy" $ toText pid
@@ -292,11 +292,11 @@ pgGetPolicy pid = do
         Success p -> return $ Right p
 
 
-pgListPolicies :: Range -> Transaction (Either Error [UUID])
+pgListPolicies :: Range -> Transaction (Either Error [PolicyId])
 pgListPolicies (Range offset maybeLimit) = do
   let limit = fromMaybe 100 maybeLimit
   result <- statement (fromIntegral offset, fromIntegral limit) selectPolicyIds
-  return $ Right $ toList result
+  return $ Right $ PolicyUUID <$> toList result
 
 
 pgListPoliciesForUser :: Text -> UserId -> Transaction (Either Error [Policy])
@@ -341,19 +341,19 @@ pgListPoliciesForGroupById host (GroupUUID uuid) = do
 
 pgCreatePolicy :: Policy -> Transaction (Either Error Policy)
 pgCreatePolicy policy = do
-  statement (policyId policy, hostname policy, toJSON policy) insertPolicy
+  statement (unPolicyId $ policyId policy, hostname policy, toJSON policy) insertPolicy
   return $ Right policy
 
 
 pgUpdatePolicy :: Policy -> Transaction (Either Error Policy)
 pgUpdatePolicy policy = do
-  statement (policyId policy, toJSON policy) updatePolicy
+  statement (unPolicyId $ policyId policy, toJSON policy) updatePolicy
   return $ Right policy
 
 
-pgDeletePolicy :: UUID -> Transaction (Either Error Policy)
-pgDeletePolicy pid = do
-  result <- pgGetPolicy pid
+pgDeletePolicy :: PolicyId -> Transaction (Either Error Policy)
+pgDeletePolicy (PolicyUUID pid) = do
+  result <- pgGetPolicy $ PolicyUUID pid
   case result of
     Left e -> return $ Left e
     Right policy -> do
@@ -392,46 +392,46 @@ pgDeleteMembership userIdentifier groupIdentifier = do
 
 
 pgCreateUserPolicyAttachment ::
-  UserIdentifier -> UUID -> Transaction (Either Error UserPolicyAttachment)
-pgCreateUserPolicyAttachment userIdentifier pid = do
+  UserIdentifier -> PolicyId -> Transaction (Either Error UserPolicyAttachment)
+pgCreateUserPolicyAttachment userIdentifier (PolicyUUID pid) = do
   maybeUid <- resolveUserIdentifier userIdentifier
   case maybeUid of
     Just (UserUUID uid) -> do
       statement (uid, pid) insertUserPolicyAttachment
-      return $ Right $ UserPolicyAttachment (UserUUID uid) pid
+      return $ Right $ UserPolicyAttachment (UserUUID uid) (PolicyUUID pid)
     Nothing -> return $ Left $ NotFound "user" $ userIdentifierToText userIdentifier
 
 
 pgDeleteUserPolicyAttachment ::
-  UserIdentifier -> UUID -> Transaction (Either Error UserPolicyAttachment)
-pgDeleteUserPolicyAttachment userIdentifier pid = do
+  UserIdentifier -> PolicyId -> Transaction (Either Error UserPolicyAttachment)
+pgDeleteUserPolicyAttachment userIdentifier (PolicyUUID pid) = do
   maybeUid <- resolveUserIdentifier userIdentifier
   case maybeUid of
     Just (UserUUID uid) -> do
       statement (uid, pid) deleteUserPolicyAttachment
-      return $ Right $ UserPolicyAttachment (UserUUID uid) pid
+      return $ Right $ UserPolicyAttachment (UserUUID uid) (PolicyUUID pid)
     Nothing -> return $ Left $ NotFound "user" $ userIdentifierToText userIdentifier
 
 
 pgCreateGroupPolicyAttachment ::
-  GroupIdentifier -> UUID -> Transaction (Either Error GroupPolicyAttachment)
-pgCreateGroupPolicyAttachment groupIdentifier pid = do
+  GroupIdentifier -> PolicyId -> Transaction (Either Error GroupPolicyAttachment)
+pgCreateGroupPolicyAttachment groupIdentifier (PolicyUUID pid) = do
   maybeGid <- resolveGroupIdentifier groupIdentifier
   case maybeGid of
     Just (GroupUUID gid) -> do
       statement (gid, pid) insertGroupPolicyAttachment
-      return $ Right $ GroupPolicyAttachment (GroupUUID gid) pid
+      return $ Right $ GroupPolicyAttachment (GroupUUID gid) (PolicyUUID pid)
     Nothing -> return $ Left $ NotFound "group" $ groupIdentifierToText groupIdentifier
 
 
 pgDeleteGroupPolicyAttachment ::
-  GroupIdentifier -> UUID -> Transaction (Either Error GroupPolicyAttachment)
-pgDeleteGroupPolicyAttachment groupIdentifier pid = do
+  GroupIdentifier -> PolicyId -> Transaction (Either Error GroupPolicyAttachment)
+pgDeleteGroupPolicyAttachment groupIdentifier (PolicyUUID pid) = do
   maybeGid <- resolveGroupIdentifier groupIdentifier
   case maybeGid of
     Just (GroupUUID gid) -> do
       statement (gid, pid) deleteGroupPolicyAttachment
-      return $ Right $ GroupPolicyAttachment (GroupUUID gid) pid
+      return $ Right $ GroupPolicyAttachment (GroupUUID gid) (PolicyUUID pid)
     Nothing -> return $ Left $ NotFound "group" $ groupIdentifierToText groupIdentifier
 
 

@@ -18,6 +18,7 @@ import IAM.Client.Auth
 import IAM.Client.Util
 import IAM.Group
 import IAM.Identifiers
+import IAM.Policy
 import qualified IAM.Client
 
 
@@ -56,7 +57,7 @@ createGroupById createGroupInfo gident = do
     Left _email -> GroupUUID <$> nextRandom
 
   let maybeName = unGroupIdentifierName gident
-  let grp = Group gid maybeName users policies
+  let grp = Group gid maybeName users $ fmap PolicyUUID policies
   res <- runClientM (IAM.Client.createGroup grp) $ mkClientEnv mgr url
   case res of
     Left err -> handleClientError err

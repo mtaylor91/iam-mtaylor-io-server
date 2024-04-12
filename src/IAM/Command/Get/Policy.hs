@@ -14,6 +14,7 @@ import qualified Data.Text as T
 import IAM.Client
 import IAM.Client.Auth
 import IAM.Client.Util
+import IAM.Policy
 
 
 getPolicy :: T.Text -> IO ()
@@ -25,7 +26,7 @@ getPolicyById uuid = do
   auth <- clientAuthInfo
   mgr <- newManager tlsManagerSettings { managerModifyRequest = clientAuth auth }
   url <- serverUrl
-  let policyClient = mkPolicyClient uuid
+  let policyClient = mkPolicyClient $ PolicyUUID uuid
   result <- runClientM (IAM.Client.getPolicy policyClient) $ mkClientEnv mgr url
   case result of
     Right policy' ->

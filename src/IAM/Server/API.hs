@@ -14,12 +14,12 @@ module IAM.Server.API
   ) where
 
 import Data.Text
-import Data.UUID
 import Network.Wai.Handler.Warp
 import Servant
 
 import IAM.API
 import IAM.Identifiers
+import IAM.Policy
 import IAM.Server.Auth
 import IAM.Server.DB
 import IAM.Server.Handlers
@@ -61,7 +61,8 @@ userAPI db caller uid
   :<|> userPolicyAPI db caller uid
   :<|> userSessionsAPI db caller uid
 
-userPolicyAPI :: DB db => db -> Auth -> UserIdentifier -> UUID -> Server UserPolicyAPI
+userPolicyAPI ::
+  DB db => db -> Auth -> UserIdentifier -> PolicyId -> Server UserPolicyAPI
 userPolicyAPI db caller uid pid
   = createUserPolicyAttachmentHandler db caller uid pid
   :<|> deleteUserPolicyAttachmentHandler db caller uid pid
@@ -92,7 +93,8 @@ groupAPI db caller gid
   :<|> groupPolicyAPI db caller gid
   :<|> groupMembershipAPI db caller gid
 
-groupPolicyAPI :: DB db => db -> Auth -> GroupIdentifier -> UUID -> Server GroupPolicyAPI
+groupPolicyAPI ::
+  DB db => db -> Auth -> GroupIdentifier -> PolicyId -> Server GroupPolicyAPI
 groupPolicyAPI db caller gid pid
   = createGroupPolicyAttachmentHandler db caller gid pid
   :<|> deleteGroupPolicyAttachmentHandler db caller gid pid
@@ -109,7 +111,7 @@ policiesAPI db caller
   :<|> createPolicyHandler db caller
   :<|> policyAPI db caller
 
-policyAPI :: DB db => db -> Auth -> UUID -> Server PolicyAPI
+policyAPI :: DB db => db -> Auth -> PolicyId -> Server PolicyAPI
 policyAPI db caller pid
   = getPolicyHandler db caller pid
   :<|> deletePolicyHandler db caller pid
