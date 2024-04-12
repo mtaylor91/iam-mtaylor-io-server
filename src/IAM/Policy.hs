@@ -25,6 +25,60 @@ instance ToHttpApiData PolicyId where
   toUrlPiece (PolicyUUID uuid) = toText uuid
 
 
+data PolicyIdentifier
+  = PolicyName !Text
+  | PolicyId !PolicyId
+  | PolicyIdAndName !PolicyId !Text
+  deriving (Eq, Show)
+
+instance FromHttpApiData PolicyIdentifier where
+  parseUrlPiece s = case readMaybe $ unpack s of
+    Just uuid -> Right $ PolicyId $ PolicyUUID uuid
+    Nothing -> Right $ PolicyName s
+
+instance ToHttpApiData PolicyIdentifier where
+  toUrlPiece (PolicyName name) = name
+  toUrlPiece (PolicyId (PolicyUUID uuid)) = toText uuid
+  toUrlPiece (PolicyIdAndName (PolicyUUID uuid) _) = toText uuid
+
+instance FromJSON PolicyIdentifier where
+  parseJSON (Object obj) = do
+    uuid <- obj .:? "id"
+    name <- obj .:? "name"
+    case (uuid, name) of
+      (Just (Just uuid'), Just name') -> return $ PolicyIdAndName (PolicyUUID uuid') name'
+      (Just (Just uuid'), Nothing) -> return $ PolicyId $ PolicyUUID uuid'
+      (Nothing, Just name') -> return $ PolicyName name'
+      (_, _) -> fail "Invalid JSON"
+  parseJSON (String s) = case readMaybe $ unpack s of
+    Just uuid -> return $ PolicyId $ PolicyUUID uuid
+    Nothing -> return $ PolicyName s
+  parseJSON _ = fail "Invalid JSON"
+
+instance ToJSON PolicyIdentifier where
+  toJSON (PolicyName name) = String name
+  toJSON (PolicyId (PolicyUUID uuid)) = String $ toText uuid
+  toJSON (PolicyIdAndName (PolicyUUID uuid) name) = object
+    [ "id" .= uuid
+    , "name" .= name
+    ]
+
+unPolicyIdentifier :: PolicyIdentifier -> Either Text PolicyId
+unPolicyIdentifier (PolicyName name) = Left name
+unPolicyIdentifier (PolicyId gid) = Right gid
+unPolicyIdentifier (PolicyIdAndName gid _) = Right gid
+
+unPolicyIdentifierName :: PolicyIdentifier -> Maybe Text
+unPolicyIdentifierName (PolicyName name) = Just name
+unPolicyIdentifierName (PolicyIdAndName _ name) = Just name
+unPolicyIdentifierName _ = Nothing
+
+policyIdentifierToText :: PolicyIdentifier -> Text
+policyIdentifierToText (PolicyName name) = name
+policyIdentifierToText (PolicyId (PolicyUUID uuid)) = toText uuid
+policyIdentifierToText (PolicyIdAndName (PolicyUUID uuid) _) = toText uuid
+
+
 data Effect = Allow | Deny deriving (Eq, Show)
 
 $(deriveJSON defaultOptions ''Effect)
