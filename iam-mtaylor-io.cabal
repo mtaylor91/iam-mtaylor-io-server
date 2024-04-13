@@ -40,6 +40,7 @@ library
       IAM.Command.Delete
       IAM.Command.Delete.Group
       IAM.Command.Delete.Policy
+      IAM.Command.Delete.Session
       IAM.Command.Delete.User
       IAM.Command.Get
       IAM.Command.Get.Group

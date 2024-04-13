@@ -25,6 +25,7 @@ data CreatePolicy
   = CreatePolicy
     { createPolicyHost :: !Text
     , createPolicyUUID :: !(Maybe Text)
+    , createPolicyName :: !(Maybe Text)
     , createPolicyAllowRead :: ![Text]
     , createPolicyAllowWrite :: ![Text]
     , createPolicyDenyRead :: ![Text]
@@ -43,8 +44,9 @@ createPolicy createPolicyInfo =
 
 createPolicyWithUUID :: CreatePolicy -> UUID -> IO ()
 createPolicyWithUUID createPolicyInfo uuid =
-  createPolicy' $ Policy (PolicyUUID uuid) Nothing host' stmts
+  createPolicy' $ Policy (PolicyUUID uuid) maybeName host' stmts
   where
+  maybeName = createPolicyName createPolicyInfo
   host' = createPolicyHost createPolicyInfo
   stmts = allowStmts ++ denyStmts
   allowStmts = allowReadStmts ++ allowWriteStmts
@@ -77,6 +79,11 @@ createPolicyOptions = CreatePolicy
   <*> optional (argument str
       ( metavar "UUID"
      <> help "Policy UUID"
+      ))
+  <*> optional (strOption
+      ( long "name"
+     <> metavar "NAME"
+     <> help "Policy name"
       ))
   <*> many (strOption
       ( long "allow-read"
