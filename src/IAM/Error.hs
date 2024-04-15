@@ -1,20 +1,102 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module IAM.Error ( module IAM.Error ) where
 
 import Control.Monad.Except
-import Data.ByteString.Lazy (fromStrict)
+import Data.Aeson
 import Data.Text
-import Data.Text.Encoding
 import Servant
+
+import IAM.Identifiers
+import IAM.Policy
+import IAM.Session
 
 
 data Error
-  = AlreadyExists
-  | NotFound Text Text
+  = AuthenticationFailed AuthenticationError
+  | NotAuthorized
+  | AlreadyExists
+  | NotFound NotFoundError
   | InternalError Text
   | NotImplemented
   deriving (Show, Eq)
+
+instance ToJSON Error where
+  toJSON (AuthenticationFailed e) = object
+    [ "error" .= ("Authentication failed" :: Text)
+    , "message" .= toJSON e
+    ]
+  toJSON NotAuthorized = object
+    [ "error" .= ("Not Authorized" :: Text) ]
+  toJSON AlreadyExists = object
+    ["error" .= ("Already exists" :: Text)]
+  toJSON (NotFound e) = object
+    [ "error" .= ("Not found" :: Text)
+    , "identifier" .= toJSON e
+    ]
+  toJSON (InternalError _) = object
+    [ "error" .= ("Internal error" :: Text) ]
+  toJSON NotImplemented = object
+    [ "error" .= ("Not implemented" :: Text) ]
+
+
+data AuthenticationError
+  = InvalidHeaders
+  | InvalidHost
+  | InvalidSignature
+  | SessionRequired
+  deriving (Show, Eq)
+
+instance ToJSON AuthenticationError where
+  toJSON InvalidHeaders = String "Missing or invalid authentication headers"
+  toJSON InvalidHost = String "Invalid Host"
+  toJSON InvalidSignature = String "Invalid Signature"
+  toJSON SessionRequired = String "Session authentication required"
+
+
+data NotFoundError
+  = UserNotFound UserIdentifier
+  | GroupNotFound GroupIdentifier
+  | PolicyNotFound PolicyIdentifier
+  | SessionNotFound (Maybe SessionId)
+  | UserGroupNotFound UserIdentifier GroupIdentifier
+  | UserPolicyNotFound UserIdentifier PolicyIdentifier
+  | GroupPolicyNotFound GroupIdentifier PolicyIdentifier
+  deriving (Show, Eq)
+
+instance ToJSON NotFoundError where
+  toJSON (UserNotFound uid) = object
+    [ "kind" .= ("User" :: Text)
+    , "user" .= toJSON uid
+    ]
+  toJSON (GroupNotFound gid) = object
+    [ "kind" .= ("Group" :: Text)
+    , "group" .= toJSON gid
+    ]
+  toJSON (PolicyNotFound pid) = object
+    [ "kind" .= ("Policy" :: Text)
+    , "policy" .= toJSON pid
+    ]
+  toJSON (SessionNotFound msid) = object
+    [ "kind" .= ("Session" :: Text)
+    , "session" .= toJSON msid
+    ]
+  toJSON (UserGroupNotFound uid gid) = object
+    [ "kind" .= ("Membership" :: Text)
+    , "user" .= toJSON uid
+    , "group" .= toJSON gid
+    ]
+  toJSON (UserPolicyNotFound uid pid) = object
+    [ "kind" .= ("UserPolicy" :: Text)
+    , "user" .= toJSON uid
+    , "policy" .= toJSON pid
+    ]
+  toJSON (GroupPolicyNotFound gid pid) = object
+    [ "kind" .= ("GroupPolicy" :: Text)
+    , "group" .= toJSON gid
+    , "policy" .= toJSON pid
+    ]
 
 
 errorHandler :: (MonadIO m, MonadError ServerError m) => Error -> m a
@@ -27,9 +109,9 @@ errorHandler err = do
 
 
 toServerError :: Error -> ServerError
-toServerError AlreadyExists     = err409
-toServerError NotImplemented    = err501
-toServerError (InternalError _) = err500
-toServerError (NotFound r n)    = err404
-  { errBody = t r <> " " <> t n <> " not found" }
-  where t = fromStrict . encodeUtf8
+toServerError e@(AuthenticationFailed _)  = err401 { errBody = encode e }
+toServerError e@NotAuthorized             = err403 { errBody = encode e }
+toServerError e@(NotFound _)              = err404 { errBody = encode e }
+toServerError e@AlreadyExists             = err409 { errBody = encode e }
+toServerError e@NotImplemented            = err501 { errBody = encode e }
+toServerError e@(InternalError _)         = err500 { errBody = encode e }

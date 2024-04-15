@@ -24,7 +24,6 @@ import Network.Wai
 import Prelude hiding (takeWhile)
 import Servant
 import Servant.Server.Experimental.Auth
-import qualified Data.ByteString.Lazy as LBS
 
 import IAM.Authentication
 import IAM.Config (headerPrefix)
@@ -100,15 +99,12 @@ authenticate host ctx req = do
         Right user -> do
           case authReqError authReq user of
             Nothing -> return (authReq, user)
-            Just err -> throwError $ err401 { errBody = LBS.fromStrict $ encodeUtf8 err }
-        Left (NotFound _ _) -> throwError $ err401 { errBody = "User not found" }
-        Left err -> do
-          liftIO $ print err
-          throwError err500
+            Just err -> errorHandler $ AuthenticationFailed err
+        Left err -> errorHandler err
     Nothing -> do
-      throwError $ err401 { errBody = "Missing or invalid authentication headers" }
+      errorHandler $ AuthenticationFailed InvalidHeaders
   where
-    authReqError :: AuthRequest -> User -> Maybe Text
+    authReqError :: AuthRequest -> User -> Maybe AuthenticationError
     authReqError authReq user =
       let authHeader = authRequestAuthorization authReq
           method = requestMethod req
@@ -120,9 +116,9 @@ authenticate host ctx req = do
           pk = authRequestPublicKey authReq
           signed = stringToSign method reqHost path query requestId maybeSessionToken
        in if reqHost /= encodeUtf8 host
-            then Just "Invalid host"
+            then Just InvalidHost
             else if not $ verifySignature user pk authHeader signed
-              then Just "Invalid signature"
+              then Just InvalidSignature
               else Nothing
     removeHostPort :: ByteString -> ByteString
     removeHostPort = takeWhile (not . (==) 58)
@@ -138,11 +134,8 @@ authorize host ctx req authN = do
       case result of
         Right uid ->
           return uid
-        Left (NotFound r n) ->
-          throwError $ err401 { errBody = t r <> " " <> t n <> " not found" }
-        Left e -> do
-          liftIO $ print e
-          throwError err500
+        Left e ->
+          errorHandler e
 
   maybeSession <- case authRequestSessionToken $ authRequest authN of
     Nothing -> return Nothing
@@ -152,26 +145,17 @@ authorize host ctx req authN = do
       case result of
         Right session ->
           return $ Just session
-        Left (NotFound r n) ->
-          throwError $ err401 { errBody = t r <> " " <> t n <> " not found" }
         Left e -> do
-          liftIO $ print e
-          throwError err500
+          errorHandler e
   let dbOp = listPoliciesForUser (ctxDB ctx) callerUserId host
   policiesResult <- liftIO $ runExceptT dbOp
   case policiesResult of
     Right policies -> do
       if authorized req policies
         then let authZ = Authorization policies maybeSession in return $ Auth authN authZ
-        else throwError err403
-    Left e -> do
-      liftIO $ print e
-      throwError err500
-
-  where
-
-  t :: Text -> LBS.ByteString
-  t = LBS.fromStrict . encodeUtf8
+        else errorHandler NotAuthorized
+    Left e ->
+      errorHandler e
 
 
 authorized :: Request ->  [Policy] -> Bool

@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 module IAM.Server.Handlers
   ( getUserHandler
   , listUsersHandler
@@ -149,7 +148,7 @@ createPolicyHandler ctx auth policy = do
   let callerPolicies = authPolicies $ authorization auth
   if policy `isAllowedBy` policyRules callerPolicies
     then createPolicy'
-    else throwError err403
+    else errorHandler NotAuthorized
   where
     createPolicy' = do
       result <- liftIO $ runExceptT $ createPolicy (ctxDB ctx) policy
@@ -196,7 +195,7 @@ createUserPolicyAttachmentHandler ctx auth uid pid = do
     Right policy -> do
       if policy `isAllowedBy` policyRules callerPolicies
         then createUserPolicyAttachment'
-        else throwError err403
+        else errorHandler NotAuthorized
     Left err -> errorHandler err
   where
     callerPolicies = authPolicies $ authorization auth
@@ -226,7 +225,7 @@ createGroupPolicyAttachmentHandler ctx auth gid pid = do
     Right policy -> do
       if policy `isAllowedBy` policyRules callerPolicies
         then createGroupPolicyAttachment'
-        else throwError err403
+        else errorHandler NotAuthorized
     Left err -> errorHandler err
   where
     callerPolicies = authPolicies $ authorization auth
@@ -252,7 +251,7 @@ createSessionHandler :: DB db =>
 createSessionHandler ctx _ uid = do
   r0 <- liftIO $ runExceptT $ getUserId (ctxDB ctx) uid
   case r0 of
-    Left e -> throwError $ toServerError e
+    Left e -> errorHandler e
     Right uid' -> do
       result <- liftIO $ runExceptT $ IAM.Server.DB.createSession (ctxDB ctx) uid'
       case result of
@@ -307,7 +306,7 @@ authorizeHandler :: DB db =>
 authorizeHandler ctx req = do
   r0 <- liftIO $ runExceptT $ getUserId (ctxDB ctx) userIdent
   uid <- case r0 of
-    Left e -> throwError $ toServerError e
+    Left e -> errorHandler e
     Right uid' -> return uid'
 
   let host = authorizationRequestHost req
@@ -331,4 +330,4 @@ requireSession :: Auth -> Handler ()
 requireSession auth = do
   case authSession $ authorization auth of
     Just Session{} -> return ()
-    Nothing        -> throwError $ err401 { errBody = "Session required" }
+    Nothing        -> errorHandler $ AuthenticationFailed SessionRequired
