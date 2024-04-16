@@ -109,9 +109,14 @@ errorHandler err = do
 
 
 toServerError :: Error -> ServerError
-toServerError e@(AuthenticationFailed _)  = err401 { errBody = encode e }
-toServerError e@NotAuthorized             = err403 { errBody = encode e }
-toServerError e@(NotFound _)              = err404 { errBody = encode e }
-toServerError e@AlreadyExists             = err409 { errBody = encode e }
-toServerError e@NotImplemented            = err501 { errBody = encode e }
-toServerError e@(InternalError _)         = err500 { errBody = encode e }
+toServerError e@(AuthenticationFailed _)  = augmentError e err401
+toServerError e@NotAuthorized             = augmentError e err403
+toServerError e@(NotFound _)              = augmentError e err404
+toServerError e@AlreadyExists             = augmentError e err409
+toServerError e@(InternalError _)         = augmentError e err500
+toServerError e@NotImplemented            = augmentError e err501
+
+
+augmentError :: Error -> ServerError -> ServerError
+augmentError e err = err
+  { errBody = encode e, errHeaders = [("Content-Type", "application/json")] }
