@@ -9,7 +9,8 @@ import Data.ByteString.Base64
 import Data.Text
 import Data.Text.Encoding
 
-import IAM.Identifiers
+import IAM.GroupIdentifier
+import IAM.UserIdentifier
 import IAM.Policy
 
 

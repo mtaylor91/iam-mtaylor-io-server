@@ -17,7 +17,7 @@ import Text.Read
 
 import IAM.Client.Auth
 import IAM.Client.Util
-import IAM.Identifiers (UserIdentifier(..), UserId(..))
+import IAM.UserIdentifier (UserIdentifier(..), UserId(..))
 import IAM.Session
 import qualified IAM.Client
 

@@ -34,12 +34,13 @@ import IAM.API
 import IAM.Authorization
 import IAM.Group
 import IAM.GroupPolicy
-import IAM.Identifiers
+import IAM.GroupIdentifier
 import IAM.Membership
 import IAM.Policy
 import IAM.Session
 import IAM.User
 import IAM.UserPolicy
+import IAM.UserIdentifier
 
 
 type UsersClientM

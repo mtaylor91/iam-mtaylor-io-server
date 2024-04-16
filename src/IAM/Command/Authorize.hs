@@ -16,7 +16,7 @@ import IAM.Authentication
 import IAM.Authorization
 import IAM.Client.Auth
 import IAM.Client.Util
-import IAM.Identifiers
+import IAM.UserIdentifier
 import qualified IAM.Client
 
 

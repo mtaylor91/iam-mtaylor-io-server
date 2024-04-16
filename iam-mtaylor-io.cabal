@@ -58,8 +58,8 @@ library
       IAM.Config
       IAM.Error
       IAM.Group
+      IAM.GroupIdentifier
       IAM.GroupPolicy
-      IAM.Identifiers
       IAM.Membership
       IAM.Policy
       IAM.Range
@@ -76,6 +76,7 @@ library
       IAM.Server.Init
       IAM.Session
       IAM.User
+      IAM.UserIdentifier
       IAM.UserPolicy
       IAM.Util
   other-modules:

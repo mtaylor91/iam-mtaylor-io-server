@@ -6,7 +6,8 @@ module IAM.Authorization
 import Data.Aeson
 import Data.Text
 
-import IAM.Identifiers
+import IAM.GroupIdentifier
+import IAM.UserIdentifier
 import IAM.Policy
 
 

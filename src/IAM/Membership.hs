@@ -5,7 +5,8 @@ module IAM.Membership
 
 import Data.Aeson
 
-import IAM.Identifiers
+import IAM.GroupIdentifier
+import IAM.UserIdentifier
 
 
 data Membership = Membership

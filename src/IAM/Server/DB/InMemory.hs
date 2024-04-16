@@ -8,7 +8,7 @@ import Control.Monad.Except
 import IAM.Error
 import IAM.Group
 import IAM.GroupPolicy
-import IAM.Identifiers
+import IAM.GroupIdentifier
 import IAM.Membership
 import IAM.Policy
 import IAM.Range
@@ -17,6 +17,7 @@ import IAM.Server.DB.InMemory.State
 import IAM.Session
 import IAM.User
 import IAM.UserPolicy
+import IAM.UserIdentifier
 
 
 -- | InMemory is an in-memory implementation of the DB typeclass.

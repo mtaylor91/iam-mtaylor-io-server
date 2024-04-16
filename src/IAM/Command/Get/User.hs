@@ -16,7 +16,7 @@ import qualified Data.Text as T
 import IAM.Client
 import IAM.Client.Auth
 import IAM.Client.Util
-import IAM.Identifiers (UserIdentifier(..), UserId(..))
+import IAM.UserIdentifier (UserIdentifier(..), UserId(..))
 
 
 getUser :: Maybe Text -> IO ()

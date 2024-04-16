@@ -13,7 +13,7 @@ import Hasql.Transaction (Transaction, statement)
 import IAM.Error
 import IAM.Group
 import IAM.GroupPolicy
-import IAM.Identifiers
+import IAM.GroupIdentifier
 import IAM.Policy
 import IAM.Membership
 import IAM.Server.DB.Postgres.Queries
@@ -21,6 +21,7 @@ import IAM.Range
 import IAM.Session
 import IAM.User
 import IAM.UserPolicy
+import IAM.UserIdentifier
 
 
 pgGetUser :: UserIdentifier -> Transaction (Either Error User)

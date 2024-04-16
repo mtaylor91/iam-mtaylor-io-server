@@ -7,9 +7,10 @@ import Data.Maybe
 import Data.Text
 
 import IAM.Group
-import IAM.Identifiers
+import IAM.GroupIdentifier
 import IAM.Policy
 import IAM.User
+import IAM.UserIdentifier
 import IAM.Session
 
 

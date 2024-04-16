@@ -18,7 +18,7 @@ import Network.Wai.Handler.Warp
 import Servant
 
 import IAM.API
-import IAM.Identifiers
+import IAM.GroupIdentifier
 import IAM.Policy
 import IAM.Server.Auth
 import IAM.Server.Context
@@ -26,6 +26,7 @@ import IAM.Server.DB
 import IAM.Server.Handlers
 import IAM.Session
 import IAM.User
+import IAM.UserIdentifier
 
 
 app :: DB db => Text -> Ctx db -> Application

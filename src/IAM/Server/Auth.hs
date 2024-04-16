@@ -28,12 +28,12 @@ import Servant.Server.Experimental.Auth
 import IAM.Authentication
 import IAM.Config (headerPrefix)
 import IAM.Error
-import IAM.Identifiers
 import IAM.Policy
 import IAM.Server.Context
 import IAM.Server.DB
 import IAM.Session
 import IAM.User
+import IAM.UserIdentifier
 
 
 data Auth = Auth

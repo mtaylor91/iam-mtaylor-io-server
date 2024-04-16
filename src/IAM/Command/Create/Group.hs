@@ -16,8 +16,9 @@ import Text.Read
 import IAM.Client.Auth
 import IAM.Client.Util
 import IAM.Group
-import IAM.Identifiers
+import IAM.GroupIdentifier
 import IAM.Policy
+import IAM.UserIdentifier
 import qualified IAM.Client
 
 

@@ -5,7 +5,7 @@ module IAM.UserPolicy
 
 import Data.Aeson
 
-import IAM.Identifiers
+import IAM.UserIdentifier
 import IAM.Policy
 
 

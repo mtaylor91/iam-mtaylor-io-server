@@ -7,7 +7,8 @@ import Data.Aeson
 import Data.Maybe
 import Data.Text
 
-import IAM.Identifiers
+import IAM.GroupIdentifier
+import IAM.UserIdentifier
 import IAM.Policy
 
 

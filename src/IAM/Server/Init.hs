@@ -10,10 +10,11 @@ import Data.UUID.V4
 
 import IAM.Error
 import IAM.Group
-import IAM.Identifiers
+import IAM.GroupIdentifier
 import IAM.Policy
 import IAM.Server.DB
 import IAM.User
+import IAM.UserIdentifier
 
 
 initDB :: DB db => Text -> Text -> Text -> db -> IO db

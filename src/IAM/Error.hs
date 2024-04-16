@@ -8,7 +8,8 @@ import Data.Aeson
 import Data.Text
 import Servant
 
-import IAM.Identifiers
+import IAM.GroupIdentifier
+import IAM.UserIdentifier
 import IAM.Policy
 import IAM.Session
 

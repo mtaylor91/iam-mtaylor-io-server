@@ -15,7 +15,7 @@ import Servant
 import System.Entropy
 import Text.Read (readMaybe)
 
-import IAM.Identifiers
+import IAM.UserIdentifier
 
 
 newtype SessionId = SessionUUID { unSessionId :: UUID } deriving (Eq, Show)

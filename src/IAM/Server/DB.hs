@@ -8,11 +8,12 @@ import Data.Text
 import IAM.Error
 import IAM.Group
 import IAM.GroupPolicy
-import IAM.Identifiers
+import IAM.GroupIdentifier
 import IAM.Policy
 import IAM.Membership
 import IAM.User
 import IAM.UserPolicy
+import IAM.UserIdentifier
 import IAM.Range
 import IAM.Session
 

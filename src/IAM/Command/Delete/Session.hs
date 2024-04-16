@@ -15,8 +15,8 @@ import Text.Read (readMaybe)
 import IAM.Client.Auth
 import IAM.Client.Util
 import IAM.Config
-import IAM.Identifiers
 import IAM.Session
+import IAM.UserIdentifier
 import qualified IAM.Client as C
 
 
