@@ -8,17 +8,14 @@ import Data.Aeson
 import Data.Text
 import Servant
 
-import IAM.GroupIdentifier
-import IAM.UserIdentifier
-import IAM.Policy
-import IAM.Session
+import IAM.Identifier
 
 
 data Error
   = AuthenticationFailed AuthenticationError
   | NotAuthorized
   | AlreadyExists
-  | NotFound NotFoundError
+  | NotFound Identifier
   | InternalError Text
   | NotImplemented
   deriving (Show, Eq)
@@ -54,50 +51,6 @@ instance ToJSON AuthenticationError where
   toJSON InvalidHost = String "Invalid Host"
   toJSON InvalidSignature = String "Invalid Signature"
   toJSON SessionRequired = String "Session authentication required"
-
-
-data NotFoundError
-  = UserNotFound UserIdentifier
-  | GroupNotFound GroupIdentifier
-  | PolicyNotFound PolicyIdentifier
-  | SessionNotFound (Maybe SessionId)
-  | UserGroupNotFound UserIdentifier GroupIdentifier
-  | UserPolicyNotFound UserIdentifier PolicyIdentifier
-  | GroupPolicyNotFound GroupIdentifier PolicyIdentifier
-  deriving (Show, Eq)
-
-instance ToJSON NotFoundError where
-  toJSON (UserNotFound uid) = object
-    [ "kind" .= ("User" :: Text)
-    , "user" .= toJSON uid
-    ]
-  toJSON (GroupNotFound gid) = object
-    [ "kind" .= ("Group" :: Text)
-    , "group" .= toJSON gid
-    ]
-  toJSON (PolicyNotFound pid) = object
-    [ "kind" .= ("Policy" :: Text)
-    , "policy" .= toJSON pid
-    ]
-  toJSON (SessionNotFound msid) = object
-    [ "kind" .= ("Session" :: Text)
-    , "session" .= toJSON msid
-    ]
-  toJSON (UserGroupNotFound uid gid) = object
-    [ "kind" .= ("Membership" :: Text)
-    , "user" .= toJSON uid
-    , "group" .= toJSON gid
-    ]
-  toJSON (UserPolicyNotFound uid pid) = object
-    [ "kind" .= ("UserPolicy" :: Text)
-    , "user" .= toJSON uid
-    , "policy" .= toJSON pid
-    ]
-  toJSON (GroupPolicyNotFound gid pid) = object
-    [ "kind" .= ("GroupPolicy" :: Text)
-    , "group" .= toJSON gid
-    , "policy" .= toJSON pid
-    ]
 
 
 errorHandler :: (MonadIO m, MonadError ServerError m) => Error -> m a

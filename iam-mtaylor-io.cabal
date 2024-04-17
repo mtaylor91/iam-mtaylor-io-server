@@ -60,6 +60,7 @@ library
       IAM.Group
       IAM.GroupIdentifier
       IAM.GroupPolicy
+      IAM.Identifier
       IAM.Membership
       IAM.Policy
       IAM.Range
