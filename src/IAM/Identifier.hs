@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module IAM.Identifier
   ( module IAM.Identifier
   ) where
@@ -54,3 +55,17 @@ instance ToJSON Identifier where
     , "group" .= toJSON gid
     , "policy" .= toJSON pid
     ]
+
+instance FromJSON Identifier where
+  parseJSON (Object obj) = do
+    kind :: Text <- obj .: "kind"
+    case kind of
+      "User" -> UserIdentifier <$> obj .: "user"
+      "Group" -> GroupIdentifier <$> obj .: "group"
+      "Policy" -> PolicyIdentifier <$> obj .: "policy"
+      "Session" -> SessionIdentifier <$> obj .: "session"
+      "Membership" -> UserGroupIdentifier <$> obj .: "user" <*> obj .: "group"
+      "UserPolicy" -> UserPolicyIdentifier <$> obj .: "user" <*> obj .: "policy"
+      "GroupPolicy" -> GroupPolicyIdentifier <$> obj .: "group" <*> obj .: "policy"
+      _ -> fail "Invalid JSON"
+  parseJSON _ = fail "Invalid JSON"
