@@ -36,6 +36,12 @@ import IAM.UserIdentifier
 type API = AuthProtect "signature-auth" :> IAMAPI
 
 
+type ListAPI a
+  = QueryParam "offset" Int
+  :> QueryParam "limit" Int
+  :> Get '[JSON] (ListResponse a)
+
+
 type IAMAPI
   = ( "user" :> UserAPI
   :<|> ("users" :> UsersAPI)
@@ -45,8 +51,7 @@ type IAMAPI
     )
 
 type UsersAPI
-  = ( QueryParam "offset" Int :> QueryParam "limit" Int
-    :> Get '[JSON] (ListResponse UserIdentifier)
+  = ( ListAPI UserIdentifier
   :<|> ( ReqBody '[JSON] User :> PostCreated '[JSON] User )
   :<|> ( Capture "user" UserIdentifier :> UserAPI )
     )
@@ -65,8 +70,7 @@ type UserPolicyAPI
 
 type UserSessionsAPI
   = ( PostCreated '[JSON] CreateSession
-  :<|> QueryParam "offset" Int :> QueryParam "limit" Int
-    :> Get '[JSON] (ListResponse Session)
+  :<|> ListAPI Session
   :<|> ( Capture "session" SessionId :> UserSessionAPI )
     )
 
@@ -77,8 +81,7 @@ type UserSessionAPI
     )
 
 type GroupsAPI
-  = ( QueryParam "offset" Int :> QueryParam "limit" Int
-    :> Get '[JSON] (ListResponse GroupIdentifier)
+  = ( ListAPI GroupIdentifier
   :<|> ( ReqBody '[JSON] Group :> PostCreated '[JSON] Group )
   :<|> ( Capture "group" GroupIdentifier :> GroupAPI )
     )
@@ -101,8 +104,7 @@ type MembershipAPI
     )
 
 type PoliciesAPI
-  = ( QueryParam "offset" Int :> QueryParam "limit" Int
-    :> Get '[JSON] (ListResponse PolicyIdentifier)
+  = ( ListAPI PolicyIdentifier
   :<|> ( ReqBody '[JSON] Policy :> PostCreated '[JSON] Policy )
   :<|> ( Capture "policy" PolicyIdentifier :> PolicyAPI )
     )
