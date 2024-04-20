@@ -373,12 +373,19 @@ pgListPoliciesForGroupById host (GroupUUID uuid) = do
 
 pgCreatePolicy :: Policy -> Transaction (Either Error Policy)
 pgCreatePolicy policy = do
-  statement (unPolicyId $ policyId policy, hostname policy, toJSON policy) insertPolicy
   case policyName policy of
-    Nothing -> return ()
+    Nothing -> pgCreatePolicy'
     Just name -> do
-      statement (unPolicyId $ policyId policy, name) insertPolicyName
-  return $ Right policy
+      result <- statement name selectPolicyIdByName
+      case result of
+        Nothing -> pgCreatePolicy'
+        Just _ -> return $ Left AlreadyExists
+  where
+    pgCreatePolicy' :: Transaction (Either Error Policy)
+    pgCreatePolicy' = do
+      let pid = unPolicyId $ policyId policy
+      statement (pid, hostname policy, toJSON policy) insertPolicy
+      return $ Right policy
 
 
 pgUpdatePolicy :: Policy -> Transaction (Either Error Policy)
