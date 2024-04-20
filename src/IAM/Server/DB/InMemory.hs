@@ -51,12 +51,12 @@ instance DB InMemory where
       Just limit' ->
         let items' = Prelude.take limit' $ Prelude.drop offset' users'
             total' = Prelude.length users'
-         in ListResponse items' offset' limit' total'
+         in ListResponse items' limit' offset' total'
       Nothing ->
         let items' = Prelude.drop offset' users'
             total' = Prelude.length users'
             limit' = total'
-         in ListResponse items' offset' limit' total'
+         in ListResponse items' limit' offset' total'
     where
       resolveUser :: InMemoryState -> UserId -> UserIdentifier
       resolveUser s uid = case s ^. userState (UserId uid) of
@@ -96,12 +96,12 @@ instance DB InMemory where
       Just limit' ->
         let items' = Prelude.take limit' $ Prelude.drop offset' gs
             total' = Prelude.length gs
-         in return $ ListResponse items' offset' limit' total'
+         in return $ ListResponse items' limit' offset' total'
       Nothing ->
         let items' = Prelude.drop offset' gs
             total' = Prelude.length gs
             limit' = total'
-         in return $ ListResponse items' offset' limit' total'
+         in return $ ListResponse items' limit' offset' total'
     where
       resolveGroup :: InMemoryState -> GroupId -> GroupIdentifier
       resolveGroup s gid = case s ^. groupState (GroupId gid) of
@@ -143,12 +143,12 @@ instance DB InMemory where
       Just limit' ->
         let items' = Prelude.take limit' $ Prelude.drop offset' policyIds
             total' = Prelude.length policyIds
-         in return $ ListResponse items' offset' limit' total'
+         in return $ ListResponse items' limit' offset' total'
       Nothing ->
         let items' = Prelude.drop offset' policyIds
             total' = Prelude.length policyIds
             limit' = total'
-         in return $ ListResponse items' offset' limit' total'
+         in return $ ListResponse items' limit' offset' total'
 
   listPoliciesForUser (InMemory tvar) uid host = do
     s <- liftIO $ readTVarIO tvar
@@ -379,9 +379,9 @@ instance DB InMemory where
           Just limit' ->
             let items' = Prelude.take limit' $ Prelude.drop offset' sessions'
                 total' = Prelude.length sessions'
-             in return $ ListResponse items' offset' limit' total'
+             in return $ ListResponse items' limit' offset' total'
           Nothing ->
             let items' = Prelude.drop offset' sessions'
                 total' = Prelude.length sessions'
                 limit' = total'
-             in return $ ListResponse items' offset' limit' total'
+             in return $ ListResponse items' limit' offset' total'

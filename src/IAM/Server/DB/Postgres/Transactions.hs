@@ -81,7 +81,7 @@ pgListUsers (Range offset' (Just limit')) = do
   total' <- statement () selectUserCount
   result <- statement (fromIntegral offset', fromIntegral limit') selectUserIdentifiers
   let items' = map userIdentifier $ toList result
-  return $ Right $ ListResponse items' offset' limit' $ fromIntegral total'
+  return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'
   where
     userIdentifier (uuuid, Nothing) = UserId $ UserUUID uuuid
     userIdentifier (uuuid, Just email) = UserIdAndEmail (UserUUID uuuid) email
@@ -209,7 +209,7 @@ pgListGroups (Range offset' maybeLimit) = do
   result <- statement (fromIntegral offset', fromIntegral limit') selectGroupIdentifiers
   let items' = map groupIdentifier $ toList result
   total' <- statement () selectGroupCount
-  return $ Right $ ListResponse items' offset' limit' $ fromIntegral total'
+  return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'
   where
     groupIdentifier (guuid, Nothing) = GroupId $ GroupUUID guuid
     groupIdentifier (guuid, Just name) = GroupIdAndName (GroupUUID guuid) name
@@ -325,7 +325,7 @@ pgListPolicies (Range offset' maybeLimit) = do
   result <- statement (fromIntegral offset', fromIntegral limit') selectPolicyIdentifiers
   total' <- statement () selectPolicyCount
   let items' = map policyIdentifier $ toList result
-  return $ Right $ ListResponse items' offset' limit' $ fromIntegral total'
+  return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'
   where
     policyIdentifier (pid, Nothing) = PolicyId $ PolicyUUID pid
     policyIdentifier (pid, Just name) = PolicyIdAndName (PolicyUUID pid) name
@@ -579,7 +579,7 @@ pgListUserSessions userIdentifier (Range offset' maybeLimit) = do
       result <- statement params selectUserSessions
       total' <- statement uid selectUserSessionCount
       let items' = map (session uid) $ toList result
-      return $ Right $ ListResponse items' offset' limit' $ fromIntegral total'
+      return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'
     Nothing -> return $ Left $ NotFound $ UserIdentifier userIdentifier
   where
     session uid (sid, _, expires) = Session (SessionUUID sid) (UserUUID uid) expires
