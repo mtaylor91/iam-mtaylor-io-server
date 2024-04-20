@@ -15,8 +15,9 @@ import IAM.Group
 import IAM.GroupPolicy
 import IAM.GroupIdentifier
 import IAM.Identifier
-import IAM.Policy
+import IAM.ListResponse
 import IAM.Membership
+import IAM.Policy
 import IAM.Server.DB.Postgres.Queries
 import IAM.Range
 import IAM.Session
@@ -74,11 +75,13 @@ pgGetUserId userIdentifier = do
     Right (UserUUID uuid) -> return $ Right $ UserUUID uuid
 
 
-pgListUsers :: Range -> Transaction (Either Error [UserIdentifier])
-pgListUsers (Range offset Nothing) = pgListUsers (Range offset $ Just 100)
-pgListUsers (Range offset (Just limit)) = do
-  result <- statement (fromIntegral offset, fromIntegral limit) selectUserIdentifiers
-  return $ Right $ map userIdentifier $ toList result
+pgListUsers :: Range -> Transaction (Either Error (ListResponse UserIdentifier))
+pgListUsers (Range offset' Nothing) = pgListUsers (Range offset' $ Just 100)
+pgListUsers (Range offset' (Just limit')) = do
+  total' <- statement () selectUserCount
+  result <- statement (fromIntegral offset', fromIntegral limit') selectUserIdentifiers
+  let items' = map userIdentifier $ toList result
+  return $ Right $ ListResponse items' offset' limit' $ fromIntegral total'
   where
     userIdentifier (uuuid, Nothing) = UserId $ UserUUID uuuid
     userIdentifier (uuuid, Just email) = UserIdAndEmail (UserUUID uuuid) email
@@ -200,11 +203,13 @@ pgGetGroupById (GroupUUID uuid) = do
     pid (pid', Just name) = PolicyIdAndName (PolicyUUID pid') name
 
 
-pgListGroups :: Range -> Transaction (Either Error [GroupIdentifier])
-pgListGroups (Range offset maybeLimit) = do
-  let limit = fromMaybe 100 maybeLimit
-  result <- statement (fromIntegral offset, fromIntegral limit) selectGroupIdentifiers
-  return $ Right $ map groupIdentifier $ toList result
+pgListGroups :: Range -> Transaction (Either Error (ListResponse GroupIdentifier))
+pgListGroups (Range offset' maybeLimit) = do
+  let limit' = fromMaybe 100 maybeLimit
+  result <- statement (fromIntegral offset', fromIntegral limit') selectGroupIdentifiers
+  let items' = map groupIdentifier $ toList result
+  total' <- statement () selectGroupCount
+  return $ Right $ ListResponse items' offset' limit' $ fromIntegral total'
   where
     groupIdentifier (guuid, Nothing) = GroupId $ GroupUUID guuid
     groupIdentifier (guuid, Just name) = GroupIdAndName (GroupUUID guuid) name
@@ -314,11 +319,13 @@ pgGetPolicy (PolicyIdAndName (PolicyUUID pid) _) =
   pgGetPolicy $ PolicyId $ PolicyUUID pid
 
 
-pgListPolicies :: Range -> Transaction (Either Error [PolicyIdentifier])
-pgListPolicies (Range offset maybeLimit) = do
-  let limit = fromMaybe 100 maybeLimit
-  result <- statement (fromIntegral offset, fromIntegral limit) selectPolicyIdentifiers
-  return $ Right $ map policyIdentifier $ toList result
+pgListPolicies :: Range -> Transaction (Either Error (ListResponse PolicyIdentifier))
+pgListPolicies (Range offset' maybeLimit) = do
+  let limit' = fromMaybe 100 maybeLimit
+  result <- statement (fromIntegral offset', fromIntegral limit') selectPolicyIdentifiers
+  total' <- statement () selectPolicyCount
+  let items' = map policyIdentifier $ toList result
+  return $ Right $ ListResponse items' offset' limit' $ fromIntegral total'
   where
     policyIdentifier (pid, Nothing) = PolicyId $ PolicyUUID pid
     policyIdentifier (pid, Just name) = PolicyIdAndName (PolicyUUID pid) name
@@ -554,15 +561,18 @@ pgGetSessionByToken uid token = do
     Nothing -> return $ Left $ NotFound $ UserIdentifier uid
 
 
-pgListUserSessions :: UserIdentifier -> Range -> Transaction (Either Error [Session])
-pgListUserSessions userIdentifier (Range offset maybeLimit) = do
-  let limit = fromMaybe 100 maybeLimit
+pgListUserSessions :: UserIdentifier -> Range ->
+  Transaction (Either Error (ListResponse Session))
+pgListUserSessions userIdentifier (Range offset' maybeLimit) = do
+  let limit' = fromMaybe 100 maybeLimit
   maybeUid <- resolveUserIdentifier userIdentifier
   case maybeUid of
     Just (UserUUID uid) -> do
-      let params = (uid, fromIntegral offset, fromIntegral limit)
+      let params = (uid, fromIntegral offset', fromIntegral limit')
       result <- statement params selectUserSessions
-      return $ Right $ map (session uid) $ toList result
+      total' <- statement uid selectUserSessionCount
+      let items' = map (session uid) $ toList result
+      return $ Right $ ListResponse items' offset' limit' $ fromIntegral total'
     Nothing -> return $ Left $ NotFound $ UserIdentifier userIdentifier
   where
     session uid (sid, _, expires) = Session (SessionUUID sid) (UserUUID uid) expires

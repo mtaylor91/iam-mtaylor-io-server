@@ -24,6 +24,7 @@ import IAM.Authorization
 import IAM.Group
 import IAM.GroupPolicy
 import IAM.GroupIdentifier
+import IAM.ListResponse
 import IAM.Membership
 import IAM.Policy
 import IAM.Session
@@ -44,7 +45,8 @@ type IAMAPI
     )
 
 type UsersAPI
-  = ( QueryParam "offset" Int :> QueryParam "limit" Int :> Get '[JSON] [UserIdentifier]
+  = ( QueryParam "offset" Int :> QueryParam "limit" Int
+    :> Get '[JSON] (ListResponse UserIdentifier)
   :<|> ( ReqBody '[JSON] User :> PostCreated '[JSON] User )
   :<|> ( Capture "user" UserIdentifier :> UserAPI )
     )
@@ -63,7 +65,8 @@ type UserPolicyAPI
 
 type UserSessionsAPI
   = ( PostCreated '[JSON] CreateSession
-  :<|> QueryParam "offset" Int :> QueryParam "limit" Int :> Get '[JSON] [Session]
+  :<|> QueryParam "offset" Int :> QueryParam "limit" Int
+    :> Get '[JSON] (ListResponse Session)
   :<|> ( Capture "session" SessionId :> UserSessionAPI )
     )
 
@@ -74,7 +77,8 @@ type UserSessionAPI
     )
 
 type GroupsAPI
-  = ( QueryParam "offset" Int :> QueryParam "limit" Int :> Get '[JSON] [GroupIdentifier]
+  = ( QueryParam "offset" Int :> QueryParam "limit" Int
+    :> Get '[JSON] (ListResponse GroupIdentifier)
   :<|> ( ReqBody '[JSON] Group :> PostCreated '[JSON] Group )
   :<|> ( Capture "group" GroupIdentifier :> GroupAPI )
     )
@@ -97,7 +101,8 @@ type MembershipAPI
     )
 
 type PoliciesAPI
-  = ( QueryParam "offset" Int :> QueryParam "limit" Int :> Get '[JSON] [PolicyIdentifier]
+  = ( QueryParam "offset" Int :> QueryParam "limit" Int
+    :> Get '[JSON] (ListResponse PolicyIdentifier)
   :<|> ( ReqBody '[JSON] Policy :> PostCreated '[JSON] Policy )
   :<|> ( Capture "policy" PolicyIdentifier :> PolicyAPI )
     )

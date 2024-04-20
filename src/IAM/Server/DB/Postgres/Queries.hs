@@ -11,7 +11,7 @@ import Data.Time (UTCTime)
 import Data.UUID (UUID)
 import Data.Vector (Vector)
 import Hasql.Statement (Statement)
-import Hasql.TH (maybeStatement, resultlessStatement, vectorStatement)
+import Hasql.TH (maybeStatement, resultlessStatement, singletonStatement, vectorStatement)
 
 
 insertUserId :: Statement UUID ()
@@ -166,6 +166,16 @@ insertSession =
   |]
 
 
+selectUserCount :: Statement () Int32
+selectUserCount =
+  [singletonStatement|
+    SELECT
+      COUNT(*) :: int
+    FROM
+      users
+  |]
+
+
 selectUserId :: Statement UUID (Maybe UUID)
 selectUserId =
   [maybeStatement|
@@ -306,6 +316,16 @@ selectUserPoliciesForHost =
   |]
 
 
+selectGroupCount :: Statement () Int32
+selectGroupCount =
+  [singletonStatement|
+    SELECT
+      COUNT(*) :: int
+    FROM
+      groups
+  |]
+
+
 selectGroupId :: Statement UUID (Maybe UUID)
 selectGroupId =
   [maybeStatement|
@@ -413,6 +433,16 @@ selectGroupPoliciesForHost =
   |]
 
 
+selectPolicyCount :: Statement () Int32
+selectPolicyCount =
+  [singletonStatement|
+    SELECT
+      COUNT(*) :: int
+    FROM
+      policies
+  |]
+
+
 selectPolicyIds :: Statement (Int32, Int32) (Vector UUID)
 selectPolicyIds =
   [vectorStatement|
@@ -497,6 +527,18 @@ selectSessionByToken =
       sessions.user_uuid = $1 :: uuid
     AND
       sessions.session_token = $2 :: text
+  |]
+
+
+selectUserSessionCount :: Statement UUID Int32
+selectUserSessionCount =
+  [singletonStatement|
+    SELECT
+      COUNT(*) :: int
+    FROM
+      sessions
+    WHERE
+      sessions.user_uuid = $1 :: uuid
   |]
 
 

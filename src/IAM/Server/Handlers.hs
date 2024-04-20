@@ -35,6 +35,7 @@ import IAM.Error
 import IAM.Group
 import IAM.GroupPolicy
 import IAM.GroupIdentifier
+import IAM.ListResponse
 import IAM.Membership
 import IAM.Policy
 import IAM.Range
@@ -57,11 +58,12 @@ getUserHandler ctx auth uid = do
 
 
 listUsersHandler ::
-  DB db => Ctx db -> Auth -> Maybe Int -> Maybe Int -> Handler [UserIdentifier]
+  DB db => Ctx db -> Auth -> Maybe Int -> Maybe Int ->
+    Handler (ListResponse UserIdentifier)
 listUsersHandler ctx auth maybeOffset maybeLimit = do
   requireSession auth
-  let offset = fromMaybe 0 maybeOffset
-  result <- liftIO $ runExceptT $ listUsers (ctxDB ctx) $ Range offset maybeLimit
+  let offset' = fromMaybe 0 maybeOffset
+  result <- liftIO $ runExceptT $ listUsers (ctxDB ctx) $ Range offset' maybeLimit
   case result of
     Right users' -> return users'
     Left err     -> errorHandler err
@@ -95,11 +97,12 @@ getGroupHandler ctx auth gid = do
 
 
 listGroupsHandler ::
-  DB db => Ctx db -> Auth -> Maybe Int -> Maybe Int -> Handler [GroupIdentifier]
+  DB db => Ctx db -> Auth -> Maybe Int -> Maybe Int ->
+    Handler (ListResponse GroupIdentifier)
 listGroupsHandler ctx auth maybeOffset maybeLimit = do
   requireSession auth
-  let offset = fromMaybe 0 maybeOffset
-  result <- liftIO $ runExceptT $ listGroups (ctxDB ctx) $ Range offset maybeLimit
+  let offset' = fromMaybe 0 maybeOffset
+  result <- liftIO $ runExceptT $ listGroups (ctxDB ctx) $ Range offset' maybeLimit
   case result of
     Right groups' -> return groups'
     Left err      -> errorHandler err
@@ -133,11 +136,12 @@ getPolicyHandler ctx auth policy = do
 
 
 listPoliciesHandler ::
-  DB db => Ctx db -> Auth -> Maybe Int -> Maybe Int -> Handler [PolicyIdentifier]
+  DB db => Ctx db -> Auth -> Maybe Int -> Maybe Int ->
+    Handler (ListResponse PolicyIdentifier)
 listPoliciesHandler ctx auth maybeOffset maybeLimit = do
   requireSession auth
-  let offset = fromMaybe 0 maybeOffset
-  result <- liftIO $ runExceptT $ listPolicyIds (ctxDB ctx) $ Range offset maybeLimit
+  let offset' = fromMaybe 0 maybeOffset
+  result <- liftIO $ runExceptT $ listPolicyIds (ctxDB ctx) $ Range offset' maybeLimit
   case result of
     Right pids -> return pids
     Left err   -> errorHandler err
@@ -261,11 +265,12 @@ createSessionHandler ctx _ uid = do
 
 
 listUserSessionsHandler :: DB db =>
-  Ctx db -> Auth -> UserIdentifier -> Maybe Int -> Maybe Int -> Handler [Session]
+  Ctx db -> Auth -> UserIdentifier -> Maybe Int -> Maybe Int ->
+    Handler (ListResponse Session)
 listUserSessionsHandler ctx auth uid maybeOffset maybeLimit = do
   requireSession auth
-  let offset = fromMaybe 0 maybeOffset
-  let dbOp = listUserSessions (ctxDB ctx) uid $ Range offset maybeLimit
+  let offset' = fromMaybe 0 maybeOffset
+  let dbOp = listUserSessions (ctxDB ctx) uid $ Range offset' maybeLimit
   result <- liftIO $ runExceptT dbOp
   case result of
     Right sessions -> return sessions

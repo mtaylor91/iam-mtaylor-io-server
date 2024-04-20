@@ -9,8 +9,9 @@ import IAM.Error
 import IAM.Group
 import IAM.GroupPolicy
 import IAM.GroupIdentifier
-import IAM.Policy
+import IAM.ListResponse
 import IAM.Membership
+import IAM.Policy
 import IAM.User
 import IAM.UserPolicy
 import IAM.UserIdentifier
@@ -30,7 +31,7 @@ class DB db where
 
   -- | listUsers returns a list of all users in the database.
   listUsers :: (MonadIO m, MonadError Error m) =>
-    db -> Range -> m [UserIdentifier]
+    db -> Range -> m (ListResponse UserIdentifier)
 
   -- | createUser adds a new user to the database.
   createUser :: (MonadIO m, MonadError Error m) =>
@@ -46,7 +47,7 @@ class DB db where
 
   -- | listGroups returns a list of all groups in the database.
   listGroups :: (MonadIO m, MonadError Error m) =>
-    db -> Range -> m [GroupIdentifier]
+    db -> Range -> m (ListResponse GroupIdentifier)
 
   -- | createGroup adds a new group to the database.
   createGroup :: (MonadIO m, MonadError Error m) =>
@@ -62,7 +63,7 @@ class DB db where
 
   -- | listPolicyIds returns a list of all policies in the database.
   listPolicyIds :: (MonadIO m, MonadError Error m) =>
-    db -> Range -> m [PolicyIdentifier]
+    db -> Range -> m (ListResponse PolicyIdentifier)
 
   -- | listPoliciesForUser returns a list of all policies attached
   -- | to a user and its groups.
@@ -127,4 +128,4 @@ class DB db where
 
   -- | listUserSessions returns a list of all sessions for a user.
   listUserSessions :: (MonadIO m, MonadError Error m) =>
-    db -> UserIdentifier -> Range -> m [Session]
+    db -> UserIdentifier -> Range -> m (ListResponse Session)

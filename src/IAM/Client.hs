@@ -35,6 +35,7 @@ import IAM.Authorization
 import IAM.Group
 import IAM.GroupPolicy
 import IAM.GroupIdentifier
+import IAM.ListResponse
 import IAM.Membership
 import IAM.Policy
 import IAM.Session
@@ -44,7 +45,7 @@ import IAM.UserIdentifier
 
 
 type UsersClientM
-  = (Maybe Int -> Maybe Int -> ClientM [UserIdentifier])
+  = (Maybe Int -> Maybe Int -> ClientM (ListResponse UserIdentifier))
   :<|> (User -> ClientM User)
   :<|> (UserIdentifier -> UserClientM)
 
@@ -63,7 +64,7 @@ type UserPolicyClientM
 
 type UserSessionsClientM
   = ClientM CreateSession
-  :<|> (Maybe Int -> Maybe Int -> ClientM [Session])
+  :<|> (Maybe Int -> Maybe Int -> ClientM (ListResponse Session))
   :<|> (SessionId -> UserSessionClientM)
 
 
@@ -74,7 +75,7 @@ type UserSessionClientM
 
 
 type GroupsClientM
-  = (Maybe Int -> Maybe Int -> ClientM [GroupIdentifier])
+  = (Maybe Int -> Maybe Int -> ClientM (ListResponse GroupIdentifier))
   :<|> (Group -> ClientM Group)
   :<|> (GroupIdentifier -> GroupClientM)
 
@@ -96,7 +97,7 @@ type GroupMembershipClientM
 
 
 type PoliciesClientM
-  = (Maybe Int -> Maybe Int -> ClientM [PolicyIdentifier])
+  = (Maybe Int -> Maybe Int -> ClientM (ListResponse PolicyIdentifier))
   :<|> (Policy -> ClientM Policy)
   :<|> (PolicyIdentifier -> PolicyClientM)
 
@@ -126,7 +127,7 @@ data UserPolicyClient = UserPolicyClient
 
 data UserSessionsClient = UserSessionsClient
   { createSession :: !(ClientM CreateSession)
-  , listSessions :: !(Maybe Int -> Maybe Int -> ClientM [Session])
+  , listSessions :: !(Maybe Int -> Maybe Int -> ClientM (ListResponse Session))
   , sessionClient :: !(SessionId -> UserSessionClient)
   }
 
@@ -208,7 +209,7 @@ mkCallerSessionsClient =
     in UserSessionClient getSession' deleteSession' refreshSession'
 
 
-listUsers :: Maybe Int -> Maybe Int -> ClientM [UserIdentifier]
+listUsers :: Maybe Int -> Maybe Int -> ClientM (ListResponse UserIdentifier)
 createUser :: User -> ClientM User
 userClient :: UserIdentifier -> UserClientM
 
@@ -245,7 +246,7 @@ mkUserClient uid =
     in UserSessionClient getSession' deleteSession' refreshSession'
 
 
-listGroups :: Maybe Int -> Maybe Int -> ClientM [GroupIdentifier]
+listGroups :: Maybe Int -> Maybe Int -> ClientM (ListResponse GroupIdentifier)
 createGroup :: Group -> ClientM Group
 groupClient :: GroupIdentifier -> GroupClientM
 
@@ -273,7 +274,7 @@ mkGroupClient gid =
     in MembershipClient createMembership' deleteMembership'
 
 
-listPolicies :: Maybe Int -> Maybe Int -> ClientM [PolicyIdentifier]
+listPolicies :: Maybe Int -> Maybe Int -> ClientM (ListResponse PolicyIdentifier)
 createPolicy :: Policy -> ClientM Policy
 policyClient :: PolicyIdentifier -> PolicyClientM
 

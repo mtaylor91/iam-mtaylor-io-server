@@ -10,6 +10,7 @@ import IAM.Group
 import IAM.GroupPolicy
 import IAM.GroupIdentifier
 import IAM.Identifier
+import IAM.ListResponse
 import IAM.Membership
 import IAM.Policy
 import IAM.Range
@@ -43,12 +44,19 @@ instance DB InMemory where
       Just uid' -> return uid'
       Nothing -> throwError $ NotFound $ UserIdentifier uid
 
-  listUsers (InMemory tvar) (Range offset maybeLimit) = do
+  listUsers (InMemory tvar) (Range offset' maybeLimit) = do
     s <- liftIO $ readTVarIO tvar
     let users' = resolveUser s <$> users s
      in return $ case maybeLimit of
-      Just limit -> Prelude.take limit $ Prelude.drop offset users'
-      Nothing -> Prelude.drop offset users'
+      Just limit' ->
+        let items' = Prelude.take limit' $ Prelude.drop offset' users'
+            total' = Prelude.length users'
+         in ListResponse items' offset' limit' total'
+      Nothing ->
+        let items' = Prelude.drop offset' users'
+            total' = Prelude.length users'
+            limit' = total'
+         in ListResponse items' offset' limit' total'
     where
       resolveUser :: InMemoryState -> UserId -> UserIdentifier
       resolveUser s uid = case s ^. userState (UserId uid) of
@@ -81,12 +89,19 @@ instance DB InMemory where
       Just g -> return g
       Nothing -> throwError $ NotFound $ GroupIdentifier gid
 
-  listGroups (InMemory tvar) (Range offset maybeLimit) = do
+  listGroups (InMemory tvar) (Range offset' maybeLimit) = do
     s <- liftIO $ readTVarIO tvar
     let gs = resolveGroup s <$> groups s
     case maybeLimit of
-      Just limit -> return $ Prelude.take limit $ Prelude.drop offset gs
-      Nothing -> return $ Prelude.drop offset gs
+      Just limit' ->
+        let items' = Prelude.take limit' $ Prelude.drop offset' gs
+            total' = Prelude.length gs
+         in return $ ListResponse items' offset' limit' total'
+      Nothing ->
+        let items' = Prelude.drop offset' gs
+            total' = Prelude.length gs
+            limit' = total'
+         in return $ ListResponse items' offset' limit' total'
     where
       resolveGroup :: InMemoryState -> GroupId -> GroupIdentifier
       resolveGroup s gid = case s ^. groupState (GroupId gid) of
@@ -121,12 +136,19 @@ instance DB InMemory where
           Just p -> return p
           Nothing -> throwError $ NotFound $ PolicyIdentifier $ PolicyId pid
 
-  listPolicyIds (InMemory tvar) (Range offset maybeLimit) = do
+  listPolicyIds (InMemory tvar) (Range offset' maybeLimit) = do
     s <- liftIO $ readTVarIO tvar
     let policyIds = lookupPolicyIdentifier s . policyId <$> policies s
     case maybeLimit of
-      Just limit -> return $ Prelude.take limit $ Prelude.drop offset policyIds
-      Nothing -> return $ Prelude.drop offset policyIds
+      Just limit' ->
+        let items' = Prelude.take limit' $ Prelude.drop offset' policyIds
+            total' = Prelude.length policyIds
+         in return $ ListResponse items' offset' limit' total'
+      Nothing ->
+        let items' = Prelude.drop offset' policyIds
+            total' = Prelude.length policyIds
+            limit' = total'
+         in return $ ListResponse items' offset' limit' total'
 
   listPoliciesForUser (InMemory tvar) uid host = do
     s <- liftIO $ readTVarIO tvar
@@ -345,7 +367,7 @@ instance DB InMemory where
           return $ Left $ NotFound $ SessionIdentifier $ Just sid
     either throwError return result
 
-  listUserSessions (InMemory tvar) uid (Range offset maybeLimit) = do
+  listUserSessions (InMemory tvar) uid (Range offset' maybeLimit) = do
     s <- liftIO $ readTVarIO tvar
     let maybeUid = resolveUserIdentifier s uid
     case maybeUid of
@@ -354,5 +376,12 @@ instance DB InMemory where
       Just uid' -> do
         let sessions' = [s' | (_, s') <- sessions s, sessionUser s' == uid']
         case maybeLimit of
-          Just limit -> return $ Prelude.take limit $ Prelude.drop offset sessions'
-          Nothing -> return $ Prelude.drop offset sessions'
+          Just limit' ->
+            let items' = Prelude.take limit' $ Prelude.drop offset' sessions'
+                total' = Prelude.length sessions'
+             in return $ ListResponse items' offset' limit' total'
+          Nothing ->
+            let items' = Prelude.drop offset' sessions'
+                total' = Prelude.length sessions'
+                limit' = total'
+             in return $ ListResponse items' offset' limit' total'

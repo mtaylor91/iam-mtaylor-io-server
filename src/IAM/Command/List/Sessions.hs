@@ -17,6 +17,7 @@ import Text.Read
 
 import IAM.Client.Auth
 import IAM.Client.Util
+import IAM.ListResponse
 import IAM.UserIdentifier (UserIdentifier(..), UserId(..))
 import IAM.Session
 import qualified IAM.Client
@@ -81,8 +82,8 @@ listSessionsOptions = ListSessionsOptions
     <> help "Limit for pagination" ))
 
 
-runWithClient ::
-  (Maybe Int -> Maybe Int -> ClientM [Session]) -> ListSessionsOptions -> IO ()
+runWithClient :: (Maybe Int -> Maybe Int -> ClientM (ListResponse Session)) ->
+  ListSessionsOptions -> IO ()
 runWithClient c opts = do
   let maybeOffset = listSessionsOffset opts
   let maybeLimit = listSessionsLimit opts
