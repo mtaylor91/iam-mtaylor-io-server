@@ -20,4 +20,7 @@ app host ctx = serveWithContext api (authContext host ctx) $ server ctx
 
 
 startApp :: DB db => Int -> Text -> Ctx db -> IO ()
-startApp port host ctx = run port $ logStdout $ app host ctx
+startApp port host ctx = do
+  logger <- mkRequestLogger $ defaultRequestLoggerSettings
+    { outputFormat = Apache FromFallback }
+  run port $ logger $ app host ctx
