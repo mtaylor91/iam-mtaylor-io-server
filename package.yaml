@@ -45,6 +45,7 @@ dependencies:
 - uuid
 - vector
 - wai
+- wai-extra
 - warp
 
 ghc-options:

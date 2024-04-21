@@ -14,7 +14,7 @@ import System.Environment
 import Text.Read
 
 import IAM.Config
-import IAM.Server.API
+import IAM.Server.App
 import IAM.Server.Context
 import IAM.Server.DB
 import IAM.Server.DB.InMemory

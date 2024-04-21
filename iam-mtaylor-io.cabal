@@ -66,6 +66,7 @@ library
       IAM.Policy
       IAM.Range
       IAM.Server.API
+      IAM.Server.App
       IAM.Server.Auth
       IAM.Server.Context
       IAM.Server.DB
@@ -114,6 +115,7 @@ library
     , uuid
     , vector
     , wai
+    , wai-extra
     , warp
   default-language: Haskell2010
 
@@ -153,6 +155,7 @@ executable iam-mtaylor-io
     , uuid
     , vector
     , wai
+    , wai-extra
     , warp
   default-language: Haskell2010
 
@@ -196,5 +199,6 @@ test-suite iam-mtaylor-io-test
     , uuid
     , vector
     , wai
+    , wai-extra
     , warp
   default-language: Haskell2010
