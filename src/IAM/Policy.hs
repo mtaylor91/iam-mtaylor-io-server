@@ -56,8 +56,8 @@ instance FromJSON PolicyIdentifier where
   parseJSON _ = fail "Invalid JSON"
 
 instance ToJSON PolicyIdentifier where
-  toJSON (PolicyName name) = String name
-  toJSON (PolicyId (PolicyUUID uuid)) = String $ toText uuid
+  toJSON (PolicyName name) = object ["name" .= name]
+  toJSON (PolicyId (PolicyUUID uuid)) = object ["id" .= uuid]
   toJSON (PolicyIdAndName (PolicyUUID uuid) name) = object
     [ "id" .= uuid
     , "name" .= name
