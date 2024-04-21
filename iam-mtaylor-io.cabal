@@ -104,10 +104,10 @@ library
     , http-client
     , http-client-tls
     , http-types
-    , iproute
     , lens
     , mtl
     , network
+    , network-ip
     , optparse-applicative
     , servant-client
     , servant-server
@@ -146,10 +146,10 @@ executable iam-mtaylor-io
     , http-client-tls
     , http-types
     , iam-mtaylor-io
-    , iproute
     , lens
     , mtl
     , network
+    , network-ip
     , optparse-applicative
     , servant-client
     , servant-server
@@ -192,10 +192,10 @@ test-suite iam-mtaylor-io-test
     , http-client-tls
     , http-types
     , iam-mtaylor-io
-    , iproute
     , lens
     , mtl
     , network
+    , network-ip
     , optparse-applicative
     , servant-client
     , servant-server

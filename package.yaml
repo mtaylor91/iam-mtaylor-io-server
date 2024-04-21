@@ -34,10 +34,10 @@ dependencies:
 - http-client
 - http-client-tls
 - http-types
-- iproute
 - lens
 - mtl
 - network
+- network-ip
 - optparse-applicative
 - servant-client
 - servant-server
