@@ -28,10 +28,16 @@ instance Read IpAddr where
 
 fromSockAddr :: SockAddr -> Maybe IpAddr
 fromSockAddr (SockAddrInet _ addr) =
-  Just $ IpAddr $ netAddr (IPv4 $ fromIntegral addr) 32
+  Just $ IpAddr $ netAddr (IPv4 $ convertIpv4 addr) 32
 fromSockAddr (SockAddrInet6 _ _ addr _) =
   Just $ IpAddr $ netAddr (IPv6 $ convertIpv6 addr) 128
 fromSockAddr _ = Nothing
+
+
+convertIpv4 :: HostAddress -> IP4
+convertIpv4 addr =
+  let (o0, o1, o2, o3) = hostAddressToTuple addr
+   in ip4FromOctets o0 o1 o2 o3
 
 
 convertIpv6 :: HostAddress6 -> IP6
