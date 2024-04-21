@@ -386,6 +386,9 @@ pgCreatePolicy policy = do
     pgCreatePolicy' = do
       let pid = unPolicyId $ policyId policy
       statement (pid, hostname policy, toJSON policy) insertPolicy
+      case policyName policy of
+        Nothing -> return ()
+        Just name -> statement (pid, name) insertPolicyName
       return $ Right policy
 
 
