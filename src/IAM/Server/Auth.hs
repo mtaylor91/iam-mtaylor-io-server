@@ -20,6 +20,7 @@ import Data.Text (Text, pack, unpack)
 import Data.Text.Encoding
 import Data.UUID
 import Network.HTTP.Types
+import Network.Socket (SockAddr)
 import Network.Wai
 import Prelude hiding (takeWhile)
 import Servant
@@ -55,7 +56,8 @@ data Authorization = Authorization
 
 
 data AuthRequest = AuthRequest
-  { authRequestAuthorization :: !ByteString
+  { authRequestAddr :: !SockAddr
+  , authRequestAuthorization :: !ByteString
   , authRequestHost :: !ByteString
   , authRequestPublicKey :: !PublicKey
   , authRequestSessionToken :: !(Maybe Text)
@@ -79,6 +81,7 @@ authHandler host ctx = mkAuthHandler $ \req -> do
 
 authenticate :: DB db => Text -> Ctx db -> Request -> Handler (AuthRequest, User)
 authenticate host ctx req = do
+  let addr = remoteHost req
   let maybeSessionToken = do
         token <- lookupHeader req "Session-Token"
         return $ decodeUtf8 token
@@ -91,7 +94,15 @@ authenticate host ctx req = do
         uid <- parseUserId $ decodeUtf8 userIdString
         pk <- parsePublicKey publicKeyBase64
         requestId <- fromString $ unpack $ decodeUtf8 requestIdString
-        return $ AuthRequest authHeader hostHeader pk maybeSessionToken uid requestId
+        return $ AuthRequest
+          { authRequestAddr = addr
+          , authRequestAuthorization = authHeader
+          , authRequestHost = hostHeader
+          , authRequestPublicKey = pk
+          , authRequestSessionToken = maybeSessionToken
+          , authRequestUserId = uid
+          , authRequestId = requestId
+          }
    in case maybeAuth of
     Just authReq -> do
       result <- liftIO $ runExceptT $ getUser (ctxDB ctx) $ authRequestUserId authReq
