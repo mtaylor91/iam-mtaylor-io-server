@@ -5,6 +5,7 @@ module IAM.Server.App
 
 import Data.Text
 import Network.Wai.Handler.Warp
+import Network.Wai.Middleware.RealIp
 import Network.Wai.Middleware.RequestLogger
 import Servant
 
@@ -20,7 +21,4 @@ app host ctx = serveWithContext api (authContext host ctx) $ server ctx
 
 
 startApp :: DB db => Int -> Text -> Ctx db -> IO ()
-startApp port host ctx = do
-  logger <- mkRequestLogger $ defaultRequestLoggerSettings
-    { outputFormat = Apache FromFallback }
-  run port $ logger $ app host ctx
+startApp port host ctx = run port $ realIp $ logStdout $ app host ctx
