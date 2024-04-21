@@ -25,6 +25,7 @@ dependencies:
 - base64
 - bytestring
 - case-insensitive
+- data-textual
 - ed25519
 - entropy
 - hasql

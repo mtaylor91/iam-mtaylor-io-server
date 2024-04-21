@@ -12,6 +12,7 @@ import Data.UUID (UUID)
 import Data.Vector (Vector)
 import Hasql.Statement (Statement)
 import Hasql.TH (maybeStatement, resultlessStatement, singletonStatement, vectorStatement)
+import Network.IP.Addr (NetAddr, IP)
 
 
 insertUserId :: Statement UUID ()
@@ -156,13 +157,13 @@ insertGroupPolicyAttachment =
   |]
 
 
-insertSession :: Statement (UUID, UUID, Text, UTCTime) ()
+insertSession :: Statement (UUID, UUID, NetAddr IP, Text, UTCTime) ()
 insertSession =
   [resultlessStatement|
     INSERT INTO
-      sessions (session_uuid, user_uuid, session_token, session_expires)
+      sessions (session_uuid, user_uuid, session_addr, session_token, session_expires)
     VALUES
-      ($1 :: uuid, $2 :: uuid, $3 :: text, $4 :: timestamptz)
+      ($1 :: uuid, $2 :: uuid, $3 :: inet, $4 :: text, $5 :: timestamptz)
   |]
 
 
@@ -500,11 +501,11 @@ selectPolicy =
   |]
 
 
-selectSessionById :: Statement (UUID, UUID) (Maybe (Text, UTCTime))
+selectSessionById :: Statement (UUID, UUID) (Maybe (NetAddr IP, UTCTime))
 selectSessionById =
   [maybeStatement|
     SELECT
-      sessions.session_token :: text,
+      sessions.session_addr :: inet,
       sessions.session_expires :: timestamptz
     FROM
       sessions
@@ -515,11 +516,12 @@ selectSessionById =
   |]
 
 
-selectSessionByToken :: Statement (UUID, Text) (Maybe (UUID, UTCTime))
+selectSessionByToken :: Statement (UUID, Text) (Maybe (UUID, NetAddr IP, UTCTime))
 selectSessionByToken =
   [maybeStatement|
     SELECT
       sessions.user_uuid :: uuid,
+      sessions.session_addr :: inet,
       sessions.session_expires :: timestamptz
     FROM
       sessions
@@ -542,12 +544,13 @@ selectUserSessionCount =
   |]
 
 
-selectUserSessions :: Statement (UUID, Int32, Int32) (Vector (UUID, Text, UTCTime))
+selectUserSessions ::
+  Statement (UUID, Int32, Int32) (Vector (UUID, NetAddr IP, UTCTime))
 selectUserSessions =
   [vectorStatement|
     SELECT
       sessions.session_uuid :: uuid,
-      sessions.session_token :: text,
+      sessions.session_addr :: inet,
       sessions.session_expires :: timestamptz
     FROM
       sessions

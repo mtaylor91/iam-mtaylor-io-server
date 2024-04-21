@@ -9,6 +9,7 @@ module IAM.Server.Auth
   , Auth(..)
   , Authentication(..)
   , Authorization(..)
+  , AuthRequest(..)
   ) where
 
 import Control.Monad.Except

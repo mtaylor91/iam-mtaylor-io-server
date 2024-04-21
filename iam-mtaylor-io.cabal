@@ -61,6 +61,7 @@ library
       IAM.GroupIdentifier
       IAM.GroupPolicy
       IAM.Identifier
+      IAM.Ip
       IAM.ListResponse
       IAM.Membership
       IAM.Policy
@@ -95,6 +96,7 @@ library
     , base64
     , bytestring
     , case-insensitive
+    , data-textual
     , ed25519
     , entropy
     , hasql
@@ -136,6 +138,7 @@ executable iam-mtaylor-io
     , base64
     , bytestring
     , case-insensitive
+    , data-textual
     , ed25519
     , entropy
     , hasql
@@ -179,6 +182,7 @@ test-suite iam-mtaylor-io-test
     , base64
     , bytestring
     , case-insensitive
+    , data-textual
     , ed25519
     , entropy
     , hasql

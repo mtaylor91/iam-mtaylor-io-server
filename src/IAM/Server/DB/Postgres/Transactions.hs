@@ -15,6 +15,7 @@ import IAM.Group
 import IAM.GroupPolicy
 import IAM.GroupIdentifier
 import IAM.Identifier
+import IAM.Ip
 import IAM.ListResponse
 import IAM.Membership
 import IAM.Policy
@@ -515,8 +516,8 @@ pgDeleteGroupPolicyAttachment groupIdentifier (PolicyIdAndName (PolicyUUID pid) 
 
 pgCreateSession :: CreateSession -> Transaction (Either Error CreateSession)
 pgCreateSession session = do
-  let CreateSession sid uid token expires = session
-  statement (unSessionId sid, unUserId uid, token, expires) insertSession
+  let CreateSession sid addr uid token expires = session
+  statement (unSessionId sid, unUserId uid, unIpAddr addr, token, expires) insertSession
   return $ Right session
 
 
@@ -550,8 +551,8 @@ pgGetSessionById uid sid = do
       case result of
         Nothing ->
           return $ Left $ NotFound $ SessionIdentifier $ Just sid
-        Just (_, expires) ->
-          return $ Right $ Session sid (UserUUID uuid) expires
+        Just (addr, expires) ->
+          return $ Right $ Session sid (IpAddr addr) (UserUUID uuid) expires
     Nothing -> return $ Left $ NotFound $ UserIdentifier uid
 
 
@@ -563,8 +564,8 @@ pgGetSessionByToken uid token = do
       result <- statement (uuid, token) selectSessionByToken
       case result of
         Nothing -> return $ Left $ NotFound $ SessionIdentifier Nothing
-        Just (sid, expires) ->
-          return $ Right $ Session (SessionUUID sid) (UserUUID uuid) expires
+        Just (sid, addr, expiry) ->
+          return $ Right $ Session (SessionUUID sid) (IpAddr addr) (UserUUID uuid) expiry
     Nothing -> return $ Left $ NotFound $ UserIdentifier uid
 
 
@@ -582,7 +583,8 @@ pgListUserSessions userIdentifier (Range offset' maybeLimit) = do
       return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'
     Nothing -> return $ Left $ NotFound $ UserIdentifier userIdentifier
   where
-    session uid (sid, _, expires) = Session (SessionUUID sid) (UserUUID uid) expires
+    session uid (sid, addr, expires) =
+      Session (SessionUUID sid) (IpAddr addr) (UserUUID uid) expires
 
 
 resolveUserIdentifier :: UserIdentifier -> Transaction (Maybe UserId)

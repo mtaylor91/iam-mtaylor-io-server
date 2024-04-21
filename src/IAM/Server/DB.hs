@@ -9,6 +9,7 @@ import IAM.Error
 import IAM.Group
 import IAM.GroupPolicy
 import IAM.GroupIdentifier
+import IAM.Ip
 import IAM.ListResponse
 import IAM.Membership
 import IAM.Policy
@@ -108,7 +109,7 @@ class DB db where
 
   -- | createSession adds a new session to the database.
   createSession :: (MonadIO m, MonadError Error m) =>
-    db -> UserId -> m CreateSession
+    db -> IpAddr -> UserId -> m CreateSession
 
   -- | getSessionById returns a session from the database by its id.
   getSessionById :: (MonadIO m, MonadError Error m) =>

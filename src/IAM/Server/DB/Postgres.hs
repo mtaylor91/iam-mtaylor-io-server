@@ -105,8 +105,8 @@ instance DB PostgresDB where
   deleteGroupPolicyAttachment (PostgresDB pool) gid pid =
     runTransaction pool $ pgDeleteGroupPolicyAttachment gid pid
 
-  createSession (PostgresDB pool) uid = do
-    s <- liftIO $ IAM.Session.createSession uid
+  createSession (PostgresDB pool) addr uid = do
+    s <- liftIO $ IAM.Session.createSession addr uid
     runTransaction pool $ pgCreateSession s
 
   getSessionById (PostgresDB pool) uid sid =

@@ -9,6 +9,7 @@ import Data.Aeson
 import Data.ByteString.Base64
 import Data.Text
 import Data.Text.Encoding
+import Data.Textual hiding (toString)
 import Data.UUID
 import Data.UUID.V4
 import Network.HTTP.Types
@@ -18,8 +19,9 @@ import Test.Hspec.Wai
 
 import IAM.Group
 import IAM.GroupIdentifier
+import IAM.Ip
 import IAM.Policy
-import IAM.Server.API (app)
+import IAM.Server.App (app)
 import IAM.Server.Auth (stringToSign)
 import IAM.Server.Context
 import IAM.Server.DB
@@ -51,12 +53,15 @@ main = do
           let pid = PolicyId callerPolicyId
           result2 <- runExceptT $ createUserPolicyAttachment db cid pid
           case result2 of
-            Right _ -> do
-              result3 <- runExceptT $ createSession db callerId
-              case result3 of
-                Right callerSession ->
-                  hspec $ spec "localhost" db pk sk callerSession
-                Left _ -> error "Failed to create test session"
+            Right _ ->
+              case maybeParsed $ parseText "127.0.0.1/32" of
+                Just addr -> do
+                  result3 <- runExceptT $ createSession db (IpAddr addr) callerId
+                  case result3 of
+                    Right callerSession ->
+                      hspec $ spec "localhost" db pk sk callerSession
+                    Left _ -> error "Failed to create test session"
+                Nothing -> error "Failed to parse test IP address"
             Left _ -> error "Failed to attach test user policy"
         Left _ -> error "Failed to create test user policy"
     Left _ -> error "Failed to create test user"

@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS "policies_names" (
 CREATE TABLE IF NOT EXISTS "sessions" (
   "session_uuid" UUID NOT NULL,
   "user_uuid" UUID NOT NULL,
+  "session_addr" INET NOT NULL,
   "session_token" TEXT NOT NULL,
   "session_expires" TIMESTAMP NOT NULL,
   PRIMARY KEY ("session_uuid"),

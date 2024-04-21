@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module IAM.Server.Handlers
   ( getUserHandler
   , listUsersHandler
@@ -35,6 +36,7 @@ import IAM.Error
 import IAM.Group
 import IAM.GroupPolicy
 import IAM.GroupIdentifier
+import IAM.Ip
 import IAM.ListResponse
 import IAM.Membership
 import IAM.Policy
@@ -253,15 +255,19 @@ deleteGroupPolicyAttachmentHandler ctx auth gid pid = do
 
 createSessionHandler :: DB db =>
   Ctx db -> Auth -> UserIdentifier -> Handler CreateSession
-createSessionHandler ctx _ uid = do
+createSessionHandler ctx auth uid = do
   r0 <- liftIO $ runExceptT $ getUserId (ctxDB ctx) uid
   case r0 of
     Left e -> errorHandler e
     Right uid' -> do
-      result <- liftIO $ runExceptT $ IAM.Server.DB.createSession (ctxDB ctx) uid'
-      case result of
-        Right session' -> return session'
-        Left err       -> errorHandler err
+      case fromSockAddr $ authRequestAddr $ authRequest $ authentication auth of
+        Nothing -> errorHandler $ InternalError "Invalid address"
+        Just addr -> do
+          let dbOp = IAM.Server.DB.createSession (ctxDB ctx) addr uid'
+          result <- liftIO $ runExceptT dbOp
+          case result of
+            Right session' -> return session'
+            Left err       -> errorHandler err
 
 
 listUserSessionsHandler :: DB db =>

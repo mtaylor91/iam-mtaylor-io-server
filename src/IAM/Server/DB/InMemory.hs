@@ -300,8 +300,8 @@ instance DB InMemory where
           return $ Left $ NotFound $ GroupIdentifier gid
     either throwError return result
 
-  createSession (InMemory tvar) uid = do
-    s <- liftIO $ IAM.Session.createSession uid
+  createSession (InMemory tvar) addr uid = do
+    s <- liftIO $ IAM.Session.createSession addr uid
     liftIO $ atomically $ do
       s' <- readTVar tvar
       let newSession = (createSessionToken s, toSession s)
