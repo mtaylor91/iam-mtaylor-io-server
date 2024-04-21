@@ -29,8 +29,8 @@ createAdmin host adminEmail adminPublicKeyBase64 db = do
 
   -- Create the admin policy
   let name = "iam-admin"
-      allowReads = Rule Allow Read "*"
-      allowWrites = Rule Allow Write "*"
+      allowReads = Rule Allow Read "**"
+      allowWrites = Rule Allow Write "**"
       adminPolicy = Policy adminPolicyId (Just name) host [allowReads, allowWrites]
   r0 <- runExceptT $ createPolicy db adminPolicy
   case r0 of

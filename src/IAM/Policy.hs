@@ -155,8 +155,21 @@ policyRules = concatMap statements
 
 
 -- | resourceMatches returns whether a resource matches a pattern.
+-- The pattern is a slash-separated string.
+-- Components of the pattern can be wildcarded with an asterisk.
+-- For example, "foo/bar/*" matches "foo/bar/baz".
+-- Two asterisks at the end of the pattern match any suffix.
 resourceMatches :: Text -> Text -> Bool
 resourceMatches match pattern
-  | "*" `isSuffixOf` pattern = Data.Text.init pattern `isPrefixOf` match
-  | pattern == match = True
+  = resourceMatches' (splitOn "/" match) (splitOn "/" pattern)
+
+
+resourceMatches' :: [Text] -> [Text] -> Bool
+resourceMatches' [] [] = True
+resourceMatches' [] _ = False
+resourceMatches' _ [] = False
+resourceMatches' (m:ms) (p:ps)
+  | p == "**" = True
+  | p == "*" = resourceMatches' ms ps
+  | m == p = resourceMatches' ms ps
   | otherwise = False

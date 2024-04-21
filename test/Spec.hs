@@ -37,8 +37,8 @@ main = do
   (pk, sk) <- createKeypair
   callerId <- UserUUID <$> nextRandom
   callerPolicyId <- PolicyUUID <$> nextRandom
-  let allowReads = Rule Allow Read "*"
-      allowWrites = Rule Allow Write "*"
+  let allowReads = Rule Allow Read "**"
+      allowWrites = Rule Allow Write "**"
       callerEmail = Just "caller@example.com"
       callerPolicy = Policy callerPolicyId Nothing "localhost" callerPolicyRules
       callerPolicyRules = [allowReads, allowWrites]
