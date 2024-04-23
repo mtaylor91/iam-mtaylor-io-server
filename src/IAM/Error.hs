@@ -44,6 +44,8 @@ data AuthenticationError
   | InvalidHost
   | InvalidSignature
   | SessionRequired
+  | SessionNotFound
+  | UserNotFound
   deriving (Show, Eq)
 
 instance ToJSON AuthenticationError where
@@ -51,6 +53,8 @@ instance ToJSON AuthenticationError where
   toJSON InvalidHost = String "Invalid Host"
   toJSON InvalidSignature = String "Invalid Signature"
   toJSON SessionRequired = String "Session authentication required"
+  toJSON SessionNotFound = String "Session not found"
+  toJSON UserNotFound = String "User not found"
 
 
 errorHandler :: (MonadIO m, MonadError ServerError m) => Error -> m a

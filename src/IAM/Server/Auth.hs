@@ -112,7 +112,12 @@ authenticate host ctx req = do
           case authReqError authReq user of
             Nothing -> return (authReq, user)
             Just err -> errorHandler $ AuthenticationFailed err
-        Left err -> errorHandler err
+        Left (NotFound _) -> do
+          errorHandler $ AuthenticationFailed UserNotFound
+        Left (InternalError e) -> do
+          errorHandler $ InternalError e
+        Left e ->
+          errorHandler $ InternalError $ pack $ show e
     Nothing -> do
       errorHandler $ AuthenticationFailed InvalidHeaders
   where
@@ -138,16 +143,7 @@ authenticate host ctx req = do
 
 authorize :: DB db => Text -> Ctx db -> Request -> Authentication -> Handler Auth
 authorize host ctx req authN = do
-  callerUserId <- case authRequestUserId $ authRequest authN of
-    UserId uid -> return uid
-    UserIdAndEmail uid _ -> return uid
-    UserEmail email -> do
-      result <- liftIO $ runExceptT $ getUserId (ctxDB ctx) $ UserEmail email
-      case result of
-        Right uid ->
-          return uid
-        Left e ->
-          errorHandler e
+  let callerUserId = userId $ authUser authN
 
   maybeSession <- case authRequestSessionToken $ authRequest authN of
     Nothing -> return Nothing
@@ -157,8 +153,12 @@ authorize host ctx req authN = do
       case result of
         Right session ->
           return $ Just session
-        Left e -> do
-          errorHandler e
+        Left (NotFound _) ->
+          errorHandler $ AuthenticationFailed SessionNotFound
+        Left (InternalError e) ->
+          errorHandler $ InternalError e
+        Left e ->
+          errorHandler $ InternalError $ pack $ show e
   let dbOp = listPoliciesForUser (ctxDB ctx) callerUserId host
   policiesResult <- liftIO $ runExceptT dbOp
   case policiesResult of
@@ -166,8 +166,8 @@ authorize host ctx req authN = do
       if authorized req policies
         then let authZ = Authorization policies maybeSession in return $ Auth authN authZ
         else errorHandler NotAuthorized
-    Left e ->
-      errorHandler e
+    Left (InternalError e) -> errorHandler $ InternalError e
+    Left e -> errorHandler $ InternalError $ pack $ show e
 
 
 authorized :: Request ->  [Policy] -> Bool
