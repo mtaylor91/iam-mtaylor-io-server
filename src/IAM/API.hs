@@ -18,6 +18,7 @@ module IAM.API
   , iamAPI
   ) where
 
+import Data.Text (Text)
 import Servant
 
 import IAM.Authorization
@@ -51,7 +52,7 @@ type IAMAPI
     )
 
 type UsersAPI
-  = ( ListAPI UserIdentifier
+  = ( QueryParam "emailPrefix" Text :> ListAPI UserIdentifier
   :<|> ( ReqBody '[JSON] User :> PostCreated '[JSON] User )
   :<|> ( Capture "user" UserIdentifier :> UserAPI )
     )

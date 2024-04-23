@@ -31,7 +31,8 @@ listUsers opts = do
   url <- serverUrl
   auth <- clientAuthInfo
   mgr <- newManager tlsManagerSettings { managerModifyRequest = clientAuth auth }
-  r <- runClientM (IAM.Client.listUsers maybeOffset maybeLimit) $ mkClientEnv mgr url
+  let clientOp = IAM.Client.listUsers Nothing maybeOffset maybeLimit
+  r <- runClientM clientOp $ mkClientEnv mgr url
   case r of
     Right users ->
       putStrLn $ T.unpack (decodeUtf8 $ toStrict $ encode $ toJSON users)

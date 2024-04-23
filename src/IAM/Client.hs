@@ -27,6 +27,7 @@ module IAM.Client
   , PolicyClient(..)
   ) where
 
+import Data.Text
 import Servant
 import Servant.Client
 import IAM.API
@@ -45,7 +46,7 @@ import IAM.UserIdentifier
 
 
 type UsersClientM
-  = (Maybe Int -> Maybe Int -> ClientM (ListResponse UserIdentifier))
+  = (Maybe Text -> Maybe Int -> Maybe Int -> ClientM (ListResponse UserIdentifier))
   :<|> (User -> ClientM User)
   :<|> (UserIdentifier -> UserClientM)
 
@@ -209,7 +210,8 @@ mkCallerSessionsClient =
     in UserSessionClient getSession' deleteSession' refreshSession'
 
 
-listUsers :: Maybe Int -> Maybe Int -> ClientM (ListResponse UserIdentifier)
+listUsers ::
+  Maybe Text -> Maybe Int -> Maybe Int -> ClientM (ListResponse UserIdentifier)
 createUser :: User -> ClientM User
 userClient :: UserIdentifier -> UserClientM
 

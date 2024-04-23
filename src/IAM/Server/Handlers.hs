@@ -29,6 +29,7 @@ module IAM.Server.Handlers
 import Control.Monad.IO.Class
 import Control.Monad.Except
 import Data.Maybe
+import Data.Text
 import Servant
 
 import IAM.Authorization
@@ -60,12 +61,20 @@ getUserHandler ctx auth uid = do
 
 
 listUsersHandler ::
-  DB db => Ctx db -> Auth -> Maybe Int -> Maybe Int ->
+  DB db => Ctx db -> Auth -> Maybe Text -> Maybe Int -> Maybe Int ->
     Handler (ListResponse UserIdentifier)
-listUsersHandler ctx auth maybeOffset maybeLimit = do
+listUsersHandler ctx auth Nothing maybeOffset maybeLimit = do
   requireSession auth
   let offset' = fromMaybe 0 maybeOffset
   result <- liftIO $ runExceptT $ listUsers (ctxDB ctx) $ Range offset' maybeLimit
+  case result of
+    Right users' -> return users'
+    Left err     -> errorHandler err
+listUsersHandler ctx auth (Just prefix) maybeOffset maybeLimit = do
+  requireSession auth
+  let offset' = fromMaybe 0 maybeOffset
+  result <- liftIO $ runExceptT $ listUsersByEmailPrefix (ctxDB ctx) prefix $
+    Range offset' maybeLimit
   case result of
     Right users' -> return users'
     Left err     -> errorHandler err
@@ -111,11 +120,11 @@ listGroupsHandler ctx auth maybeOffset maybeLimit = do
 
 
 createGroupHandler :: DB db => Ctx db -> Auth -> Group -> Handler Group
-createGroupHandler ctx auth group = do
+createGroupHandler ctx auth group' = do
   requireSession auth
-  result <- liftIO $ runExceptT $ createGroup (ctxDB ctx) group
+  result <- liftIO $ runExceptT $ createGroup (ctxDB ctx) group'
   case result of
-    Right group' -> return group'
+    Right group'' -> return group''
     Left err -> errorHandler err
 
 
