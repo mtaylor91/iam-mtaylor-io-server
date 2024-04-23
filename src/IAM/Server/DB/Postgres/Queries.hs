@@ -177,6 +177,18 @@ selectUserCount =
   |]
 
 
+selectUserCountByEmailLike :: Statement Text Int32
+selectUserCountByEmailLike =
+  [singletonStatement|
+    SELECT
+      COUNT(*) :: int
+    FROM
+      users_emails
+    WHERE
+      users_emails.user_email LIKE $1 :: text
+  |]
+
+
 selectUserId :: Statement UUID (Maybe UUID)
 selectUserId =
   [maybeStatement|
@@ -217,6 +229,28 @@ selectUserIdentifiers =
       $1 :: int
     LIMIT
       $2 :: int
+  |]
+
+
+selectUserIdentifiersByEmailLike ::
+  Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text))
+selectUserIdentifiersByEmailLike =
+  [vectorStatement|
+    SELECT
+      users.user_uuid :: uuid,
+      users_emails.user_email :: text?
+    FROM
+      users
+    LEFT JOIN
+      users_emails
+    ON
+      users.user_uuid = users_emails.user_uuid
+    WHERE
+      users_emails.user_email LIKE $1 :: text
+    OFFSET
+      $2 :: int
+    LIMIT
+      $3 :: int
   |]
 
 

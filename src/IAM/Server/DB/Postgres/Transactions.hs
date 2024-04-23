@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module IAM.Server.DB.Postgres.Transactions
   ( module IAM.Server.DB.Postgres.Transactions
   ) where
@@ -5,7 +6,7 @@ module IAM.Server.DB.Postgres.Transactions
 import Crypto.Sign.Ed25519 (PublicKey(..))
 import Data.Aeson (Result(..), fromJSON, toJSON)
 import Data.Maybe
-import Data.Text (Text, pack)
+import Data.Text (Text, pack, unpack)
 import Data.UUID (UUID)
 import Data.Vector (toList)
 import Hasql.Transaction (Transaction, statement)
@@ -25,6 +26,14 @@ import IAM.Session
 import IAM.User
 import IAM.UserPolicy
 import IAM.UserIdentifier
+
+
+pgEscapeLike :: Text -> Text
+pgEscapeLike = pack . concatMap escapeChar . unpack
+  where
+    escapeChar '%' = ['\\', '%']
+    escapeChar '_' = ['\\', '_']
+    escapeChar c = [c]
 
 
 pgGetUser :: UserIdentifier -> Transaction (Either Error User)
@@ -87,6 +96,20 @@ pgListUsers (Range offset' (Just limit')) = do
     userIdentifier (uuuid, Nothing) = UserId $ UserUUID uuuid
     userIdentifier (uuuid, Just email) = UserIdAndEmail (UserUUID uuuid) email
           
+
+pgListUsersByEmailPrefix :: Text -> Range ->
+  Transaction (Either Error (ListResponse UserIdentifier))
+pgListUsersByEmailPrefix prefix (Range offset' Nothing) =
+  pgListUsersByEmailPrefix prefix (Range offset' $ Just 100)
+pgListUsersByEmailPrefix prefix (Range offset' (Just limit')) = do
+  let emailLike = pgEscapeLike prefix <> "%"
+  total' <- statement emailLike selectUserCountByEmailLike
+  result <- statement (emailLike, fromIntegral offset', fromIntegral limit') selectUserIdentifiersByEmailLike
+  let items' = map userIdentifier $ toList result
+  return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'
+  where
+    userIdentifier (uuuid, Nothing) = UserId $ UserUUID uuuid
+    userIdentifier (uuuid, Just email) = UserIdAndEmail (UserUUID uuuid) email
 
 
 pgCreateUser :: User -> Transaction (Either Error User)

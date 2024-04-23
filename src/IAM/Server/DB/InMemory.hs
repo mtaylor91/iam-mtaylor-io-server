@@ -4,6 +4,7 @@ import Control.Concurrent.STM
 import Control.Lens
 import Control.Monad.IO.Class
 import Control.Monad.Except
+import Data.Text (isPrefixOf)
 
 import IAM.Error
 import IAM.Group
@@ -58,6 +59,33 @@ instance DB InMemory where
             limit' = total'
          in ListResponse items' limit' offset' total'
     where
+      resolveUser :: InMemoryState -> UserId -> UserIdentifier
+      resolveUser s uid = case s ^. userState (UserId uid) of
+        Nothing -> UserId uid
+        Just u ->
+          case userEmail u of
+            Nothing -> UserId uid
+            Just email -> UserIdAndEmail uid email
+
+  listUsersByEmailPrefix (InMemory tvar) prefix (Range offset' maybeLimit) = do
+    s <- liftIO $ readTVarIO tvar
+    let users' = resolveUser s <$> users s
+    let users'' = Prelude.filter f users'
+    case maybeLimit of
+      Just limit' ->
+        let items' = Prelude.take limit' $ Prelude.drop offset' users''
+            total' = Prelude.length users''
+         in return $ ListResponse items' limit' offset' total'
+      Nothing ->
+        let items' = Prelude.drop offset' users''
+            total' = Prelude.length users''
+            limit' = total'
+         in return $ ListResponse items' limit' offset' total'
+    where
+      f :: UserIdentifier -> Bool
+      f (UserIdAndEmail _ email) = prefix `isPrefixOf` email
+      f _ = False
+
       resolveUser :: InMemoryState -> UserId -> UserIdentifier
       resolveUser s uid = case s ^. userState (UserId uid) of
         Nothing -> UserId uid
