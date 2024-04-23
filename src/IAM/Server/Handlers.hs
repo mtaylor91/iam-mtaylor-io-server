@@ -155,12 +155,20 @@ getPolicyHandler ctx auth policy = do
 
 
 listPoliciesHandler ::
-  DB db => Ctx db -> Auth -> Maybe Int -> Maybe Int ->
+  DB db => Ctx db -> Auth -> Maybe Text -> Maybe Int -> Maybe Int ->
     Handler (ListResponse PolicyIdentifier)
-listPoliciesHandler ctx auth maybeOffset maybeLimit = do
+listPoliciesHandler ctx auth Nothing maybeOffset maybeLimit = do
   requireSession auth
   let offset' = fromMaybe 0 maybeOffset
   result <- liftIO $ runExceptT $ listPolicyIds (ctxDB ctx) $ Range offset' maybeLimit
+  case result of
+    Right pids -> return pids
+    Left err   -> errorHandler err
+listPoliciesHandler ctx auth (Just search) maybeOffset maybeLimit = do
+  requireSession auth
+  let offset' = fromMaybe 0 maybeOffset
+  result <- liftIO $ runExceptT $ listPolicyIdsBySearchTerm (ctxDB ctx) search $
+    Range offset' maybeLimit
   case result of
     Right pids -> return pids
     Left err   -> errorHandler err

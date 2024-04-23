@@ -105,7 +105,7 @@ type MembershipAPI
     )
 
 type PoliciesAPI
-  = ( ListAPI PolicyIdentifier
+  = ( QueryParam "search" Text :> ListAPI PolicyIdentifier
   :<|> ( ReqBody '[JSON] Policy :> PostCreated '[JSON] Policy )
   :<|> ( Capture "policy" PolicyIdentifier :> PolicyAPI )
     )

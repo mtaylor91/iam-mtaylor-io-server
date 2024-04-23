@@ -81,6 +81,9 @@ instance DB PostgresDB where
   listPolicyIds (PostgresDB pool) range =
     runTransaction pool $ pgListPolicies range
 
+  listPolicyIdsBySearchTerm (PostgresDB pool) search range =
+    runTransaction pool $ pgListPoliciesBySearchTerm search range
+
   listPoliciesForUser (PostgresDB pool) uid host =
     runTransaction pool $ pgListPoliciesForUser host uid
 

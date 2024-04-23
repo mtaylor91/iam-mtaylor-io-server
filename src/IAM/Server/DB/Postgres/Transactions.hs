@@ -371,6 +371,21 @@ pgListPolicies (Range offset' maybeLimit) = do
     policyIdentifier (pid, Just name) = PolicyIdAndName (PolicyUUID pid) name
 
 
+pgListPoliciesBySearchTerm :: Text -> Range ->
+  Transaction (Either Error (ListResponse PolicyIdentifier))
+pgListPoliciesBySearchTerm search (Range offset' maybeLimit) = do
+  let limit' = fromMaybe 100 maybeLimit
+  let likeExpr = "%" <> pgEscapeLike search <> "%"
+  result <- statement (likeExpr, fromIntegral offset', fromIntegral limit')
+    selectPolicyIdentifiersLike
+  total' <- statement likeExpr selectPolicyCountLike
+  let items' = map policyIdentifier $ toList result
+  return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'
+  where
+    policyIdentifier (pid, Nothing) = PolicyId $ PolicyUUID pid
+    policyIdentifier (pid, Just name) = PolicyIdAndName (PolicyUUID pid) name
+
+
 pgListPoliciesForUser :: Text -> UserId -> Transaction (Either Error [Policy])
 pgListPoliciesForUser host (UserUUID uuid) = do
   r0 <- statement (uuid, host) selectUserPoliciesForHost

@@ -527,6 +527,24 @@ selectPolicyCount =
   |]
 
 
+selectPolicyCountLike :: Statement Text Int32
+selectPolicyCountLike =
+  [singletonStatement|
+    SELECT
+      COUNT(*) :: int
+    FROM
+      policies
+    LEFT JOIN
+      policies_names
+    ON
+      policies.policy_uuid = policies_names.policy_uuid
+    WHERE
+      policies.policy_uuid :: text LIKE $1 :: text
+    OR
+      policies_names.policy_name LIKE $1 :: text
+  |]
+
+
 selectPolicyIds :: Statement (Int32, Int32) (Vector UUID)
 selectPolicyIds =
   [vectorStatement|
@@ -557,6 +575,29 @@ selectPolicyIdentifiers =
       $1 :: int
     LIMIT
       $2 :: int
+  |]
+
+
+selectPolicyIdentifiersLike :: Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text))
+selectPolicyIdentifiersLike =
+  [vectorStatement|
+    SELECT
+      policies.policy_uuid :: uuid,
+      policies_names.policy_name :: text?
+    FROM
+      policies
+    LEFT JOIN
+      policies_names
+    ON
+      policies.policy_uuid = policies_names.policy_uuid
+    WHERE
+      policies.policy_uuid :: text LIKE $1 :: text
+    OR
+      policies_names.policy_name LIKE $1 :: text
+    OFFSET
+      $2 :: int
+    LIMIT
+      $3 :: int
   |]
 
 

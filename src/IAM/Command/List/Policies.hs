@@ -19,19 +19,22 @@ import qualified IAM.Client
 
 
 data ListPoliciesOptions = ListPoliciesOptions
-  { listPoliciesOffset :: Maybe Int
-  , listPoliciesLimit :: Maybe Int
+  { listPoliciesSearch :: !(Maybe Text)
+  , listPoliciesOffset :: !(Maybe Int)
+  , listPoliciesLimit :: !(Maybe Int)
   } deriving (Show)
 
 
 listPolicies :: ListPoliciesOptions -> IO ()
 listPolicies opts = do
+  let search = listPoliciesSearch opts
   let offset = listPoliciesOffset opts
   let limit = listPoliciesLimit opts
   url <- serverUrl
   auth <- clientAuthInfo
   mgr <- newManager tlsManagerSettings { managerModifyRequest = clientAuth auth }
-  result <- runClientM (IAM.Client.listPolicies offset limit) $ mkClientEnv mgr url
+  let clientOp = IAM.Client.listPolicies search offset limit
+  result <- runClientM clientOp $ mkClientEnv mgr url
   case result of
     Right policies ->
       putStrLn $ T.unpack (decodeUtf8 $ toStrict $ encode $ toJSON policies)
@@ -41,7 +44,12 @@ listPolicies opts = do
 
 listPoliciesOptions :: Parser ListPoliciesOptions
 listPoliciesOptions = ListPoliciesOptions
-  <$> optional (option auto
+  <$> optional (strOption
+    ( long "search"
+    <> short 's'
+    <> metavar "SEARCH"
+    <> help "Search term for policies" ))
+  <*> optional (option auto
     ( long "offset"
     <> short 'o'
     <> metavar "OFFSET"

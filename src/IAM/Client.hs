@@ -98,7 +98,7 @@ type GroupMembershipClientM
 
 
 type PoliciesClientM
-  = (Maybe Int -> Maybe Int -> ClientM (ListResponse PolicyIdentifier))
+  = (Maybe Text -> Maybe Int -> Maybe Int -> ClientM (ListResponse PolicyIdentifier))
   :<|> (Policy -> ClientM Policy)
   :<|> (PolicyIdentifier -> PolicyClientM)
 
@@ -277,7 +277,8 @@ mkGroupClient gid =
     in MembershipClient createMembership' deleteMembership'
 
 
-listPolicies :: Maybe Int -> Maybe Int -> ClientM (ListResponse PolicyIdentifier)
+listPolicies ::
+  Maybe Text -> Maybe Int -> Maybe Int -> ClientM (ListResponse PolicyIdentifier)
 createPolicy :: Policy -> ClientM Policy
 policyClient :: PolicyIdentifier -> PolicyClientM
 

@@ -210,6 +210,27 @@ instance DB InMemory where
             limit' = total'
          in return $ ListResponse items' limit' offset' total'
 
+  listPolicyIdsBySearchTerm (InMemory tvar) search (Range offset' maybeLimit) = do
+    s <- liftIO $ readTVarIO tvar
+    let policyIds = lookupPolicyIdentifier s . policyId <$> policies s
+    let policyIds' = Prelude.filter f policyIds
+    case maybeLimit of
+      Just limit' ->
+        let items' = Prelude.take limit' $ Prelude.drop offset' policyIds'
+            total' = Prelude.length policyIds'
+         in return $ ListResponse items' limit' offset' total'
+      Nothing ->
+        let items' = Prelude.drop offset' policyIds'
+            total' = Prelude.length policyIds'
+            limit' = total'
+         in return $ ListResponse items' limit' offset' total'
+    where
+      f :: PolicyIdentifier -> Bool
+      f (PolicyName name) = search `isInfixOf` name
+      f (PolicyId (PolicyUUID pid)) = search `isInfixOf` toText pid
+      f (PolicyIdAndName (PolicyUUID pid) name) =
+        search `isInfixOf` toText pid || search `isInfixOf` name
+
   listPoliciesForUser (InMemory tvar) uid host = do
     s <- liftIO $ readTVarIO tvar
     let gs = [gid | (uid', gid) <- memberships s, uid' == uid]
