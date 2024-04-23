@@ -104,7 +104,8 @@ pgListUsersByEmailPrefix prefix (Range offset' Nothing) =
 pgListUsersByEmailPrefix prefix (Range offset' (Just limit')) = do
   let emailLike = pgEscapeLike prefix <> "%"
   total' <- statement emailLike selectUserCountByEmailLike
-  result <- statement (emailLike, fromIntegral offset', fromIntegral limit') selectUserIdentifiersByEmailLike
+  result <- statement (emailLike, fromIntegral offset', fromIntegral limit')
+    selectUserIdentifiersByEmailLike
   let items' = map userIdentifier $ toList result
   return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'
   where
