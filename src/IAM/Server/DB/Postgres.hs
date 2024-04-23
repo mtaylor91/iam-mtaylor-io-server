@@ -65,6 +65,9 @@ instance DB PostgresDB where
 
   listGroups (PostgresDB pool) range =
     runTransaction pool $ pgListGroups range
+
+  listGroupsBySearchTerm (PostgresDB pool) search range =
+    runTransaction pool $ pgListGroupsBySearchTerm search range
     
   createGroup (PostgresDB pool) g =
     runTransaction pool $ pgCreateGroup g

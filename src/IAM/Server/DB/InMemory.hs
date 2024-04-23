@@ -142,6 +142,35 @@ instance DB InMemory where
             Nothing -> GroupId gid
             Just name -> GroupIdAndName gid name
 
+  listGroupsBySearchTerm (InMemory tvar) search (Range offset' maybeLimit) = do
+    s <- liftIO $ readTVarIO tvar
+    let gs = resolveGroup s <$> groups s
+    let gs' = Prelude.filter f gs
+    case maybeLimit of
+      Just limit' ->
+        let items' = Prelude.take limit' $ Prelude.drop offset' gs'
+            total' = Prelude.length gs'
+         in return $ ListResponse items' limit' offset' total'
+      Nothing ->
+        let items' = Prelude.drop offset' gs'
+            total' = Prelude.length gs'
+            limit' = total'
+         in return $ ListResponse items' limit' offset' total'
+    where
+      f :: GroupIdentifier -> Bool
+      f (GroupName name) = search `isInfixOf` name
+      f (GroupId (GroupUUID uuid)) = search `isInfixOf` toText uuid
+      f (GroupIdAndName (GroupUUID uuid) name) =
+        search `isInfixOf` name || search `isInfixOf` toText uuid
+
+      resolveGroup :: InMemoryState -> GroupId -> GroupIdentifier
+      resolveGroup s gid = case s ^. groupState (GroupId gid) of
+        Nothing -> GroupId gid
+        Just g ->
+          case groupName g of
+            Nothing -> GroupId gid
+            Just name -> GroupIdAndName gid name
+
   createGroup (InMemory tvar) g@(Group gid _ _ _) = do
     liftIO $ atomically $ do
       s <- readTVar tvar

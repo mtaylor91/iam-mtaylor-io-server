@@ -108,12 +108,20 @@ getGroupHandler ctx auth gid = do
 
 
 listGroupsHandler ::
-  DB db => Ctx db -> Auth -> Maybe Int -> Maybe Int ->
+  DB db => Ctx db -> Auth -> Maybe Text -> Maybe Int -> Maybe Int ->
     Handler (ListResponse GroupIdentifier)
-listGroupsHandler ctx auth maybeOffset maybeLimit = do
+listGroupsHandler ctx auth Nothing maybeOffset maybeLimit = do
   requireSession auth
   let offset' = fromMaybe 0 maybeOffset
   result <- liftIO $ runExceptT $ listGroups (ctxDB ctx) $ Range offset' maybeLimit
+  case result of
+    Right groups' -> return groups'
+    Left err      -> errorHandler err
+listGroupsHandler ctx auth (Just search) maybeOffset maybeLimit = do
+  requireSession auth
+  let offset' = fromMaybe 0 maybeOffset
+  result <- liftIO $ runExceptT $ listGroupsBySearchTerm (ctxDB ctx) search $
+    Range offset' maybeLimit
   case result of
     Right groups' -> return groups'
     Left err      -> errorHandler err

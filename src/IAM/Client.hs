@@ -76,7 +76,7 @@ type UserSessionClientM
 
 
 type GroupsClientM
-  = (Maybe Int -> Maybe Int -> ClientM (ListResponse GroupIdentifier))
+  = (Maybe Text -> Maybe Int -> Maybe Int -> ClientM (ListResponse GroupIdentifier))
   :<|> (Group -> ClientM Group)
   :<|> (GroupIdentifier -> GroupClientM)
 
@@ -248,7 +248,8 @@ mkUserClient uid =
     in UserSessionClient getSession' deleteSession' refreshSession'
 
 
-listGroups :: Maybe Int -> Maybe Int -> ClientM (ListResponse GroupIdentifier)
+listGroups ::
+  Maybe Text -> Maybe Int -> Maybe Int -> ClientM (ListResponse GroupIdentifier)
 createGroup :: Group -> ClientM Group
 groupClient :: GroupIdentifier -> GroupClientM
 

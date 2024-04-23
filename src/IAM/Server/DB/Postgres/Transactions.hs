@@ -240,6 +240,21 @@ pgListGroups (Range offset' maybeLimit) = do
     groupIdentifier (guuid, Just name) = GroupIdAndName (GroupUUID guuid) name
 
 
+pgListGroupsBySearchTerm :: Text -> Range ->
+  Transaction (Either Error (ListResponse GroupIdentifier))
+pgListGroupsBySearchTerm search (Range offset' maybeLimit) = do
+  let limit' = fromMaybe 100 maybeLimit
+  let likeExpr = "%" <> pgEscapeLike search <> "%"
+  result <- statement (likeExpr, fromIntegral offset', fromIntegral limit')
+    selectGroupIdentifiersLike
+  let items' = map groupIdentifier $ toList result
+  total' <- statement likeExpr selectGroupCountLike
+  return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'
+  where
+    groupIdentifier (guuid, Nothing) = GroupId $ GroupUUID guuid
+    groupIdentifier (guuid, Just name) = GroupIdAndName (GroupUUID guuid) name
+
+
 pgCreateGroup :: Group -> Transaction (Either Error Group)
 pgCreateGroup (Group (GroupUUID uuid) maybeName users policies) = do
   result0 <- statement uuid selectGroupId

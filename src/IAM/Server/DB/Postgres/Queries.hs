@@ -369,6 +369,24 @@ selectGroupCount =
   |]
 
 
+selectGroupCountLike :: Statement Text Int32
+selectGroupCountLike =
+  [singletonStatement|
+    SELECT
+      COUNT(*) :: int
+    FROM
+      groups
+    LEFT JOIN
+      groups_names
+    ON
+      groups.group_uuid = groups_names.group_uuid
+    WHERE
+      groups.group_uuid :: text LIKE $1 :: text
+    OR
+      groups_names.group_name LIKE $1 :: text
+  |]
+
+
 selectGroupId :: Statement UUID (Maybe UUID)
 selectGroupId =
   [maybeStatement|
@@ -409,6 +427,29 @@ selectGroupIdentifiers =
       $1 :: int
     LIMIT
       $2 :: int
+  |]
+
+
+selectGroupIdentifiersLike :: Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text))
+selectGroupIdentifiersLike =
+  [vectorStatement|
+    SELECT
+      groups.group_uuid :: uuid,
+      groups_names.group_name :: text?
+    FROM
+      groups
+    LEFT JOIN
+      groups_names
+    ON
+      groups.group_uuid = groups_names.group_uuid
+    WHERE
+      groups.group_uuid :: text LIKE $1 :: text
+    OR
+      groups_names.group_name LIKE $1 :: text
+    OFFSET
+      $2 :: int
+    LIMIT
+      $3 :: int
   |]
 
 

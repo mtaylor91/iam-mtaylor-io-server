@@ -19,19 +19,21 @@ import qualified IAM.Client
 
 
 data ListGroupsOptions = ListGroupsOptions
-  { listGroupsOffset :: Maybe Int
+  { listGroupsSearch :: Maybe Text
+  , listGroupsOffset :: Maybe Int
   , listGroupsLimit :: Maybe Int
   } deriving (Show)
 
 
 listGroups :: ListGroupsOptions -> IO ()
 listGroups opts = do
+  let search = listGroupsSearch opts
   let offset = listGroupsOffset opts
   let limit = listGroupsLimit opts
   url <- serverUrl
   auth <- clientAuthInfo
   mgr <- newManager tlsManagerSettings { managerModifyRequest = clientAuth auth }
-  result <- runClientM (IAM.Client.listGroups offset limit) $ mkClientEnv mgr url
+  result <- runClientM (IAM.Client.listGroups search offset limit) $ mkClientEnv mgr url
   case result of
     Right groups ->
       putStrLn $ T.unpack (decodeUtf8 $ toStrict $ encode $ toJSON groups)
@@ -41,7 +43,12 @@ listGroups opts = do
 
 listGroupsOptions :: Parser ListGroupsOptions
 listGroupsOptions = ListGroupsOptions
-  <$> optional (option auto
+  <$> optional (strOption
+    ( long "search"
+    <> short 's'
+    <> metavar "SEARCH"
+    <> help "Search term for filtering groups" ))
+  <*> optional (option auto
     ( long "offset"
     <> short 'o'
     <> metavar "OFFSET"

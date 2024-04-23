@@ -55,6 +55,9 @@ class DB db where
   listGroups :: (MonadIO m, MonadError Error m) =>
     db -> Range -> m (ListResponse GroupIdentifier)
 
+  listGroupsBySearchTerm :: (MonadIO m, MonadError Error m) =>
+    db -> Text -> Range -> m (ListResponse GroupIdentifier)
+
   -- | createGroup adds a new group to the database.
   createGroup :: (MonadIO m, MonadError Error m) =>
     db -> Group -> m Group

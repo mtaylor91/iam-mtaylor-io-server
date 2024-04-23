@@ -82,7 +82,7 @@ type UserSessionAPI
     )
 
 type GroupsAPI
-  = ( ListAPI GroupIdentifier
+  = ( QueryParam "search" Text :> ListAPI GroupIdentifier
   :<|> ( ReqBody '[JSON] Group :> PostCreated '[JSON] Group )
   :<|> ( Capture "group" GroupIdentifier :> GroupAPI )
     )
