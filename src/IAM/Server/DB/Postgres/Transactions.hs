@@ -97,15 +97,15 @@ pgListUsers (Range offset' (Just limit')) = do
     userIdentifier (uuuid, Just email) = UserIdAndEmail (UserUUID uuuid) email
           
 
-pgListUsersByEmailPrefix :: Text -> Range ->
+pgListUsersBySearchTerm :: Text -> Range ->
   Transaction (Either Error (ListResponse UserIdentifier))
-pgListUsersByEmailPrefix prefix (Range offset' Nothing) =
-  pgListUsersByEmailPrefix prefix (Range offset' $ Just 100)
-pgListUsersByEmailPrefix prefix (Range offset' (Just limit')) = do
-  let emailLike = pgEscapeLike prefix <> "%"
-  total' <- statement emailLike selectUserCountByEmailLike
-  result <- statement (emailLike, fromIntegral offset', fromIntegral limit')
-    selectUserIdentifiersByEmailLike
+pgListUsersBySearchTerm search (Range offset' Nothing) =
+  pgListUsersBySearchTerm search (Range offset' $ Just 100)
+pgListUsersBySearchTerm search (Range offset' (Just limit')) = do
+  let likeExpr = "%" <> pgEscapeLike search <> "%"
+  total' <- statement likeExpr selectUserCountLike
+  result <- statement (likeExpr, fromIntegral offset', fromIntegral limit')
+    selectUserIdentifiersLike
   let items' = map userIdentifier $ toList result
   return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'
   where

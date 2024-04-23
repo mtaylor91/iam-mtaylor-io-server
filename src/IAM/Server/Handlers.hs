@@ -70,10 +70,10 @@ listUsersHandler ctx auth Nothing maybeOffset maybeLimit = do
   case result of
     Right users' -> return users'
     Left err     -> errorHandler err
-listUsersHandler ctx auth (Just prefix) maybeOffset maybeLimit = do
+listUsersHandler ctx auth (Just search) maybeOffset maybeLimit = do
   requireSession auth
   let offset' = fromMaybe 0 maybeOffset
-  result <- liftIO $ runExceptT $ listUsersByEmailPrefix (ctxDB ctx) prefix $
+  result <- liftIO $ runExceptT $ listUsersBySearchTerm (ctxDB ctx) search $
     Range offset' maybeLimit
   case result of
     Right users' -> return users'

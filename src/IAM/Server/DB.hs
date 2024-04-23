@@ -34,10 +34,9 @@ class DB db where
   listUsers :: (MonadIO m, MonadError Error m) =>
     db -> Range -> m (ListResponse UserIdentifier)
 
-  -- | listUsersByEmailPrefix returns a list of all users in the database
-  -- | whose email starts with the given prefix.
-  -- | The list is paginated.
-  listUsersByEmailPrefix :: (MonadIO m, MonadError Error m) =>
+  -- | listUsersBySearchTerm returns a list of all users in the database
+  -- | that match a search term.
+  listUsersBySearchTerm :: (MonadIO m, MonadError Error m) =>
     db -> Text -> Range -> m (ListResponse UserIdentifier)
 
   -- | createUser adds a new user to the database.

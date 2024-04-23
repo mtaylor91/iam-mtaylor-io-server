@@ -19,7 +19,7 @@ import qualified IAM.Client
 
 
 data ListUsersOptions = ListUsersOptions
-  { listUsersEmailPrefix :: !(Maybe Text)
+  { listUsersSearch :: !(Maybe Text)
   , listUsersOffset :: !(Maybe Int)
   , listUsersLimit :: !(Maybe Int)
   } deriving (Show)
@@ -27,13 +27,13 @@ data ListUsersOptions = ListUsersOptions
 
 listUsers :: ListUsersOptions -> IO ()
 listUsers opts = do
-  let maybeEmailPrefix = listUsersEmailPrefix opts
+  let maybeSearch = listUsersSearch opts
   let maybeOffset = listUsersOffset opts
   let maybeLimit = listUsersLimit opts
   url <- serverUrl
   auth <- clientAuthInfo
   mgr <- newManager tlsManagerSettings { managerModifyRequest = clientAuth auth }
-  let clientOp = IAM.Client.listUsers maybeEmailPrefix maybeOffset maybeLimit
+  let clientOp = IAM.Client.listUsers maybeSearch maybeOffset maybeLimit
   r <- runClientM clientOp $ mkClientEnv mgr url
   case r of
     Right users ->
@@ -45,10 +45,10 @@ listUsers opts = do
 listUsersOptions :: Parser ListUsersOptions
 listUsersOptions = ListUsersOptions
   <$> optional (strOption
-    ( long "email-prefix"
-    <> short 'e'
-    <> metavar "EMAIL_PREFIX"
-    <> help "Email prefix for filtering users" ))
+    ( long "search"
+    <> short 's'
+    <> metavar "SEARCH"
+    <> help "Search string for filtering users" ))
   <*> optional (option auto
     ( long "offset"
     <> short 'o'

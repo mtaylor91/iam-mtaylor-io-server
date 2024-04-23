@@ -51,8 +51,8 @@ instance DB PostgresDB where
   listUsers (PostgresDB pool) range =
     runTransaction pool $ pgListUsers range
 
-  listUsersByEmailPrefix (PostgresDB pool) prefix range =
-    runTransaction pool $ pgListUsersByEmailPrefix prefix range
+  listUsersBySearchTerm (PostgresDB pool) prefix range =
+    runTransaction pool $ pgListUsersBySearchTerm prefix range
 
   createUser (PostgresDB pool) u =
     runTransaction pool $ pgCreateUser u

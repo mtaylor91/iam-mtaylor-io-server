@@ -52,7 +52,7 @@ type IAMAPI
     )
 
 type UsersAPI
-  = ( QueryParam "emailPrefix" Text :> ListAPI UserIdentifier
+  = ( QueryParam "search" Text :> ListAPI UserIdentifier
   :<|> ( ReqBody '[JSON] User :> PostCreated '[JSON] User )
   :<|> ( Capture "user" UserIdentifier :> UserAPI )
     )
