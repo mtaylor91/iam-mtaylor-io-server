@@ -183,15 +183,15 @@ selectUserCountLike =
     SELECT
       COUNT(*) :: int
     FROM
-      users_emails
-    LEFT JOIN
       users
+    LEFT JOIN
+      users_emails
     ON
       users.user_uuid = users_emails.user_uuid
     WHERE
-      users_emails.user_email LIKE $1 :: text
-    OR
       users.user_uuid :: text LIKE $1 :: text
+    OR
+      users_emails.user_email LIKE $1 :: text
   |]
 
 
