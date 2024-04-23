@@ -231,6 +231,9 @@ selectUserIdentifiers =
       users_emails
     ON
       users.user_uuid = users_emails.user_uuid
+    ORDER BY
+      users_emails.user_email,
+      users.user_uuid
     OFFSET
       $1 :: int
     LIMIT
@@ -255,6 +258,9 @@ selectUserIdentifiersLike =
       users_emails.user_email LIKE $1 :: text
     OR
       users.user_uuid :: text LIKE $1 :: text
+    ORDER BY
+      users_emails.user_email,
+      users.user_uuid
     OFFSET
       $2 :: int
     LIMIT
@@ -423,6 +429,9 @@ selectGroupIdentifiers =
       groups_names
     ON
       groups.group_uuid = groups_names.group_uuid
+    ORDER BY
+      groups_names.group_name,
+      groups.group_uuid
     OFFSET
       $1 :: int
     LIMIT
@@ -446,6 +455,9 @@ selectGroupIdentifiersLike =
       groups.group_uuid :: text LIKE $1 :: text
     OR
       groups_names.group_name LIKE $1 :: text
+    ORDER BY
+      groups_names.group_name,
+      groups.group_uuid
     OFFSET
       $2 :: int
     LIMIT
@@ -552,6 +564,8 @@ selectPolicyIds =
       policies.policy_uuid :: uuid
     FROM
       policies
+    ORDER BY
+      policies.policy_uuid
     OFFSET
       $1 :: int
     LIMIT
@@ -571,6 +585,9 @@ selectPolicyIdentifiers =
       policies_names
     ON
       policies.policy_uuid = policies_names.policy_uuid
+    ORDER BY
+      policies_names.policy_name,
+      policies.policy_uuid
     OFFSET
       $1 :: int
     LIMIT
@@ -594,6 +611,9 @@ selectPolicyIdentifiersLike =
       policies.policy_uuid :: text LIKE $1 :: text
     OR
       policies_names.policy_name LIKE $1 :: text
+    ORDER BY
+      policies_names.policy_name,
+      policies.policy_uuid
     OFFSET
       $2 :: int
     LIMIT
@@ -680,6 +700,8 @@ selectUserSessions =
       sessions
     WHERE
       sessions.user_uuid = $1 :: uuid
+    ORDER BY
+      sessions.session_expires
     OFFSET
       $2 :: int
     LIMIT
