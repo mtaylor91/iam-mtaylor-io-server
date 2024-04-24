@@ -23,7 +23,7 @@ import qualified IAM.Client
 
 
 data CreateGroup = CreateGroup
-  { createGroupId :: !Text
+  { createGroupId :: !(Maybe Text)
   , createGroupPolicies :: ![Text]
   , createGroupUsers :: ![Text]
   } deriving (Show)
@@ -31,9 +31,18 @@ data CreateGroup = CreateGroup
 
 createGroup :: CreateGroup -> IO ()
 createGroup createGroupInfo =
-  case readMaybe (unpack $ createGroupId createGroupInfo) of
-    Just uuid -> createGroupByUUID createGroupInfo uuid
-    Nothing -> createGroupByName createGroupInfo $ createGroupId createGroupInfo
+  case createGroupId createGroupInfo of
+    Nothing -> createGroup' createGroupInfo
+    Just groupIdentifier ->
+      case readMaybe (unpack groupIdentifier) of
+        Just uuid -> createGroupByUUID createGroupInfo uuid
+        Nothing -> createGroupByName createGroupInfo groupIdentifier
+
+
+createGroup' :: CreateGroup -> IO ()
+createGroup' createGroupInfo = do
+  uuid <- nextRandom
+  createGroupByUUID createGroupInfo uuid
 
 
 createGroupByName :: CreateGroup -> Text -> IO ()
@@ -80,10 +89,10 @@ createGroupById createGroupInfo gident = do
 
 createGroupOptions :: Parser CreateGroup
 createGroupOptions = CreateGroup
-  <$> argument str
+  <$> optional (argument str
     (  metavar "GROUP"
     <> help "The name or uuid of the group to create"
-    )
+    ))
   <*> many (strOption
     ( long "policy"
     <> short 'p'
