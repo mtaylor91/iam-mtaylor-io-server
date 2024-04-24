@@ -29,7 +29,7 @@ import qualified IAM.Client
 
 
 data CreateUser = CreateUser
-  { createUserUUIDOrEmail :: !Text
+  { createUserUUIDOrEmail :: !(Maybe Text)
   , createUserDescription :: !(Maybe Text)
   , createUserPublicKey :: !(Maybe Text)
   , createUserPolicies :: ![Text]
@@ -39,9 +39,14 @@ data CreateUser = CreateUser
 
 createUser :: CreateUser -> IO ()
 createUser createUserInfo =
-  case readMaybe (unpack $ createUserUUIDOrEmail createUserInfo) of
-    Just uuid -> createUserByUUID createUserInfo uuid Nothing
-    Nothing -> createUserByEmail createUserInfo $ createUserUUIDOrEmail createUserInfo
+  case createUserUUIDOrEmail createUserInfo of
+    Nothing -> do
+      uuid <- nextRandom
+      createUserByUUID createUserInfo uuid Nothing
+    Just userIdentifier ->
+      case readMaybe (unpack userIdentifier) of
+        Just uuid -> createUserByUUID createUserInfo uuid Nothing
+        Nothing -> createUserByEmail createUserInfo userIdentifier
 
 
 createUserByEmail :: CreateUser -> Text -> IO ()
@@ -97,10 +102,10 @@ createUserById' createUserInfo uid maybeEmail pk = do
 
 createUserOptions :: Parser CreateUser
 createUserOptions = CreateUser
-  <$> argument str
+  <$> optional ( argument str
       ( metavar "EMAIL | UUID"
      <> help "Email or UUID for user"
-      )
+      ) )
   <*> optional ( argument str
       ( metavar "DESCRIPTION"
      <> help "Description for user's public key"
