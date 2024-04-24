@@ -14,7 +14,7 @@ import IAM.UserIdentifier
 
 
 data Identifier
-  = UserIdentifier UserIdentifier
+  = UserIdentifier' UserIdentifier
   | GroupIdentifier GroupIdentifier
   | PolicyIdentifier PolicyIdentifier
   | SessionIdentifier (Maybe SessionId)
@@ -24,7 +24,7 @@ data Identifier
   deriving (Show, Eq)
 
 instance ToJSON Identifier where
-  toJSON (UserIdentifier uid) = object
+  toJSON (UserIdentifier' uid) = object
     [ "kind" .= ("User" :: Text)
     , "user" .= toJSON uid
     ]
@@ -60,7 +60,7 @@ instance FromJSON Identifier where
   parseJSON (Object obj) = do
     kind :: Text <- obj .: "kind"
     case kind of
-      "User" -> UserIdentifier <$> obj .: "user"
+      "User" -> UserIdentifier' <$> obj .: "user"
       "Group" -> GroupIdentifier <$> obj .: "group"
       "Policy" -> PolicyIdentifier <$> obj .: "policy"
       "Session" -> SessionIdentifier <$> obj .: "session"

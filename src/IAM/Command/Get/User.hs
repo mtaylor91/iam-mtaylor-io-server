@@ -44,11 +44,11 @@ getCurrentUser = do
 
 
 getUserByUUID :: UUID -> IO ()
-getUserByUUID = getUserById . UserId . UserUUID
+getUserByUUID uuid = getUserById $ UserIdentifier (Just $ UserUUID uuid) Nothing Nothing
 
 
 getUserByEmail :: Text -> IO ()
-getUserByEmail = getUserById . UserEmail
+getUserByEmail email = getUserById $ UserIdentifier Nothing Nothing (Just email)
 
 
 getUserById :: UserIdentifier -> IO ()

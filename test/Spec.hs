@@ -39,17 +39,18 @@ main = do
   callerPolicyId <- PolicyUUID <$> nextRandom
   let allowReads = Rule Allow Read "**"
       allowWrites = Rule Allow Write "**"
+      callerName = Just "testuser"
       callerEmail = Just "caller@example.com"
       callerPolicy = Policy callerPolicyId Nothing "localhost" callerPolicyRules
       callerPolicyRules = [allowReads, allowWrites]
-      callerPrincipal = User callerId callerEmail [] [] [UserPublicKey pk "test"]
+      callerPrincipal = User callerId callerName callerEmail [] [] [UserPublicKey pk "test"]
   result0 <- runExceptT $ createUser db callerPrincipal
   case result0 of
     Right _  -> do
       result1 <- runExceptT $ createPolicy db callerPolicy
       case result1 of
         Right _ -> do
-          let cid = UserId callerId
+          let cid = UserIdentifier (Just callerId) Nothing Nothing
           let pid = PolicyId callerPolicyId
           result2 <- runExceptT $ createUserPolicyAttachment db cid pid
           case result2 of
@@ -90,7 +91,7 @@ spec host db callerPK callerSK callerSession = with (return $ app host $ Ctx db)
       uid <- UserUUID <$> liftIO nextRandom
       (pk, _) <- liftIO createKeypair
       requestId <- liftIO nextRandom
-      let user = User uid Nothing [] [] [UserPublicKey pk "test"]
+      let user = User uid Nothing Nothing [] [] [UserPublicKey pk "test"]
           userJSON = encode user
           headers =
             [ ("Authorization", "Signature " <> sig)
@@ -106,14 +107,14 @@ spec host db callerPK callerSK callerSession = with (return $ app host $ Ctx db)
             stringToSign methodPost (encodeUtf8 host) "/users" "" requestId $
               Just $ createSessionToken callerSession
       request methodPost "/users" headers userJSON `shouldRespondWith` 201
-      result <- liftIO $ runExceptT $ deleteUser db $ UserId uid
+      result <- liftIO $ runExceptT $ deleteUser db $ UserIdentifier (Just uid) Nothing Nothing
       liftIO $ result `shouldBe` Right user
   describe "POST /users with UUID" $ do
     it "responds with 201" $ do
       uuid <- liftIO nextRandom
       (pk, _) <- liftIO createKeypair
       requestId <- liftIO nextRandom
-      let user = User (UserUUID uuid) Nothing [] [] [UserPublicKey pk "test"]
+      let user = User (UserUUID uuid) Nothing Nothing [] [] [UserPublicKey pk "test"]
           userJSON = encode user
           headers =
             [ ("Authorization", "Signature " <> sig)
@@ -129,7 +130,7 @@ spec host db callerPK callerSK callerSession = with (return $ app host $ Ctx db)
             stringToSign methodPost (encodeUtf8 host) "/users" "" requestId $
               Just $ createSessionToken callerSession
       request methodPost "/users" headers userJSON `shouldRespondWith` 201
-      result <- liftIO $ runExceptT $ deleteUser db $ UserId $ UserUUID uuid
+      result <- liftIO $ runExceptT $ deleteUser db $ UserIdentifier (Just $ UserUUID uuid) Nothing Nothing
       liftIO $ result `shouldBe` Right user
   describe "GET /groups" $ do
     it "responds with 200" $ do

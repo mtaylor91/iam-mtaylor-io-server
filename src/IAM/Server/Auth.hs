@@ -26,6 +26,7 @@ import Network.Wai
 import Prelude hiding (takeWhile)
 import Servant
 import Servant.Server.Experimental.Auth
+import Text.Email.Validate
 
 import IAM.Authentication
 import IAM.Config (headerPrefix)
@@ -148,7 +149,7 @@ authorize host ctx req authN = do
   maybeSession <- case authRequestSessionToken $ authRequest authN of
     Nothing -> return Nothing
     Just token -> do
-      let uid = UserId callerUserId
+      let uid = UserIdentifier (Just callerUserId) Nothing Nothing
       result <- liftIO $ runExceptT $ getSessionByToken (ctxDB ctx) uid token
       case result of
         Right session ->
@@ -187,8 +188,11 @@ parsePublicKey s =
 parseUserId :: Text -> Maybe UserIdentifier
 parseUserId s =
   case fromString (unpack s) of
-    Just uuid -> Just $ UserId $ UserUUID uuid
-    Nothing -> Just $ UserEmail s
+    Just uuid -> Just $ UserIdentifier (Just $ UserUUID uuid) Nothing Nothing
+    Nothing ->
+      if isValid $ encodeUtf8 s
+      then Just $ UserIdentifier Nothing Nothing (Just s)
+      else Just $ UserIdentifier Nothing (Just s) Nothing
 
 
 verifySignature :: User -> PublicKey -> ByteString -> ByteString -> Bool

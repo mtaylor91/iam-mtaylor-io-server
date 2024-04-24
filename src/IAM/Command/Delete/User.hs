@@ -31,11 +31,12 @@ deleteUser deleteUserInfo =
 
 
 deleteUserByEmail :: Text -> IO ()
-deleteUserByEmail = deleteUserById . UserEmail
+deleteUserByEmail email = deleteUserById $ UserIdentifier Nothing Nothing (Just email)
 
 
 deleteUserByUUID :: UUID -> IO ()
-deleteUserByUUID = deleteUserById . UserId . UserUUID
+deleteUserByUUID uuid =
+  deleteUserById $ UserIdentifier (Just $ UserUUID uuid) Nothing Nothing
 
 
 deleteUserById :: UserIdentifier -> IO ()

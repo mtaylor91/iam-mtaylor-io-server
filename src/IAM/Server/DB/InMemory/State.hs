@@ -19,6 +19,7 @@ data InMemoryState = InMemoryState
   , groups :: ![GroupId]
   , policies :: ![Policy]
   , sessions :: ![(Text, Session)]
+  , usersNames :: ![(UserId, Text)]
   , usersEmails :: ![(UserId, Text)]
   , groupsNames :: ![(GroupId, Text)]
   , memberships :: ![(UserId, GroupId)]
@@ -34,6 +35,7 @@ newInMemoryState = InMemoryState
   , groups = []
   , policies = []
   , sessions = []
+  , usersNames = []
   , usersEmails = []
   , groupsNames = []
   , memberships = []
@@ -50,9 +52,10 @@ lookupGroupIdentifier s gid = case lookup gid $ groupsNames s of
 
 
 lookupUserIdentifier :: InMemoryState -> UserId -> UserIdentifier
-lookupUserIdentifier s uid = case lookup uid $ usersEmails s of
-  Just email -> UserIdAndEmail uid email
-  Nothing -> UserId uid
+lookupUserIdentifier s uid =
+  let mName = lookup uid $ usersNames s
+      mEmail = lookup uid $ usersEmails s
+   in UserIdentifier (Just uid) mName mEmail
 
 
 lookupPolicyIdentifier :: InMemoryState -> PolicyId -> PolicyIdentifier
@@ -65,14 +68,16 @@ lookupPolicyIdentifier s pid =
         Nothing -> PolicyId pid
 
 
-lookupUser :: InMemoryState -> UserId -> Maybe Text -> User
-lookupUser s uid maybeEmail =
+lookupUser :: InMemoryState -> UserId -> User
+lookupUser s uid =
   let gs = [lookupGroupIdentifier s gid |
             (uid', gid) <- memberships s, uid' == uid]
       ps = [lookupPolicyIdentifier s pid |
             (uid', pid) <- userPolicyAttachments s, uid' == uid]
       pks = [pk | (uid', pk) <- usersPublicKeys s, uid' == uid]
-   in User uid maybeEmail gs ps pks
+      maybeName = lookup uid $ usersNames s
+      maybeEmail = lookup uid $ usersEmails s
+   in User uid maybeName maybeEmail gs ps pks
 
 
 lookupGroup :: InMemoryState -> GroupId -> Maybe Text -> Group
@@ -84,18 +89,31 @@ lookupGroup s gid maybeName =
    in Group gid maybeName us ps
 
 
-userState :: forall f. Functor f =>
-  UserIdentifier -> (Maybe User -> f (Maybe User)) -> InMemoryState -> f InMemoryState
-userState (UserIdAndEmail uid _) f s = userState (UserId uid) f s
-userState (UserEmail email) f s =
-  case Prelude.filter ((== email) . snd) $ usersEmails s of
-    [] -> s <$ f Nothing
-    (uid, _):_ -> userState (UserId uid) f s
-userState (UserId uid) f s =
+userIdState :: forall f. Functor f =>
+  UserId -> (Maybe User -> f (Maybe User)) -> InMemoryState -> f InMemoryState
+userIdState uid f s =
   case Prelude.filter (== uid) $ users s of
     [] -> u <$> f Nothing
-    _:_ -> u <$> f (Just $ lookupUser s uid (lookup uid $ usersEmails s))
+    _:_ -> u <$> f (Just $ lookupUser s uid)
   where u = updateUserState s uid
+
+
+userIdentifierState :: forall f. Functor f =>
+  UserIdentifier -> (Maybe User -> f (Maybe User)) -> InMemoryState -> f InMemoryState
+userIdentifierState (UserIdentifier (Just uid) _ _) f s =
+  case Prelude.filter (== uid) $ users s of
+    [] -> u <$> f Nothing
+    _:_ -> u <$> f (Just $ lookupUser s uid)
+  where u = updateUserState s uid
+userIdentifierState (UserIdentifier Nothing (Just name) mEmail) f s =
+  case Prelude.filter ((== name) . snd) $ usersNames s of
+    [] -> s <$ f Nothing
+    (uid, _):_ -> userIdentifierState (UserIdentifier (Just uid) mEmail Nothing) f s
+userIdentifierState (UserIdentifier Nothing Nothing (Just email)) f s =
+  case Prelude.filter ((== email) . snd) $ usersEmails s of
+    [] -> s <$ f Nothing
+    (uid, _):_ -> userIdentifierState (UserIdentifier (Just uid) Nothing Nothing) f s
+userIdentifierState (UserIdentifier Nothing Nothing Nothing) f s = s <$ f Nothing
 
 
 groupState :: forall f. Functor f =>
@@ -140,29 +158,6 @@ sessionStateByToken token f s =
 
 
 updateUserState :: InMemoryState -> UserId -> Maybe User -> InMemoryState
-updateUserState s uid (Just (User _ Nothing gs ps pks)) = s
-  { users = uid : Prelude.filter (/= uid) (users s)
-  , memberships = Prelude.foldr
-    (\gid -> (:) (uid, gid) . Prelude.filter (/= (uid, gid)))
-    (memberships s) (mapMaybe (resolveGroupIdentifier s) gs)
-  , userPolicyAttachments = Prelude.foldr
-    (\pid -> (:) (uid, pid) . Prelude.filter (/= (uid, pid)))
-    (userPolicyAttachments s) (mapMaybe (resolvePolicyIdentifier s) ps)
-  , usersPublicKeys = Prelude.foldr
-    (\pk -> (:) (uid, pk) . Prelude.filter (/= (uid, pk))) (usersPublicKeys s) pks
-  }
-updateUserState s uid (Just (User _ (Just email) gs ps pks)) = s
-  { users = uid : Prelude.filter (/= uid) (users s)
-  , usersEmails = (uid, email) : Prelude.filter ((/= uid) . fst) (usersEmails s)
-  , memberships = Prelude.foldr
-    (\gid -> (:) (uid, gid) . Prelude.filter (/= (uid, gid)))
-    (memberships s) (mapMaybe (resolveGroupIdentifier s) gs)
-  , userPolicyAttachments = Prelude.foldr
-    (\pid -> (:) (uid, pid) . Prelude.filter (/= (uid, pid)))
-    (userPolicyAttachments s) (mapMaybe (resolvePolicyIdentifier s) ps)
-  , usersPublicKeys = Prelude.foldr
-    (\pk -> (:) (uid, pk) . Prelude.filter (/= (uid, pk))) (usersPublicKeys s) pks
-  }
 updateUserState s uid Nothing = s
   { users = Prelude.filter (/= uid) (users s)
   , usersEmails = Prelude.filter ((/= uid) . fst) (usersEmails s)
@@ -170,6 +165,28 @@ updateUserState s uid Nothing = s
   , userPolicyAttachments = Prelude.filter ((/= uid) . fst) (userPolicyAttachments s)
   , usersPublicKeys = Prelude.filter ((/= uid) . fst) (usersPublicKeys s)
   }
+updateUserState s uid (Just (User _ maybeName maybeEmail gs ps pks)) = s
+  { users = uid : Prelude.filter (/= uid) (users s)
+  , usersNames = updateUsersNames maybeName
+  , usersEmails = updateUsersEmails maybeEmail
+  , memberships = Prelude.foldr
+    (\gid -> (:) (uid, gid) . Prelude.filter (/= (uid, gid)))
+    (memberships s) (mapMaybe (resolveGroupIdentifier s) gs)
+  , userPolicyAttachments = Prelude.foldr
+    (\pid -> (:) (uid, pid) . Prelude.filter (/= (uid, pid)))
+    (userPolicyAttachments s) (mapMaybe (resolvePolicyIdentifier s) ps)
+  , usersPublicKeys = Prelude.foldr
+    (\pk -> (:) (uid, pk) . Prelude.filter (/= (uid, pk))) (usersPublicKeys s) pks
+  }
+  where
+    updateUsersNames Nothing =
+      Prelude.filter ((/= uid) . fst) (usersNames s)
+    updateUsersNames (Just name) =
+      (uid, name) : Prelude.filter ((/= uid) . fst) (usersNames s)
+    updateUsersEmails Nothing =
+      Prelude.filter ((/= uid) . fst) (usersEmails s)
+    updateUsersEmails (Just email) =
+      (uid, email) : Prelude.filter ((/= uid) . fst) (usersEmails s)
 
 
 updateGroupState :: InMemoryState -> GroupId -> Maybe Group -> InMemoryState
@@ -223,15 +240,19 @@ updateSessionStateByToken s token Nothing
 
 
 resolveUserIdentifier :: InMemoryState -> UserIdentifier -> Maybe UserId
-resolveUserIdentifier s (UserIdAndEmail uid _) = resolveUserIdentifier s (UserId uid)
-resolveUserIdentifier s (UserEmail email) =
-  case Prelude.filter ((== email) . snd) $ usersEmails s of
-    [] -> Nothing
-    (uid, _):_ -> Just uid
-resolveUserIdentifier s (UserId uid) =
+resolveUserIdentifier s (UserIdentifier (Just uid) _ _) =
   case Prelude.filter (== uid) $ users s of
     [] -> Nothing
     _: _ -> Just uid
+resolveUserIdentifier s (UserIdentifier _ (Just name) _) =
+  case Prelude.filter ((== name) . snd) $ usersNames s of
+    [] -> Nothing
+    (uid, _):_ -> Just uid
+resolveUserIdentifier s (UserIdentifier _ _ (Just email)) =
+  case Prelude.filter ((== email) . snd) $ usersEmails s of
+    [] -> Nothing
+    (uid, _):_ -> Just uid
+resolveUserIdentifier _ (UserIdentifier Nothing Nothing Nothing) = Nothing
 
 
 resolveGroupIdentifier :: InMemoryState -> GroupIdentifier -> Maybe GroupId

@@ -16,6 +16,7 @@ import Network.HTTP.Client
 import Network.HTTP.Client.TLS
 import Options.Applicative
 import Servant.Client
+import Text.Email.Validate
 import Text.Read
 
 import IAM.Client.Auth
@@ -42,35 +43,48 @@ createUser createUserInfo =
   case createUserUUIDOrEmail createUserInfo of
     Nothing -> do
       uuid <- nextRandom
-      createUserByUUID createUserInfo uuid Nothing
+      createUserByUUID createUserInfo uuid Nothing Nothing
     Just userIdentifier ->
       case readMaybe (unpack userIdentifier) of
-        Just uuid -> createUserByUUID createUserInfo uuid Nothing
-        Nothing -> createUserByEmail createUserInfo userIdentifier
+        Just uuid -> createUserByUUID createUserInfo uuid Nothing Nothing
+        Nothing ->
+          if isValid $ encodeUtf8 userIdentifier
+          then createUserByEmail createUserInfo userIdentifier
+          else createUserByName createUserInfo userIdentifier
+
+
+createUserByName :: CreateUser -> Text -> IO ()
+createUserByName createUserInfo name = do
+  uuid <- nextRandom
+  createUserByUUID createUserInfo uuid (Just name) Nothing
 
 
 createUserByEmail :: CreateUser -> Text -> IO ()
 createUserByEmail createUserInfo email = do
   uuid <- nextRandom
-  createUserByUUID createUserInfo uuid $ Just email
+  createUserByUUID createUserInfo uuid Nothing $ Just email
 
 
-createUserByUUID :: CreateUser -> UUID -> Maybe Text -> IO ()
-createUserByUUID createUserInfo uuid maybeEmail = do
+createUserByUUID :: CreateUser -> UUID -> Maybe Text -> Maybe Text -> IO ()
+createUserByUUID createUserInfo uuid maybeName maybeEmail = do
   let uid = UserUUID uuid
   case createUserPublicKey createUserInfo of
     Just pk -> do
-      createUserById' createUserInfo uid maybeEmail pk
+      createUserById' createUserInfo uid maybeName maybeEmail pk
     Nothing -> do
       (pk, sk) <- createKeypair
-      createUserById' createUserInfo uid maybeEmail $ encodeBase64 (unPublicKey pk)
+      let pkBase64 = encodeBase64 (unPublicKey pk)
+      createUserById' createUserInfo uid maybeName maybeEmail pkBase64
       case maybeEmail of
         Just email -> printUserEmailShellVars email pk sk
-        Nothing -> printUserUUIDShellVars uuid pk sk
+        Nothing ->
+          case maybeName of
+            Just name -> printUserNameShellVars name pk sk
+            Nothing -> printUserUUIDShellVars uuid pk sk
 
 
-createUserById' :: CreateUser -> UserId -> Maybe Text -> Text -> IO ()
-createUserById' createUserInfo uid maybeEmail pk = do
+createUserById' :: CreateUser -> UserId -> Maybe Text -> Maybe Text -> Text -> IO ()
+createUserById' createUserInfo uid maybeName maybeEmail pk = do
   url <- serverUrl
   auth <- clientAuthInfo
   mgr <- newManager $ tlsManagerSettings { managerModifyRequest = clientAuth auth }
@@ -81,7 +95,7 @@ createUserById' createUserInfo uid maybeEmail pk = do
       let upk' = upk (PublicKey pk') (createUserDescription createUserInfo)
       let gs = gid <$> createUserGroups createUserInfo
       let ps = pid <$> createUserPolicies createUserInfo
-      let user = User uid maybeEmail gs ps [upk']
+      let user = User uid maybeName maybeEmail gs ps [upk']
       let clientCommand = IAM.Client.createUser user
       result <- runClientM clientCommand $ mkClientEnv mgr url
       case result of
@@ -103,8 +117,8 @@ createUserById' createUserInfo uid maybeEmail pk = do
 createUserOptions :: Parser CreateUser
 createUserOptions = CreateUser
   <$> optional ( argument str
-      ( metavar "EMAIL | UUID"
-     <> help "Email or UUID for user"
+      ( metavar "EMAIL | NAME | UUID"
+     <> help "Email, username or UUID for user"
       ) )
   <*> optional ( argument str
       ( metavar "DESCRIPTION"

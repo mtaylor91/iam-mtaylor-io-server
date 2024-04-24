@@ -5,12 +5,14 @@ module IAM.Command.Create.Group
   ) where
 
 import Data.Text
+import Data.Text.Encoding
 import Data.UUID
 import Data.UUID.V4
 import Network.HTTP.Client
 import Network.HTTP.Client.TLS
 import Options.Applicative
 import Servant.Client
+import Text.Email.Validate
 import Text.Read
 
 import IAM.Client.Auth
@@ -83,8 +85,12 @@ createGroupById createGroupInfo gident = do
     translateUserId :: Text -> IO UserIdentifier
     translateUserId uid = do
       case readMaybe (unpack uid) of
-        Just uuid -> return $ UserId $ UserUUID uuid
-        Nothing -> return $ UserEmail uid
+        Just uuid ->
+          return $ UserIdentifier (Just $ UserUUID uuid) Nothing Nothing
+        Nothing ->
+          if isValid $ encodeUtf8 uid
+          then return $ UserIdentifier Nothing Nothing (Just uid)
+          else return $ UserIdentifier Nothing (Just uid) Nothing
 
 
 createGroupOptions :: Parser CreateGroup

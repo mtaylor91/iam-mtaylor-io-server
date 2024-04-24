@@ -35,10 +35,13 @@ server ctx caller
 
 callerAPI :: DB db => Ctx db -> Auth -> Server UserAPI
 callerAPI ctx caller
-  = getUserHandler ctx caller (UserId $ userId $ authUser $ authentication caller)
-  :<|> deleteUserHandler ctx caller (UserId $ userId $ authUser $ authentication caller)
-  :<|> userPolicyAPI ctx caller (UserId $ userId $ authUser $ authentication caller)
-  :<|> userSessionsAPI ctx caller (UserId $ userId $ authUser $ authentication caller)
+  = getUserHandler ctx caller callerId
+  :<|> deleteUserHandler ctx caller callerId
+  :<|> userPolicyAPI ctx caller callerId
+  :<|> userSessionsAPI ctx caller callerId
+  where
+  callerId = UserIdentifier callerUid Nothing Nothing
+  callerUid = Just $ userId $ authUser $ authentication caller
 
 
 usersAPI :: DB db => Ctx db -> Auth -> Server UsersAPI

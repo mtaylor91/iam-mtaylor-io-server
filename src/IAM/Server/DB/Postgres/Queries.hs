@@ -25,6 +25,16 @@ insertUserId =
   |]
 
 
+insertUserName :: Statement (UUID, Text) ()
+insertUserName =
+  [resultlessStatement|
+    INSERT INTO
+      users_names (user_uuid, user_name)
+    VALUES
+      ($1 :: uuid, $2 :: text)
+  |]
+
+
 insertUserEmail :: Statement (UUID, Text) ()
 insertUserEmail =
   [resultlessStatement|
@@ -185,11 +195,17 @@ selectUserCountLike =
     FROM
       users
     LEFT JOIN
+      users_names
+    ON
+      users.user_uuid = users_names.user_uuid
+    LEFT JOIN
       users_emails
     ON
       users.user_uuid = users_emails.user_uuid
     WHERE
       users.user_uuid :: text LIKE $1 :: text
+    OR
+      users_names.user_name LIKE $1 :: text
     OR
       users_emails.user_email LIKE $1 :: text
   |]
@@ -207,6 +223,18 @@ selectUserId =
   |]
 
 
+selectUserIdByName :: Statement Text (Maybe UUID)
+selectUserIdByName =
+  [maybeStatement|
+    SELECT
+      users_names.user_uuid :: uuid
+    FROM
+      users_names
+    WHERE
+      users_names.user_name = $1 :: text
+  |]
+
+
 selectUserIdByEmail :: Statement Text (Maybe UUID)
 selectUserIdByEmail =
   [maybeStatement|
@@ -219,14 +247,19 @@ selectUserIdByEmail =
   |]
 
 
-selectUserIdentifiers :: Statement (Int32, Int32) (Vector (UUID, Maybe Text))
+selectUserIdentifiers :: Statement (Int32, Int32) (Vector (UUID, Maybe Text, Maybe Text))
 selectUserIdentifiers =
   [vectorStatement|
     SELECT
       users.user_uuid :: uuid,
+      users_names.user_name :: text?,
       users_emails.user_email :: text?
     FROM
       users
+    LEFT JOIN
+      users_names
+    ON
+      users.user_uuid = users_names.user_uuid
     LEFT JOIN
       users_emails
     ON
@@ -242,20 +275,27 @@ selectUserIdentifiers =
 
 
 selectUserIdentifiersLike ::
-  Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text))
+  Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text, Maybe Text))
 selectUserIdentifiersLike =
   [vectorStatement|
     SELECT
       users.user_uuid :: uuid,
+      users_names.user_name :: text?,
       users_emails.user_email :: text?
     FROM
       users
+    LEFT JOIN
+      users_names
+    ON
+      users.user_uuid = users_names.user_uuid
     LEFT JOIN
       users_emails
     ON
       users.user_uuid = users_emails.user_uuid
     WHERE
       users_emails.user_email LIKE $1 :: text
+    OR
+      users_names.user_name LIKE $1 :: text
     OR
       users.user_uuid :: text LIKE $1 :: text
     ORDER BY
@@ -265,6 +305,18 @@ selectUserIdentifiersLike =
       $2 :: int
     LIMIT
       $3 :: int
+  |]
+
+
+selectUserName :: Statement UUID (Maybe Text)
+selectUserName =
+  [maybeStatement|
+    SELECT
+      users_names.user_name :: text
+    FROM
+      users_names
+    WHERE
+      users_names.user_uuid = $1 :: uuid
   |]
 
 
@@ -477,14 +529,19 @@ selectGroupName =
   |]
 
 
-selectGroupUsers :: Statement UUID (Vector (UUID, Maybe Text))
+selectGroupUsers :: Statement UUID (Vector (UUID, Maybe Text, Maybe Text))
 selectGroupUsers =
   [vectorStatement|
     SELECT
       users_groups.user_uuid :: uuid,
+      users_names.user_name :: text?,
       users_emails.user_email :: text?
     FROM
       users_groups
+    LEFT JOIN
+      users_names
+    ON
+      users_groups.user_uuid = users_names.user_uuid
     LEFT JOIN
       users_emails
     ON

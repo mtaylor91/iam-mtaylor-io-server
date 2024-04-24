@@ -37,35 +37,50 @@ pgEscapeLike = pack . concatMap escapeChar . unpack
 
 
 pgGetUser :: UserIdentifier -> Transaction (Either Error User)
-pgGetUser userIdentifier =
-  case unUserIdentifier userIdentifier of
-    Left email -> pgGetUserByEmail email
-    Right (UserUUID uuid) -> pgGetUserById $ UserUUID uuid
+pgGetUser (UserIdentifier (Just uid) _ _) = pgGetUserById uid
+pgGetUser (UserIdentifier Nothing (Just name) _) = pgGetUserByName name
+pgGetUser (UserIdentifier Nothing Nothing (Just email)) = pgGetUserByEmail email
+pgGetUser uid = return $ Left $ NotFound $ UserIdentifier' uid
+
+
+pgGetUserByName :: Text -> Transaction (Either Error User)
+pgGetUserByName name = do
+  result0 <- statement name selectUserIdByName
+  case result0 of
+    Nothing ->
+      let uid = UserIdentifier Nothing (Just name) Nothing
+       in return $ Left $ NotFound $ UserIdentifier' uid
+    Just uuid' -> do
+      pgGetUserById $ UserUUID uuid'
 
 
 pgGetUserByEmail :: Text -> Transaction (Either Error User)
 pgGetUserByEmail email = do
   result0 <- statement email selectUserIdByEmail
   case result0 of
-    Nothing -> return $ Left $ NotFound $ UserIdentifier $ UserEmail email
+    Nothing ->
+      let uid = UserIdentifier Nothing Nothing (Just email)
+       in return $ Left $ NotFound $ UserIdentifier' uid
     Just uuid' -> do
-      pgGetUser (UserId $ UserUUID uuid')
+      pgGetUserById $ UserUUID uuid'
 
 
 pgGetUserById :: UserId -> Transaction (Either Error User)
 pgGetUserById (UserUUID uuid) = do
   result <- statement uuid selectUserId
   case result of
-    Nothing -> return $ Left $ NotFound $ UserIdentifier $ UserId $ UserUUID uuid
+    Nothing -> return $ Left $ NotFound $ UserIdentifier' $
+      UserIdentifier (Just $ UserUUID uuid) Nothing Nothing
     Just _ -> do
-      maybeEmail <- statement uuid selectUserEmail
+      mName <- statement uuid selectUserName
+      mEmail <- statement uuid selectUserEmail
       r0 <- statement uuid selectUserGroups
       r1 <- statement uuid selectUserPolicyIdentifiers
       r2 <- statement uuid selectUserPublicKeys
       let groups = map group $ toList r0
       let publicKeys = map pk $ toList r2
       let policies = map pid $ toList r1
-      return $ Right $ User (UserUUID uuid) maybeEmail groups policies publicKeys
+      return $ Right $ User (UserUUID uuid) mName mEmail groups policies publicKeys
   where
     group (guuid, Nothing) = GroupId $ GroupUUID guuid
     group (guuid, Just name) = GroupIdAndName (GroupUUID guuid) name
@@ -75,14 +90,22 @@ pgGetUserById (UserUUID uuid) = do
 
 
 pgGetUserId :: UserIdentifier -> Transaction (Either Error UserId)
-pgGetUserId userIdentifier = do
-  case unUserIdentifier userIdentifier of
-    Left email -> do
-      result <- statement email selectUserIdByEmail
-      case result of
-        Nothing -> return $ Left $ NotFound $ UserIdentifier userIdentifier
-        Just uuid' -> return $ Right $ UserUUID uuid'
-    Right (UserUUID uuid) -> return $ Right $ UserUUID uuid
+pgGetUserId (UserIdentifier (Just uid) _ _) = return $ Right uid
+pgGetUserId (UserIdentifier Nothing (Just name) _) = do
+  result <- statement name selectUserIdByName
+  case result of
+    Just uuid' -> return $ Right $ UserUUID uuid'
+    Nothing ->
+      let uid = UserIdentifier Nothing (Just name) Nothing
+       in return $ Left $ NotFound $ UserIdentifier' uid
+pgGetUserId (UserIdentifier Nothing Nothing (Just email)) = do
+  result <- statement email selectUserIdByEmail
+  case result of
+    Just uuid' -> return $ Right $ UserUUID uuid'
+    Nothing ->
+      let uid = UserIdentifier Nothing Nothing (Just email)
+       in return $ Left $ NotFound $ UserIdentifier' uid
+pgGetUserId uid = return $ Left $ NotFound $ UserIdentifier' uid
 
 
 pgListUsers :: Range -> Transaction (Either Error (ListResponse UserIdentifier))
@@ -93,8 +116,8 @@ pgListUsers (Range offset' (Just limit')) = do
   let items' = map userIdentifier $ toList result
   return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'
   where
-    userIdentifier (uuuid, Nothing) = UserId $ UserUUID uuuid
-    userIdentifier (uuuid, Just email) = UserIdAndEmail (UserUUID uuuid) email
+    userIdentifier (uuuid, mName, mEmail) =
+      UserIdentifier (Just $ UserUUID uuuid) mName mEmail
           
 
 pgListUsersBySearchTerm :: Text -> Range ->
@@ -109,14 +132,14 @@ pgListUsersBySearchTerm search (Range offset' (Just limit')) = do
   let items' = map userIdentifier $ toList result
   return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'
   where
-    userIdentifier (uuuid, Nothing) = UserId $ UserUUID uuuid
-    userIdentifier (uuuid, Just email) = UserIdAndEmail (UserUUID uuuid) email
+    userIdentifier (uuuid, mName, mEmail) =
+      UserIdentifier (Just $ UserUUID uuuid) mName mEmail
 
 
 pgCreateUser :: User -> Transaction (Either Error User)
-pgCreateUser (User (UserUUID uuid) maybeEmail groups policies publicKeys) = do
+pgCreateUser (User (UserUUID uuid) mName mEmail groups policies publicKeys) = do
   result0 <- statement uuid selectUserId
-  result1 <- emailQuery maybeEmail
+  result1 <- emailQuery mEmail
 
   case (result0, result1) of
     (Just _, _) -> return $ Left AlreadyExists
@@ -124,7 +147,12 @@ pgCreateUser (User (UserUUID uuid) maybeEmail groups policies publicKeys) = do
     (Nothing, Nothing) -> do
       statement uuid insertUserId
 
-      case maybeEmail of
+      case mName of
+        Nothing -> return ()
+        Just name -> do
+          statement (uuid, name) insertUserName
+
+      case mEmail of
         Nothing -> return ()
         Just email -> do
           statement (uuid, email) insertUserEmail
@@ -142,7 +170,8 @@ pgCreateUser (User (UserUUID uuid) maybeEmail groups policies publicKeys) = do
               mapM_ insertUserPolicy' $ fmap unPolicyId pids
               mapM_ insertUserPublicKey' publicKeys
 
-              return $ Right $ User (UserUUID uuid) maybeEmail groups policies publicKeys
+              return $ Right $
+                User (UserUUID uuid) mName mEmail groups policies publicKeys
 
   where
 
@@ -166,18 +195,30 @@ pgCreateUser (User (UserUUID uuid) maybeEmail groups policies publicKeys) = do
 
 
 pgDeleteUser :: UserIdentifier -> Transaction (Either Error User)
-pgDeleteUser userIdentifier = do
-  case unUserIdentifier userIdentifier of
-    Left email -> pgDeleteUserByEmail email
-    Right (UserUUID uuid) -> pgDeleteUserById $ UserUUID uuid
+pgDeleteUser (UserIdentifier (Just uid) _ _) = pgDeleteUserById uid
+pgDeleteUser (UserIdentifier Nothing (Just name) _) = pgDeleteUserByName name
+pgDeleteUser (UserIdentifier Nothing Nothing (Just email)) = pgDeleteUserByEmail email
+pgDeleteUser uid = return $ Left $ NotFound $ UserIdentifier' uid
+
+
+pgDeleteUserByName :: Text -> Transaction (Either Error User)
+pgDeleteUserByName name = do
+  result0 <- statement name selectUserIdByName
+  case result0 of
+    Just uuid' -> pgDeleteUserById $ UserUUID uuid'
+    Nothing ->
+      let uid = UserIdentifier Nothing (Just name) Nothing
+       in return $ Left $ NotFound $ UserIdentifier' uid
 
 
 pgDeleteUserByEmail :: Text -> Transaction (Either Error User)
 pgDeleteUserByEmail email = do
   result0 <- statement email selectUserIdByEmail
   case result0 of
-    Nothing -> return $ Left $ NotFound $ UserIdentifier $ UserEmail email
     Just uuid' -> pgDeleteUserById $ UserUUID uuid'
+    Nothing ->
+      let uid = UserIdentifier Nothing Nothing (Just email)
+       in return $ Left $ NotFound $ UserIdentifier' uid
 
 
 pgDeleteUserById :: UserId -> Transaction (Either Error User)
@@ -222,8 +263,7 @@ pgGetGroupById (GroupUUID uuid) = do
       let policies = map pid $ toList r1
       return $ Right $ Group (GroupUUID uuid) maybeName users policies
   where
-    user (uuuid, Nothing) = UserId $ UserUUID uuuid
-    user (uuuid, Just email) = UserIdAndEmail (UserUUID uuuid) email
+    user (uuuid, mName, mEmail) = UserIdentifier (Just $ UserUUID uuuid) mName mEmail
     pid (pid', Nothing) = PolicyId $ PolicyUUID pid'
     pid (pid', Just name) = PolicyIdAndName (PolicyUUID pid') name
 
@@ -305,7 +345,7 @@ pgCreateGroup (Group (GroupUUID uuid) maybeName users policies) = do
     result <- resolveUserIdentifier uident
     case result of
       Nothing ->
-        return $ Left $ NotFound $ UserIdentifier uident
+        return $ Left $ NotFound $ UserIdentifier' uident
       Just (UserUUID uuuid) -> do
         result' <- resolveGroupUsers rest
         case result' of
@@ -479,7 +519,7 @@ pgCreateMembership userIdentifier groupIdentifier = do
       statement (uid, gid) insertMembership
       return $ Right $ Membership (UserUUID uid) (GroupUUID gid)
     (Nothing, _) ->
-      return $ Left $ NotFound $ UserIdentifier userIdentifier
+      return $ Left $ NotFound $ UserIdentifier' userIdentifier
     (_, Nothing) ->
       return $ Left $ NotFound $ GroupIdentifier groupIdentifier
 
@@ -494,7 +534,7 @@ pgDeleteMembership userIdentifier groupIdentifier = do
       statement (uid, gid) deleteMembership
       return $ Right $ Membership (UserUUID uid) (GroupUUID gid)
     (Nothing, _) ->
-      return $ Left $ NotFound $ UserIdentifier userIdentifier
+      return $ Left $ NotFound $ UserIdentifier' userIdentifier
     (_, Nothing) ->
       return $ Left $ NotFound $ GroupIdentifier groupIdentifier
 
@@ -507,7 +547,7 @@ pgCreateUserPolicyAttachment userIdentifier (PolicyId (PolicyUUID pid)) = do
     Just (UserUUID uid) -> do
       statement (uid, pid) insertUserPolicyAttachment
       return $ Right $ UserPolicyAttachment (UserUUID uid) (PolicyUUID pid)
-    Nothing -> return $ Left $ NotFound $ UserIdentifier userIdentifier
+    Nothing -> return $ Left $ NotFound $ UserIdentifier' userIdentifier
 pgCreateUserPolicyAttachment userIdentifier (PolicyName name) = do
   result <- statement name selectPolicyIdByName
   case result of
@@ -525,7 +565,7 @@ pgDeleteUserPolicyAttachment userIdentifier (PolicyId (PolicyUUID pid)) = do
     Just (UserUUID uid) -> do
       statement (uid, pid) deleteUserPolicyAttachment
       return $ Right $ UserPolicyAttachment (UserUUID uid) (PolicyUUID pid)
-    Nothing -> return $ Left $ NotFound $ UserIdentifier userIdentifier
+    Nothing -> return $ Left $ NotFound $ UserIdentifier' userIdentifier
 pgDeleteUserPolicyAttachment userIdentifier (PolicyName name) = do
   result <- statement name selectPolicyIdByName
   case result of
@@ -610,7 +650,7 @@ pgGetSessionById uid sid = do
           return $ Left $ NotFound $ SessionIdentifier $ Just sid
         Just (addr, expires) ->
           return $ Right $ Session sid (IpAddr addr) (UserUUID uuid) expires
-    Nothing -> return $ Left $ NotFound $ UserIdentifier uid
+    Nothing -> return $ Left $ NotFound $ UserIdentifier' uid
 
 
 pgGetSessionByToken :: UserIdentifier -> Text -> Transaction (Either Error Session)
@@ -623,7 +663,7 @@ pgGetSessionByToken uid token = do
         Nothing -> return $ Left $ NotFound $ SessionIdentifier Nothing
         Just (sid, addr, expiry) ->
           return $ Right $ Session (SessionUUID sid) (IpAddr addr) (UserUUID uuid) expiry
-    Nothing -> return $ Left $ NotFound $ UserIdentifier uid
+    Nothing -> return $ Left $ NotFound $ UserIdentifier' uid
 
 
 pgListUserSessions :: UserIdentifier -> Range ->
@@ -638,21 +678,25 @@ pgListUserSessions userIdentifier (Range offset' maybeLimit) = do
       total' <- statement uid selectUserSessionCount
       let items' = map (session uid) $ toList result
       return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'
-    Nothing -> return $ Left $ NotFound $ UserIdentifier userIdentifier
+    Nothing -> return $ Left $ NotFound $ UserIdentifier' userIdentifier
   where
     session uid (sid, addr, expires) =
       Session (SessionUUID sid) (IpAddr addr) (UserUUID uid) expires
 
 
 resolveUserIdentifier :: UserIdentifier -> Transaction (Maybe UserId)
-resolveUserIdentifier userIdentifier =
-  case unUserIdentifier userIdentifier of
-    Left email -> do
-      result <- statement email selectUserIdByEmail
-      case result of
-        Nothing -> return Nothing
-        Just uuid' -> return $ Just $ UserUUID uuid'
-    Right (UserUUID uuid) -> return $ Just $ UserUUID uuid
+resolveUserIdentifier (UserIdentifier (Just uid) _ _) = return $ Just uid
+resolveUserIdentifier (UserIdentifier Nothing (Just name) _) = do
+  result <- statement name selectUserIdByName
+  case result of
+    Nothing -> return Nothing
+    Just uuid' -> return $ Just $ UserUUID uuid'
+resolveUserIdentifier (UserIdentifier Nothing Nothing (Just email)) = do
+  result <- statement email selectUserIdByEmail
+  case result of
+    Nothing -> return Nothing
+    Just uuid' -> return $ Just $ UserUUID uuid'
+resolveUserIdentifier (UserIdentifier Nothing Nothing Nothing) = return Nothing
 
 
 resolveGroupIdentifier :: GroupIdentifier -> Transaction (Maybe GroupId)

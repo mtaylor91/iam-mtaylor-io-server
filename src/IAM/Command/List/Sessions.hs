@@ -51,12 +51,12 @@ listUserSessions user opts = case readMaybe (unpack user) of
 
 listUserSessionsByUUID :: UUID -> ListSessionsOptions -> IO ()
 listUserSessionsByUUID uuid = listUserSessionsByIdentifier userIdentifier
-  where userIdentifier = UserId $ UserUUID uuid
+  where userIdentifier = UserIdentifier (Just $ UserUUID uuid) Nothing Nothing
 
 
 listUserSessionsByEmail :: Text -> ListSessionsOptions -> IO ()
 listUserSessionsByEmail email = listUserSessionsByIdentifier userIdentifier
-  where userIdentifier = UserEmail email
+  where userIdentifier = UserIdentifier Nothing Nothing (Just email)
 
 
 listUserSessionsByIdentifier :: UserIdentifier -> ListSessionsOptions -> IO ()

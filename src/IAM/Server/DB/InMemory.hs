@@ -36,15 +36,15 @@ instance DB InMemory where
 
   getUser (InMemory tvar) uid = do
     s <- liftIO $ readTVarIO tvar
-    case s ^. userState uid of
+    case s ^. userIdentifierState uid of
       Just u -> return u
-      Nothing -> throwError $ NotFound $ UserIdentifier uid
+      Nothing -> throwError $ NotFound $ UserIdentifier' uid
 
   getUserId (InMemory tvar) uid = do
     s <- liftIO $ readTVarIO tvar
     case resolveUserIdentifier s uid of
       Just uid' -> return uid'
-      Nothing -> throwError $ NotFound $ UserIdentifier uid
+      Nothing -> throwError $ NotFound $ UserIdentifier' uid
 
   listUsers (InMemory tvar) (Range offset' maybeLimit) = do
     s <- liftIO $ readTVarIO tvar
@@ -61,12 +61,12 @@ instance DB InMemory where
          in ListResponse items' limit' offset' total'
     where
       resolveUser :: InMemoryState -> UserId -> UserIdentifier
-      resolveUser s uid = case s ^. userState (UserId uid) of
-        Nothing -> UserId uid
+      resolveUser s uid = case s ^. userIdState uid of
+        Nothing -> UserIdentifier (Just uid) Nothing Nothing
         Just u ->
-          case userEmail u of
-            Nothing -> UserId uid
-            Just email -> UserIdAndEmail uid email
+          let mName = userName u
+              mEmail = userEmail u
+           in UserIdentifier (Just uid) mName mEmail
 
   listUsersBySearchTerm (InMemory tvar) search (Range offset' maybeLimit) = do
     s <- liftIO $ readTVarIO tvar
@@ -84,34 +84,34 @@ instance DB InMemory where
          in return $ ListResponse items' limit' offset' total'
     where
       f :: UserIdentifier -> Bool
-      f (UserEmail email) = search `isInfixOf` email
-      f (UserId (UserUUID uuid)) = search `isInfixOf` toText uuid
-      f (UserIdAndEmail (UserUUID uuid) email) =
-        search `isInfixOf` email || search `isInfixOf` toText uuid
+      f (UserIdentifier mUid mName mEmail) =
+        maybe False ((search `isInfixOf`) . toText . unUserId) mUid
+        || maybe False (search `isInfixOf`) mName
+        || maybe False (search `isInfixOf`) mEmail
 
       resolveUser :: InMemoryState -> UserId -> UserIdentifier
-      resolveUser s uid = case s ^. userState (UserId uid) of
-        Nothing -> UserId uid
+      resolveUser s uid = case s ^. userIdState uid of
+        Nothing -> UserIdentifier (Just uid) Nothing Nothing
         Just u ->
-          case userEmail u of
-            Nothing -> UserId uid
-            Just email -> UserIdAndEmail uid email
+          let mName = userName u
+              mEmail = userEmail u
+           in UserIdentifier (Just uid) mName mEmail
 
-  createUser (InMemory tvar) u@(User uid _ _ _ _) = do
+  createUser (InMemory tvar) u@(User uid _ _ _ _ _) = do
     liftIO $ atomically $ do
       s <- readTVar tvar
-      writeTVar tvar $ s & userState (UserId uid) ?~ u
+      writeTVar tvar $ s & userIdState uid ?~ u
     return u
 
   deleteUser (InMemory tvar) uid = do
     result <- liftIO $ atomically $ do
       s <- readTVar tvar
-      case s ^. userState uid of
+      case s ^. userIdentifierState uid of
         Just u -> do
-          writeTVar tvar $ s & userState uid .~ Nothing
+          writeTVar tvar $ s & userIdentifierState uid .~ Nothing
           return $ Right u
         Nothing ->
-          return $ Left $ NotFound $ UserIdentifier uid
+          return $ Left $ NotFound $ UserIdentifier' uid
     either throwError return result
 
   getGroup (InMemory tvar) gid = do
@@ -281,7 +281,7 @@ instance DB InMemory where
             _:_ ->
               return $ Left AlreadyExists
         (Nothing, _) ->
-          return $ Left $ NotFound $ UserIdentifier uid
+          return $ Left $ NotFound $ UserIdentifier' uid
         (_, Nothing) ->
           return $ Left $ NotFound $ GroupIdentifier gid
     either throwError return result
@@ -299,7 +299,7 @@ instance DB InMemory where
                 Prelude.filter (/= (uid', gid')) $ memberships s }
               return $ Right $ Membership uid' gid'
         (Nothing, _) ->
-          return $ Left $ NotFound $ UserIdentifier uid
+          return $ Left $ NotFound $ UserIdentifier' uid
         (_, Nothing) ->
           return $ Left $ NotFound $ GroupIdentifier gid
     either throwError return result
@@ -321,7 +321,7 @@ instance DB InMemory where
             Nothing ->
               return $ Left $ NotFound $ PolicyIdentifier pident
         Nothing ->
-          return $ Left $ NotFound $ UserIdentifier uid
+          return $ Left $ NotFound $ UserIdentifier' uid
     either throwError return result
 
   deleteUserPolicyAttachment (InMemory tvar) uid pident = do
@@ -340,7 +340,7 @@ instance DB InMemory where
             Nothing ->
               return $ Left $ NotFound $ PolicyIdentifier pident
         Nothing ->
-          return $ Left $ NotFound $ UserIdentifier uid
+          return $ Left $ NotFound $ UserIdentifier' uid
     either throwError return result
 
   createGroupPolicyAttachment (InMemory tvar) gid pident = do
@@ -400,14 +400,14 @@ instance DB InMemory where
       (Nothing, _) ->
         throwError $ NotFound $ SessionIdentifier $ Just sid
       (_, Nothing) ->
-        throwError $ NotFound $ UserIdentifier uid
+        throwError $ NotFound $ UserIdentifier' uid
 
   getSessionByToken (InMemory tvar) uid token = do
     s <- liftIO $ readTVarIO tvar
     let maybeUid = resolveUserIdentifier s uid
     case maybeUid of
       Nothing ->
-        throwError $ NotFound $ UserIdentifier uid
+        throwError $ NotFound $ UserIdentifier' uid
       Just uid' ->
         case s ^. sessionStateByToken token of
           Just session ->
@@ -453,7 +453,7 @@ instance DB InMemory where
     let maybeUid = resolveUserIdentifier s uid
     case maybeUid of
       Nothing ->
-        throwError $ NotFound $ UserIdentifier uid
+        throwError $ NotFound $ UserIdentifier' uid
       Just uid' -> do
         let sessions' = [s' | (_, s') <- sessions s, sessionUser s' == uid']
         case maybeLimit of

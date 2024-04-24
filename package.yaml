@@ -28,6 +28,7 @@ dependencies:
 - data-textual
 - ed25519
 - entropy
+- email-validate
 - hasql
 - hasql-pool
 - hasql-th

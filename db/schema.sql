@@ -16,6 +16,13 @@ CREATE TABLE IF NOT EXISTS "policies" (
   PRIMARY KEY ("policy_uuid")
 );
 
+CREATE TABLE IF NOT EXISTS "users_names" (
+  "user_uuid" UUID NOT NULL,
+  "user_name" TEXT NOT NULL UNIQUE,
+  PRIMARY KEY ("user_uuid"),
+  FOREIGN KEY ("user_uuid") REFERENCES "users" ("user_uuid") ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS "users_emails" (
   "user_uuid" UUID NOT NULL,
   "user_email" TEXT NOT NULL UNIQUE,

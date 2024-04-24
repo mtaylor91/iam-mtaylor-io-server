@@ -98,6 +98,7 @@ library
     , case-insensitive
     , data-textual
     , ed25519
+    , email-validate
     , entropy
     , hasql
     , hasql-pool
@@ -140,6 +141,7 @@ executable iam-mtaylor-io
     , case-insensitive
     , data-textual
     , ed25519
+    , email-validate
     , entropy
     , hasql
     , hasql-pool
@@ -184,6 +186,7 @@ test-suite iam-mtaylor-io-test
     , case-insensitive
     , data-textual
     , ed25519
+    , email-validate
     , entropy
     , hasql
     , hasql-pool

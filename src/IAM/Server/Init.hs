@@ -52,8 +52,10 @@ createAdmin host adminEmail adminPublicKeyBase64 db = do
     Left _ -> error "Invalid base64 public key"
     Right adminPublicKey -> do
       uid <- UserUUID <$> nextRandom
-      let pk = UserPublicKey (PublicKey adminPublicKey) "Admin public key"
-      let user = User uid (Just adminEmail) [GroupId adminsGroupId] [] [pk]
+      let mName = Just "admin"
+          mEmail = Just adminEmail
+          pk = UserPublicKey (PublicKey adminPublicKey) "Admin public key"
+          user = User uid mName mEmail [GroupId adminsGroupId] [] [pk]
       r2 <- runExceptT $ createUser db user
       case r2 of
         Left AlreadyExists -> return ()

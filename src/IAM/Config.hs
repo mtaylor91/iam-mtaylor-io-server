@@ -1,5 +1,6 @@
 module IAM.Config
   ( configEmail
+  , configUserIdentifier
   , configPublicKey
   , configSecretKey
   , configMaybeSessionToken
@@ -7,6 +8,7 @@ module IAM.Config
   , configURL
   , envPrefix
   , headerPrefix
+  , printUserNameShellVars
   , printUserEmailShellVars
   , printUserUUIDShellVars
   ) where
@@ -27,6 +29,21 @@ envPrefix = "MTAYLOR_IO"
 
 headerPrefix :: String
 headerPrefix = "X-MTaylor-IO"
+
+
+configUserIdentifier :: IO String
+configUserIdentifier = do
+  maybeUUID <- lookupNamespaceEnvConfig "UUID"
+  maybeUsername <- lookupNamespaceEnvConfig "USERNAME"
+  maybeEmail <- lookupNamespaceEnvConfig "EMAIL"
+  case (maybeUUID, maybeUsername, maybeEmail) of
+    (Just uuid, _, _) -> return uuid
+    (_, Just username, _) -> return username
+    (_, _, Just email) -> return email
+    _ -> throw $ userError $ "One of "
+      ++ envPrefix ++ "_UUID, "
+      ++ envPrefix ++ "_USERNAME, or "
+      ++ envPrefix ++ "_EMAIL must be set"
 
 
 configEmail :: IO String
@@ -74,6 +91,18 @@ lookupNamespaceEnvConfig :: String -> IO (Maybe String)
 lookupNamespaceEnvConfig key = do
   let key' = envPrefix ++ "_" ++ key
   lookupEnv key'
+
+
+printUserNameShellVars :: T.Text -> PublicKey -> SecretKey -> IO ()
+printUserNameShellVars name pk sk = do
+  let name' = T.unpack name
+  let pk' = T.unpack (encodePublicKey pk)
+  let sk' = T.unpack (encodeSecretKey sk)
+  let prefix = "export " ++ envPrefix ++ "_"
+  putStrLn $ prefix ++ "USERNAME=\"" ++ name' ++ "\""
+  putStrLn $ prefix ++ "PUBLIC_KEY=\"" ++ pk' ++ "\""
+  putStrLn $ prefix ++ "SECRET_KEY=\"" ++ sk' ++ "\""
+  return ()
 
 
 printUserEmailShellVars :: T.Text -> PublicKey -> SecretKey -> IO ()

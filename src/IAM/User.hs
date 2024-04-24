@@ -16,6 +16,7 @@ import IAM.Policy
 
 data User = User
   { userId :: !UserId
+  , userName :: !(Maybe Text)
   , userEmail :: !(Maybe Text)
   , userGroups :: ![GroupIdentifier]
   , userPolicies :: ![PolicyIdentifier]
@@ -28,13 +29,15 @@ instance FromJSON User where
     groups <- obj .: "groups"
     policies <- obj .: "policies"
     publicKeys <- obj .: "publicKeys"
+    maybeName <- obj .:? "name"
     maybeEmail <- obj .:? "email"
-    return $ User uid maybeEmail groups policies publicKeys
+    return $ User uid maybeName maybeEmail groups policies publicKeys
   parseJSON _ = fail "Invalid JSON"
 
 instance ToJSON User where
-  toJSON (User (UserUUID uuid) email groups policies pks) = object
+  toJSON (User (UserUUID uuid) name email groups policies pks) = object
     [ "id" .= uuid
+    , "name" .= name
     , "email" .= email
     , "groups" .= groups
     , "policies" .= policies

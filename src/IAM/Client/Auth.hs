@@ -16,7 +16,7 @@ import Data.UUID.V4
 import Network.HTTP.Client
 
 import IAM.Authentication
-import IAM.Config (configEmail, configSecretKey, configMaybeSessionToken,  headerPrefix)
+import IAM.Config
 
 
 newtype ClientAuth = ClientAuth { clientAuth :: Request -> IO Request }
@@ -24,29 +24,29 @@ newtype ClientAuth = ClientAuth { clientAuth :: Request -> IO Request }
 
 clientAuthInfo :: IO ClientAuth
 clientAuthInfo = do
-  email <- configEmail
+  userId <- configUserIdentifier
   secretKey <- configSecretKey
   maybeSessionToken <- configMaybeSessionToken
   case decodeSecretKey $ pack secretKey of
     Nothing ->
       throw $ userError "Invalid secret key"
     Just secretKey' ->
-      return $ mkClientAuth email secretKey' $ pack <$> maybeSessionToken
+      return $ mkClientAuth userId secretKey' $ pack <$> maybeSessionToken
 
 
 mkClientAuth :: String -> SecretKey -> Maybe Text -> ClientAuth
-mkClientAuth email secretKey maybeSessionToken = ClientAuth $ \req -> do
+mkClientAuth userId secretKey maybeSessionToken = ClientAuth $ \req -> do
   case lookup "Authorization" $ requestHeaders req of
     Just _ -> return req
     Nothing -> do
       requestId <- nextRandom
-      let email' = pack email
+      let userId' = pack userId
           publicKey = encodePublicKey secretKey
           authorization = authHeader reqStringToSign secretKey
           reqStringToSign = authStringToSign req requestId maybeSessionToken
       return $ req
         { requestHeaders = requestHeaders req ++
-          authReqHeaders authorization email' publicKey requestId maybeSessionToken
+          authReqHeaders authorization userId' publicKey requestId maybeSessionToken
         }
 
 
@@ -77,15 +77,15 @@ authStringToSign req reqId maybeSessionToken
 
 authReqHeaders ::
   ByteString -> Text -> Text -> UUID -> Maybe Text ->  [(CI ByteString, ByteString)]
-authReqHeaders authorization email publicKey requestId Nothing =
+authReqHeaders authorization userId publicKey requestId Nothing =
   [ ("Authorization", authorization)
-  , (headerPrefix' <> "-User-Id", encodeUtf8 email)
+  , (headerPrefix' <> "-User-Id", encodeUtf8 userId)
   , (headerPrefix' <> "-Public-Key", encodeUtf8 publicKey)
   , (headerPrefix' <> "-Request-Id", encodeUtf8 $ pack $ toString requestId)
   ]
-authReqHeaders authorization email publicKey requestId (Just token) =
+authReqHeaders authorization userId publicKey requestId (Just token) =
   (headerPrefix' <> "-Session-Token", encodeUtf8 token) :
-  authReqHeaders authorization email publicKey requestId Nothing
+  authReqHeaders authorization userId publicKey requestId Nothing
 
 
 headerPrefix' :: CI ByteString
