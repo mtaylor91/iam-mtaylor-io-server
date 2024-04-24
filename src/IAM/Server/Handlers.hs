@@ -61,20 +61,21 @@ getUserHandler ctx auth uid = do
 
 
 listUsersHandler ::
-  DB db => Ctx db -> Auth -> Maybe Text -> Maybe Int -> Maybe Int ->
+  DB db => Ctx db -> Auth -> Maybe Text -> Maybe SortUsersBy -> Maybe Int -> Maybe Int ->
     Handler (ListResponse UserIdentifier)
-listUsersHandler ctx auth Nothing maybeOffset maybeLimit = do
+listUsersHandler ctx auth Nothing maybeSort maybeOffset maybeLimit = do
   requireSession auth
   let offset' = fromMaybe 0 maybeOffset
-  result <- liftIO $ runExceptT $ listUsers (ctxDB ctx) $ Range offset' maybeLimit
+  result <- liftIO $ runExceptT $ listUsers (ctxDB ctx) (Range offset' maybeLimit)
+    $ fromMaybe SortUsersByEmail maybeSort
   case result of
     Right users' -> return users'
     Left err     -> errorHandler err
-listUsersHandler ctx auth (Just search) maybeOffset maybeLimit = do
+listUsersHandler ctx auth (Just search) maybeSort maybeOffset maybeLimit = do
   requireSession auth
   let offset' = fromMaybe 0 maybeOffset
-  result <- liftIO $ runExceptT $ listUsersBySearchTerm (ctxDB ctx) search $
-    Range offset' maybeLimit
+  result <- liftIO $ runExceptT $ listUsersBySearchTerm (ctxDB ctx) search
+    (Range offset' maybeLimit) $ fromMaybe SortUsersByEmail maybeSort
   case result of
     Right users' -> return users'
     Left err     -> errorHandler err

@@ -4,6 +4,7 @@ import Control.Concurrent.STM
 import Control.Lens
 import Control.Monad.IO.Class
 import Control.Monad.Except
+import Data.List (sortBy)
 import Data.Text (isInfixOf)
 import Data.UUID (toText)
 
@@ -46,17 +47,18 @@ instance DB InMemory where
       Just uid' -> return uid'
       Nothing -> throwError $ NotFound $ UserIdentifier' uid
 
-  listUsers (InMemory tvar) (Range offset' maybeLimit) = do
+  listUsers (InMemory tvar) (Range offset' maybeLimit) order = do
     s <- liftIO $ readTVarIO tvar
     let users' = resolveUser s <$> users s
+        users'' = sortUsers order users'
      in return $ case maybeLimit of
       Just limit' ->
-        let items' = Prelude.take limit' $ Prelude.drop offset' users'
-            total' = Prelude.length users'
+        let items' = Prelude.take limit' $ Prelude.drop offset' users''
+            total' = Prelude.length users''
          in ListResponse items' limit' offset' total'
       Nothing ->
-        let items' = Prelude.drop offset' users'
-            total' = Prelude.length users'
+        let items' = Prelude.drop offset' users''
+            total' = Prelude.length users''
             limit' = total'
          in ListResponse items' limit' offset' total'
     where
@@ -68,10 +70,10 @@ instance DB InMemory where
               mEmail = userEmail u
            in UserIdentifier (Just uid) mName mEmail
 
-  listUsersBySearchTerm (InMemory tvar) search (Range offset' maybeLimit) = do
+  listUsersBySearchTerm (InMemory tvar) search (Range offset' maybeLimit) order = do
     s <- liftIO $ readTVarIO tvar
     let users' = resolveUser s <$> users s
-    let users'' = Prelude.filter f users'
+    let users'' = sortUsers order $ Prelude.filter f users'
     case maybeLimit of
       Just limit' ->
         let items' = Prelude.take limit' $ Prelude.drop offset' users''
@@ -466,3 +468,16 @@ instance DB InMemory where
                 total' = Prelude.length sessions'
                 limit' = total'
              in return $ ListResponse items' limit' offset' total'
+
+
+sortUsers :: SortUsersBy -> [UserIdentifier] -> [UserIdentifier]
+sortUsers order = sortBy f where
+  f :: UserIdentifier -> UserIdentifier -> Ordering
+  f uid1 uid2 =
+    case order of
+      SortUsersByName ->
+        compare (unUserIdentifierName uid1) (unUserIdentifierName uid2)
+      SortUsersByEmail ->
+        compare (unUserIdentifierEmail uid1) (unUserIdentifierEmail uid2)
+      SortUsersById ->
+        compare (unUserIdentifierId uid1) (unUserIdentifierId uid2)

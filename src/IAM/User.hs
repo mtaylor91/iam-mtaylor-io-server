@@ -8,6 +8,7 @@ import Data.Aeson
 import Data.ByteString.Base64
 import Data.Text
 import Data.Text.Encoding
+import Servant
 
 import IAM.GroupIdentifier
 import IAM.UserIdentifier
@@ -65,3 +66,23 @@ instance ToJSON UserPublicKey where
     [ "description" .= description
     , "key" .= encodeBase64 (unPublicKey key)
     ]
+
+
+data SortUsersBy = SortUsersById | SortUsersByName | SortUsersByEmail
+
+instance FromHttpApiData SortUsersBy where
+  parseUrlPiece = maybe (Left "Invalid sort") Right . parseSortUsersBy
+
+instance ToHttpApiData SortUsersBy where
+  toUrlPiece = sortUserByText
+
+sortUserByText :: SortUsersBy -> Text
+sortUserByText SortUsersById = "id"
+sortUserByText SortUsersByName = "name"
+sortUserByText SortUsersByEmail = "email"
+
+parseSortUsersBy :: Text -> Maybe SortUsersBy
+parseSortUsersBy "id" = Just SortUsersById
+parseSortUsersBy "name" = Just SortUsersByName
+parseSortUsersBy "email" = Just SortUsersByEmail
+parseSortUsersBy _ = Nothing

@@ -108,11 +108,19 @@ pgGetUserId (UserIdentifier Nothing Nothing (Just email)) = do
 pgGetUserId uid = return $ Left $ NotFound $ UserIdentifier' uid
 
 
-pgListUsers :: Range -> Transaction (Either Error (ListResponse UserIdentifier))
-pgListUsers (Range offset' Nothing) = pgListUsers (Range offset' $ Just 100)
-pgListUsers (Range offset' (Just limit')) = do
+pgListUsers ::
+  Range -> SortUsersBy -> Transaction (Either Error (ListResponse UserIdentifier))
+pgListUsers (Range offset' Nothing) order =
+  pgListUsers (Range offset' $ Just 100) order
+pgListUsers (Range offset' (Just limit')) order = do
+  let limit'' = fromIntegral limit'
+  let offset'' = fromIntegral offset'
+  let query = case order of
+        SortUsersById -> selectUserIdentifiersOrderById
+        SortUsersByName -> selectUserIdentifiersOrderByName
+        SortUsersByEmail -> selectUserIdentifiersOrderByEmail
   total' <- statement () selectUserCount
-  result <- statement (fromIntegral offset', fromIntegral limit') selectUserIdentifiers
+  result <- statement (offset'', limit'') query
   let items' = map userIdentifier $ toList result
   return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'
   where
@@ -120,15 +128,18 @@ pgListUsers (Range offset' (Just limit')) = do
       UserIdentifier (Just $ UserUUID uuuid) mName mEmail
           
 
-pgListUsersBySearchTerm :: Text -> Range ->
+pgListUsersBySearchTerm :: Text -> Range -> SortUsersBy ->
   Transaction (Either Error (ListResponse UserIdentifier))
-pgListUsersBySearchTerm search (Range offset' Nothing) =
-  pgListUsersBySearchTerm search (Range offset' $ Just 100)
-pgListUsersBySearchTerm search (Range offset' (Just limit')) = do
+pgListUsersBySearchTerm search (Range offset' Nothing) order =
+  pgListUsersBySearchTerm search (Range offset' $ Just 100) order
+pgListUsersBySearchTerm search (Range offset' (Just limit')) order = do
   let likeExpr = "%" <> pgEscapeLike search <> "%"
+  let query = case order of
+        SortUsersById -> selectUserIdentifiersLikeOrderById
+        SortUsersByName -> selectUserIdentifiersLikeOrderByName
+        SortUsersByEmail -> selectUserIdentifiersLikeOrderByEmail
   total' <- statement likeExpr selectUserCountLike
-  result <- statement (likeExpr, fromIntegral offset', fromIntegral limit')
-    selectUserIdentifiersLike
+  result <- statement (likeExpr, fromIntegral offset', fromIntegral limit') query
   let items' = map userIdentifier $ toList result
   return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'
   where

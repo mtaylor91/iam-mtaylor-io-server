@@ -32,12 +32,12 @@ class DB db where
 
   -- | listUsers returns a list of all users in the database.
   listUsers :: (MonadIO m, MonadError Error m) =>
-    db -> Range -> m (ListResponse UserIdentifier)
+    db -> Range -> SortUsersBy -> m (ListResponse UserIdentifier)
 
   -- | listUsersBySearchTerm returns a list of all users in the database
   -- | that match a search term.
   listUsersBySearchTerm :: (MonadIO m, MonadError Error m) =>
-    db -> Text -> Range -> m (ListResponse UserIdentifier)
+    db -> Text -> Range -> SortUsersBy -> m (ListResponse UserIdentifier)
 
   -- | createUser adds a new user to the database.
   createUser :: (MonadIO m, MonadError Error m) =>

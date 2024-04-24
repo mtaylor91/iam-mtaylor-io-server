@@ -18,6 +18,9 @@ newtype UserId = UserUUID { unUserId :: UUID } deriving (Eq, Show)
 
 $(deriveJSON defaultOptions { unwrapUnaryRecords = True } ''UserId)
 
+instance Ord UserId where
+  compare (UserUUID a) (UserUUID b) = compare a b
+
 
 data UserIdentifier = UserIdentifier
   { unUserIdentifierId :: !(Maybe UserId)
