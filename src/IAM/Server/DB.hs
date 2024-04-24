@@ -18,6 +18,7 @@ import IAM.UserPolicy
 import IAM.UserIdentifier
 import IAM.Range
 import IAM.Session
+import IAM.Sort
 
 
 class DB db where
@@ -32,12 +33,12 @@ class DB db where
 
   -- | listUsers returns a list of all users in the database.
   listUsers :: (MonadIO m, MonadError Error m) =>
-    db -> Range -> SortUsersBy -> m (ListResponse UserIdentifier)
+    db -> Range -> SortUsersBy -> SortOrder -> m (ListResponse UserIdentifier)
 
   -- | listUsersBySearchTerm returns a list of all users in the database
   -- | that match a search term.
   listUsersBySearchTerm :: (MonadIO m, MonadError Error m) =>
-    db -> Text -> Range -> SortUsersBy -> m (ListResponse UserIdentifier)
+    db -> Text -> Range -> SortUsersBy -> SortOrder -> m (ListResponse UserIdentifier)
 
   -- | createUser adds a new user to the database.
   createUser :: (MonadIO m, MonadError Error m) =>

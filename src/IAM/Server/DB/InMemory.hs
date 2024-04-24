@@ -20,6 +20,7 @@ import IAM.Range
 import IAM.Server.DB
 import IAM.Server.DB.InMemory.State
 import IAM.Session
+import IAM.Sort
 import IAM.User
 import IAM.UserPolicy
 import IAM.UserIdentifier
@@ -47,10 +48,10 @@ instance DB InMemory where
       Just uid' -> return uid'
       Nothing -> throwError $ NotFound $ UserIdentifier' uid
 
-  listUsers (InMemory tvar) (Range offset' maybeLimit) order = do
+  listUsers (InMemory tvar) (Range offset' maybeLimit) sort order = do
     s <- liftIO $ readTVarIO tvar
     let users' = resolveUser s <$> users s
-        users'' = sortUsers order users'
+        users'' = sortUsers sort order users'
      in return $ case maybeLimit of
       Just limit' ->
         let items' = Prelude.take limit' $ Prelude.drop offset' users''
@@ -70,10 +71,10 @@ instance DB InMemory where
               mEmail = userEmail u
            in UserIdentifier (Just uid) mName mEmail
 
-  listUsersBySearchTerm (InMemory tvar) search (Range offset' maybeLimit) order = do
+  listUsersBySearchTerm (InMemory tvar) search (Range offset' maybeLimit) sort order = do
     s <- liftIO $ readTVarIO tvar
     let users' = resolveUser s <$> users s
-    let users'' = sortUsers order $ Prelude.filter f users'
+    let users'' = sortUsers sort order $ Prelude.filter f users'
     case maybeLimit of
       Just limit' ->
         let items' = Prelude.take limit' $ Prelude.drop offset' users''
@@ -470,14 +471,20 @@ instance DB InMemory where
              in return $ ListResponse items' limit' offset' total'
 
 
-sortUsers :: SortUsersBy -> [UserIdentifier] -> [UserIdentifier]
-sortUsers order = sortBy f where
+sortUsers :: SortUsersBy -> SortOrder -> [UserIdentifier] -> [UserIdentifier]
+sortUsers sort order = sortBy f where
   f :: UserIdentifier -> UserIdentifier -> Ordering
   f uid1 uid2 =
-    case order of
-      SortUsersByName ->
-        compare (unUserIdentifierName uid1) (unUserIdentifierName uid2)
-      SortUsersByEmail ->
-        compare (unUserIdentifierEmail uid1) (unUserIdentifierEmail uid2)
-      SortUsersById ->
+    case (sort, order) of
+      (SortUsersById, Ascending) ->
         compare (unUserIdentifierId uid1) (unUserIdentifierId uid2)
+      (SortUsersById, Descending) ->
+        compare (unUserIdentifierId uid2) (unUserIdentifierId uid1)
+      (SortUsersByName, Ascending) ->
+        compare (unUserIdentifierName uid1) (unUserIdentifierName uid2)
+      (SortUsersByName, Descending) ->
+        compare (unUserIdentifierName uid2) (unUserIdentifierName uid1)
+      (SortUsersByEmail, Ascending) ->
+        compare (unUserIdentifierEmail uid1) (unUserIdentifierEmail uid2)
+      (SortUsersByEmail, Descending) ->
+        compare (unUserIdentifierEmail uid2) (unUserIdentifierEmail uid1)

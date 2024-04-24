@@ -23,6 +23,7 @@ import IAM.Policy
 import IAM.Server.DB.Postgres.Queries
 import IAM.Range
 import IAM.Session
+import IAM.Sort
 import IAM.User
 import IAM.UserPolicy
 import IAM.UserIdentifier
@@ -109,16 +110,26 @@ pgGetUserId uid = return $ Left $ NotFound $ UserIdentifier' uid
 
 
 pgListUsers ::
-  Range -> SortUsersBy -> Transaction (Either Error (ListResponse UserIdentifier))
-pgListUsers (Range offset' Nothing) order =
-  pgListUsers (Range offset' $ Just 100) order
-pgListUsers (Range offset' (Just limit')) order = do
+  Range -> SortUsersBy -> SortOrder ->
+  Transaction (Either Error (ListResponse UserIdentifier))
+pgListUsers (Range offset' Nothing) sort order =
+  pgListUsers (Range offset' $ Just 100) sort order
+pgListUsers (Range offset' (Just limit')) sort order = do
   let limit'' = fromIntegral limit'
   let offset'' = fromIntegral offset'
-  let query = case order of
-        SortUsersById -> selectUserIdentifiersOrderById
-        SortUsersByName -> selectUserIdentifiersOrderByName
-        SortUsersByEmail -> selectUserIdentifiersOrderByEmail
+  let query = case (sort, order) of
+        (SortUsersById, Ascending) ->
+          selectUserIdentifiersOrderByIdAsc
+        (SortUsersById, Descending) ->
+          selectUserIdentifiersOrderByIdDesc
+        (SortUsersByName, Ascending) ->
+          selectUserIdentifiersOrderByNameAsc
+        (SortUsersByName, Descending) ->
+          selectUserIdentifiersOrderByNameDesc
+        (SortUsersByEmail, Ascending) ->
+          selectUserIdentifiersOrderByEmailAsc
+        (SortUsersByEmail, Descending) ->
+          selectUserIdentifiersOrderByEmailDesc
   total' <- statement () selectUserCount
   result <- statement (offset'', limit'') query
   let items' = map userIdentifier $ toList result
@@ -128,16 +139,20 @@ pgListUsers (Range offset' (Just limit')) order = do
       UserIdentifier (Just $ UserUUID uuuid) mName mEmail
           
 
-pgListUsersBySearchTerm :: Text -> Range -> SortUsersBy ->
+pgListUsersBySearchTerm ::
+  Text -> Range -> SortUsersBy -> SortOrder ->
   Transaction (Either Error (ListResponse UserIdentifier))
-pgListUsersBySearchTerm search (Range offset' Nothing) order =
-  pgListUsersBySearchTerm search (Range offset' $ Just 100) order
-pgListUsersBySearchTerm search (Range offset' (Just limit')) order = do
+pgListUsersBySearchTerm search (Range offset' Nothing) sort order =
+  pgListUsersBySearchTerm search (Range offset' $ Just 100) sort order
+pgListUsersBySearchTerm search (Range offset' (Just limit')) sort order = do
   let likeExpr = "%" <> pgEscapeLike search <> "%"
-  let query = case order of
-        SortUsersById -> selectUserIdentifiersLikeOrderById
-        SortUsersByName -> selectUserIdentifiersLikeOrderByName
-        SortUsersByEmail -> selectUserIdentifiersLikeOrderByEmail
+  let query = case (sort, order) of
+        (SortUsersById, Ascending) -> selectUserIdentifiersLikeOrderByIdAsc
+        (SortUsersByName, Ascending) -> selectUserIdentifiersLikeOrderByNameAsc
+        (SortUsersByEmail, Ascending) -> selectUserIdentifiersLikeOrderByEmailAsc
+        (SortUsersById, Descending) -> selectUserIdentifiersLikeOrderByIdDesc
+        (SortUsersByName, Descending) -> selectUserIdentifiersLikeOrderByNameDesc
+        (SortUsersByEmail, Descending) -> selectUserIdentifiersLikeOrderByEmailDesc
   total' <- statement likeExpr selectUserCountLike
   result <- statement (likeExpr, fromIntegral offset', fromIntegral limit') query
   let items' = map userIdentifier $ toList result

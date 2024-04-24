@@ -48,11 +48,11 @@ instance DB PostgresDB where
   getUserId (PostgresDB pool) uid =
     runTransaction pool $ pgGetUserId uid
 
-  listUsers (PostgresDB pool) range order =
-    runTransaction pool $ pgListUsers range order
+  listUsers (PostgresDB pool) range sort order =
+    runTransaction pool $ pgListUsers range sort order
 
-  listUsersBySearchTerm (PostgresDB pool) prefix range order =
-    runTransaction pool $ pgListUsersBySearchTerm prefix range order
+  listUsersBySearchTerm (PostgresDB pool) prefix range sort order =
+    runTransaction pool $ pgListUsersBySearchTerm prefix range sort order
 
   createUser (PostgresDB pool) u =
     runTransaction pool $ pgCreateUser u

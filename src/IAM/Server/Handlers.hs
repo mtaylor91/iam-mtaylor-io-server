@@ -46,6 +46,7 @@ import IAM.Server.Auth
 import IAM.Server.Context
 import IAM.Server.DB
 import IAM.Session
+import IAM.Sort
 import IAM.User
 import IAM.UserPolicy
 import IAM.UserIdentifier
@@ -61,21 +62,22 @@ getUserHandler ctx auth uid = do
 
 
 listUsersHandler ::
-  DB db => Ctx db -> Auth -> Maybe Text -> Maybe SortUsersBy -> Maybe Int -> Maybe Int ->
-    Handler (ListResponse UserIdentifier)
-listUsersHandler ctx auth Nothing maybeSort maybeOffset maybeLimit = do
+  DB db => Ctx db -> Auth -> Maybe Text -> Maybe SortUsersBy -> Maybe SortOrder ->
+    Maybe Int -> Maybe Int -> Handler (ListResponse UserIdentifier)
+listUsersHandler ctx auth Nothing maybeSort maybeOrder maybeOffset maybeLimit = do
   requireSession auth
   let offset' = fromMaybe 0 maybeOffset
   result <- liftIO $ runExceptT $ listUsers (ctxDB ctx) (Range offset' maybeLimit)
-    $ fromMaybe SortUsersByEmail maybeSort
+    (fromMaybe SortUsersByEmail maybeSort) (fromMaybe Ascending maybeOrder)
   case result of
     Right users' -> return users'
     Left err     -> errorHandler err
-listUsersHandler ctx auth (Just search) maybeSort maybeOffset maybeLimit = do
+listUsersHandler ctx auth (Just search) maybeSort maybeOrder maybeOffset maybeLimit = do
   requireSession auth
   let offset' = fromMaybe 0 maybeOffset
   result <- liftIO $ runExceptT $ listUsersBySearchTerm (ctxDB ctx) search
-    (Range offset' maybeLimit) $ fromMaybe SortUsersByEmail maybeSort
+    (Range offset' maybeLimit) (fromMaybe SortUsersByEmail maybeSort)
+    (fromMaybe Ascending maybeOrder)
   case result of
     Right users' -> return users'
     Left err     -> errorHandler err

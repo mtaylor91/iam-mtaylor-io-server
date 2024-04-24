@@ -29,6 +29,7 @@ import IAM.ListResponse
 import IAM.Membership
 import IAM.Policy
 import IAM.Session
+import IAM.Sort
 import IAM.User
 import IAM.UserPolicy
 import IAM.UserIdentifier
@@ -52,7 +53,10 @@ type IAMAPI
     )
 
 type UsersAPI
-  = ( QueryParam "search" Text :> QueryParam "sort" SortUsersBy :> ListAPI UserIdentifier
+  = ( QueryParam "search" Text
+    :> QueryParam "sort" SortUsersBy
+    :> QueryParam "order" SortOrder
+    :> ListAPI UserIdentifier
   :<|> ( ReqBody '[JSON] User :> PostCreated '[JSON] User )
   :<|> ( Capture "user" UserIdentifier :> UserAPI )
     )

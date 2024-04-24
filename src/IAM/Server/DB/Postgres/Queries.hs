@@ -247,9 +247,9 @@ selectUserIdByEmail =
   |]
 
 
-selectUserIdentifiersOrderById ::
+selectUserIdentifiersOrderByIdAsc ::
   Statement (Int32, Int32) (Vector (UUID, Maybe Text, Maybe Text))
-selectUserIdentifiersOrderById =
+selectUserIdentifiersOrderByIdAsc =
   [vectorStatement|
     SELECT
       users.user_uuid :: uuid,
@@ -266,7 +266,7 @@ selectUserIdentifiersOrderById =
     ON
       users.user_uuid = users_emails.user_uuid
     ORDER BY
-      users.user_uuid
+      users.user_uuid ASC
     OFFSET
       $1 :: int
     LIMIT
@@ -274,9 +274,9 @@ selectUserIdentifiersOrderById =
   |]
 
 
-selectUserIdentifiersOrderByName ::
+selectUserIdentifiersOrderByIdDesc ::
   Statement (Int32, Int32) (Vector (UUID, Maybe Text, Maybe Text))
-selectUserIdentifiersOrderByName =
+selectUserIdentifiersOrderByIdDesc =
   [vectorStatement|
     SELECT
       users.user_uuid :: uuid,
@@ -293,8 +293,7 @@ selectUserIdentifiersOrderByName =
     ON
       users.user_uuid = users_emails.user_uuid
     ORDER BY
-      users_names.user_name,
-      users.user_uuid
+      users.user_uuid DESC
     OFFSET
       $1 :: int
     LIMIT
@@ -302,9 +301,9 @@ selectUserIdentifiersOrderByName =
   |]
 
 
-selectUserIdentifiersOrderByEmail ::
+selectUserIdentifiersOrderByNameAsc ::
   Statement (Int32, Int32) (Vector (UUID, Maybe Text, Maybe Text))
-selectUserIdentifiersOrderByEmail =
+selectUserIdentifiersOrderByNameAsc =
   [vectorStatement|
     SELECT
       users.user_uuid :: uuid,
@@ -321,8 +320,8 @@ selectUserIdentifiersOrderByEmail =
     ON
       users.user_uuid = users_emails.user_uuid
     ORDER BY
-      users_emails.user_email,
-      users.user_uuid
+      users_names.user_name ASC,
+      users.user_uuid ASC
     OFFSET
       $1 :: int
     LIMIT
@@ -330,9 +329,93 @@ selectUserIdentifiersOrderByEmail =
   |]
 
 
-selectUserIdentifiersLikeOrderById ::
+selectUserIdentifiersOrderByNameDesc ::
+  Statement (Int32, Int32) (Vector (UUID, Maybe Text, Maybe Text))
+selectUserIdentifiersOrderByNameDesc =
+  [vectorStatement|
+    SELECT
+      users.user_uuid :: uuid,
+      users_names.user_name :: text?,
+      users_emails.user_email :: text?
+    FROM
+      users
+    LEFT JOIN
+      users_names
+    ON
+      users.user_uuid = users_names.user_uuid
+    LEFT JOIN
+      users_emails
+    ON
+      users.user_uuid = users_emails.user_uuid
+    ORDER BY
+      users_names.user_name DESC,
+      users.user_uuid DESC
+    OFFSET
+      $1 :: int
+    LIMIT
+      $2 :: int
+  |]
+
+
+selectUserIdentifiersOrderByEmailAsc ::
+  Statement (Int32, Int32) (Vector (UUID, Maybe Text, Maybe Text))
+selectUserIdentifiersOrderByEmailAsc =
+  [vectorStatement|
+    SELECT
+      users.user_uuid :: uuid,
+      users_names.user_name :: text?,
+      users_emails.user_email :: text?
+    FROM
+      users
+    LEFT JOIN
+      users_names
+    ON
+      users.user_uuid = users_names.user_uuid
+    LEFT JOIN
+      users_emails
+    ON
+      users.user_uuid = users_emails.user_uuid
+    ORDER BY
+      users_emails.user_email ASC,
+      users.user_uuid ASC
+    OFFSET
+      $1 :: int
+    LIMIT
+      $2 :: int
+  |]
+
+
+selectUserIdentifiersOrderByEmailDesc ::
+  Statement (Int32, Int32) (Vector (UUID, Maybe Text, Maybe Text))
+selectUserIdentifiersOrderByEmailDesc =
+  [vectorStatement|
+    SELECT
+      users.user_uuid :: uuid,
+      users_names.user_name :: text?,
+      users_emails.user_email :: text?
+    FROM
+      users
+    LEFT JOIN
+      users_names
+    ON
+      users.user_uuid = users_names.user_uuid
+    LEFT JOIN
+      users_emails
+    ON
+      users.user_uuid = users_emails.user_uuid
+    ORDER BY
+      users_emails.user_email DESC,
+      users.user_uuid DESC
+    OFFSET
+      $1 :: int
+    LIMIT
+      $2 :: int
+  |]
+
+
+selectUserIdentifiersLikeOrderByIdAsc ::
   Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text, Maybe Text))
-selectUserIdentifiersLikeOrderById =
+selectUserIdentifiersLikeOrderByIdAsc =
   [vectorStatement|
     SELECT
       users.user_uuid :: uuid,
@@ -355,7 +438,7 @@ selectUserIdentifiersLikeOrderById =
     OR
       users.user_uuid :: text LIKE $1 :: text
     ORDER BY
-      users.user_uuid
+      users.user_uuid ASC
     OFFSET
       $2 :: int
     LIMIT
@@ -363,9 +446,9 @@ selectUserIdentifiersLikeOrderById =
   |]
 
 
-selectUserIdentifiersLikeOrderByName ::
+selectUserIdentifiersLikeOrderByIdDesc ::
   Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text, Maybe Text))
-selectUserIdentifiersLikeOrderByName =
+selectUserIdentifiersLikeOrderByIdDesc =
   [vectorStatement|
     SELECT
       users.user_uuid :: uuid,
@@ -388,8 +471,7 @@ selectUserIdentifiersLikeOrderByName =
     OR
       users.user_uuid :: text LIKE $1 :: text
     ORDER BY
-      users_names.user_name,
-      users.user_uuid
+      users.user_uuid DESC
     OFFSET
       $2 :: int
     LIMIT
@@ -397,9 +479,9 @@ selectUserIdentifiersLikeOrderByName =
   |]
 
 
-selectUserIdentifiersLikeOrderByEmail ::
+selectUserIdentifiersLikeOrderByNameAsc ::
   Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text, Maybe Text))
-selectUserIdentifiersLikeOrderByEmail =
+selectUserIdentifiersLikeOrderByNameAsc =
   [vectorStatement|
     SELECT
       users.user_uuid :: uuid,
@@ -422,8 +504,110 @@ selectUserIdentifiersLikeOrderByEmail =
     OR
       users.user_uuid :: text LIKE $1 :: text
     ORDER BY
-      users_emails.user_email,
-      users.user_uuid
+      users_names.user_name ASC,
+      users.user_uuid ASC
+    OFFSET
+      $2 :: int
+    LIMIT
+      $3 :: int
+  |]
+
+
+selectUserIdentifiersLikeOrderByNameDesc ::
+  Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text, Maybe Text))
+selectUserIdentifiersLikeOrderByNameDesc =
+  [vectorStatement|
+    SELECT
+      users.user_uuid :: uuid,
+      users_names.user_name :: text?,
+      users_emails.user_email :: text?
+    FROM
+      users
+    LEFT JOIN
+      users_names
+    ON
+      users.user_uuid = users_names.user_uuid
+    LEFT JOIN
+      users_emails
+    ON
+      users.user_uuid = users_emails.user_uuid
+    WHERE
+      users_emails.user_email LIKE $1 :: text
+    OR
+      users_names.user_name LIKE $1 :: text
+    OR
+      users.user_uuid :: text LIKE $1 :: text
+    ORDER BY
+      users_names.user_name DESC,
+      users.user_uuid DESC
+    OFFSET
+      $2 :: int
+    LIMIT
+      $3 :: int
+  |]
+
+
+selectUserIdentifiersLikeOrderByEmailAsc ::
+  Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text, Maybe Text))
+selectUserIdentifiersLikeOrderByEmailAsc =
+  [vectorStatement|
+    SELECT
+      users.user_uuid :: uuid,
+      users_names.user_name :: text?,
+      users_emails.user_email :: text?
+    FROM
+      users
+    LEFT JOIN
+      users_names
+    ON
+      users.user_uuid = users_names.user_uuid
+    LEFT JOIN
+      users_emails
+    ON
+      users.user_uuid = users_emails.user_uuid
+    WHERE
+      users_emails.user_email LIKE $1 :: text
+    OR
+      users_names.user_name LIKE $1 :: text
+    OR
+      users.user_uuid :: text LIKE $1 :: text
+    ORDER BY
+      users_emails.user_email ASC,
+      users.user_uuid ASC
+    OFFSET
+      $2 :: int
+    LIMIT
+      $3 :: int
+  |]
+
+
+selectUserIdentifiersLikeOrderByEmailDesc ::
+  Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text, Maybe Text))
+selectUserIdentifiersLikeOrderByEmailDesc =
+  [vectorStatement|
+    SELECT
+      users.user_uuid :: uuid,
+      users_names.user_name :: text?,
+      users_emails.user_email :: text?
+    FROM
+      users
+    LEFT JOIN
+      users_names
+    ON
+      users.user_uuid = users_names.user_uuid
+    LEFT JOIN
+      users_emails
+    ON
+      users.user_uuid = users_emails.user_uuid
+    WHERE
+      users_emails.user_email LIKE $1 :: text
+    OR
+      users_names.user_name LIKE $1 :: text
+    OR
+      users.user_uuid :: text LIKE $1 :: text
+    ORDER BY
+      users_emails.user_email DESC,
+      users.user_uuid DESC
     OFFSET
       $2 :: int
     LIMIT

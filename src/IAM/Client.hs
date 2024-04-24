@@ -40,13 +40,14 @@ import IAM.ListResponse
 import IAM.Membership
 import IAM.Policy
 import IAM.Session
+import IAM.Sort
 import IAM.User
 import IAM.UserPolicy
 import IAM.UserIdentifier
 
 
 type UsersClientM
-  = (Maybe Text -> Maybe SortUsersBy -> Maybe Int -> Maybe Int ->
+  = (Maybe Text -> Maybe SortUsersBy -> Maybe SortOrder -> Maybe Int -> Maybe Int ->
       ClientM (ListResponse UserIdentifier))
   :<|> (User -> ClientM User)
   :<|> (UserIdentifier -> UserClientM)
@@ -211,8 +212,8 @@ mkCallerSessionsClient =
     in UserSessionClient getSession' deleteSession' refreshSession'
 
 
-listUsers :: Maybe Text -> Maybe SortUsersBy -> Maybe Int -> Maybe Int ->
-  ClientM (ListResponse UserIdentifier)
+listUsers :: Maybe Text -> Maybe SortUsersBy -> Maybe SortOrder -> Maybe Int ->
+  Maybe Int -> ClientM (ListResponse UserIdentifier)
 createUser :: User -> ClientM User
 userClient :: UserIdentifier -> UserClientM
 

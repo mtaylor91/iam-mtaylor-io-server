@@ -1,0 +1,53 @@
+{-# LANGUAGE OverloadedStrings #-}
+module IAM.Sort
+  ( module IAM.Sort
+  ) where
+
+import Data.Text (Text)
+import Servant
+
+
+data SortOrder = Ascending | Descending
+
+
+instance FromHttpApiData SortOrder where
+  parseUrlPiece = maybe (Left "Invalid sort") Right . parseSortOrder
+
+
+instance ToHttpApiData SortOrder where
+  toUrlPiece = sortOrderText
+
+
+sortOrderText :: SortOrder -> Text
+sortOrderText Ascending = "asc"
+sortOrderText Descending = "desc"
+
+
+parseSortOrder :: Text -> Maybe SortOrder
+parseSortOrder "asc" = Just Ascending
+parseSortOrder "desc" = Just Descending
+parseSortOrder _ = Nothing
+
+
+data SortUsersBy = SortUsersById | SortUsersByName | SortUsersByEmail
+
+
+instance FromHttpApiData SortUsersBy where
+  parseUrlPiece = maybe (Left "Invalid sort") Right . parseSortUsersBy
+
+
+instance ToHttpApiData SortUsersBy where
+  toUrlPiece = sortUserByText
+
+
+sortUserByText :: SortUsersBy -> Text
+sortUserByText SortUsersById = "id"
+sortUserByText SortUsersByName = "name"
+sortUserByText SortUsersByEmail = "email"
+
+
+parseSortUsersBy :: Text -> Maybe SortUsersBy
+parseSortUsersBy "id" = Just SortUsersById
+parseSortUsersBy "name" = Just SortUsersByName
+parseSortUsersBy "email" = Just SortUsersByEmail
+parseSortUsersBy _ = Nothing
