@@ -63,11 +63,11 @@ instance DB PostgresDB where
   getGroup (PostgresDB pool) gid =
     runTransaction pool $ pgGetGroup gid
 
-  listGroups (PostgresDB pool) range =
-    runTransaction pool $ pgListGroups range
+  listGroups (PostgresDB pool) range sort order =
+    runTransaction pool $ pgListGroups range sort order
 
-  listGroupsBySearchTerm (PostgresDB pool) search range =
-    runTransaction pool $ pgListGroupsBySearchTerm search range
+  listGroupsBySearchTerm (PostgresDB pool) search range sort order =
+    runTransaction pool $ pgListGroupsBySearchTerm search range sort order
     
   createGroup (PostgresDB pool) g =
     runTransaction pool $ pgCreateGroup g

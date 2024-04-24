@@ -78,7 +78,8 @@ type UserSessionClientM
 
 
 type GroupsClientM
-  = (Maybe Text -> Maybe Int -> Maybe Int -> ClientM (ListResponse GroupIdentifier))
+  = (Maybe Text -> Maybe SortGroupsBy -> Maybe SortOrder -> Maybe Int -> Maybe Int ->
+      ClientM (ListResponse GroupIdentifier))
   :<|> (Group -> ClientM Group)
   :<|> (GroupIdentifier -> GroupClientM)
 
@@ -251,7 +252,8 @@ mkUserClient uid =
 
 
 listGroups ::
-  Maybe Text -> Maybe Int -> Maybe Int -> ClientM (ListResponse GroupIdentifier)
+  Maybe Text ->  Maybe SortGroupsBy -> Maybe SortOrder ->Maybe Int -> Maybe Int ->
+  ClientM (ListResponse GroupIdentifier)
 createGroup :: Group -> ClientM Group
 groupClient :: GroupIdentifier -> GroupClientM
 

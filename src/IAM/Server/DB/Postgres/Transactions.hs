@@ -294,10 +294,16 @@ pgGetGroupById (GroupUUID uuid) = do
     pid (pid', Just name) = PolicyIdAndName (PolicyUUID pid') name
 
 
-pgListGroups :: Range -> Transaction (Either Error (ListResponse GroupIdentifier))
-pgListGroups (Range offset' maybeLimit) = do
+pgListGroups :: Range -> SortGroupsBy -> SortOrder ->
+  Transaction (Either Error (ListResponse GroupIdentifier))
+pgListGroups (Range offset' maybeLimit) sort order = do
   let limit' = fromMaybe 100 maybeLimit
-  result <- statement (fromIntegral offset', fromIntegral limit') selectGroupIdentifiers
+  let query = case (sort, order) of
+        (SortGroupsById, Ascending) -> selectGroupIdentifiersOrderByIdAsc
+        (SortGroupsById, Descending) -> selectGroupIdentifiersOrderByIdDesc
+        (SortGroupsByName, Ascending) -> selectGroupIdentifiersOrderByNameAsc
+        (SortGroupsByName, Descending) -> selectGroupIdentifiersOrderByNameDesc
+  result <- statement (fromIntegral offset', fromIntegral limit') query
   let items' = map groupIdentifier $ toList result
   total' <- statement () selectGroupCount
   return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'
@@ -306,13 +312,17 @@ pgListGroups (Range offset' maybeLimit) = do
     groupIdentifier (guuid, Just name) = GroupIdAndName (GroupUUID guuid) name
 
 
-pgListGroupsBySearchTerm :: Text -> Range ->
+pgListGroupsBySearchTerm :: Text -> Range -> SortGroupsBy -> SortOrder ->
   Transaction (Either Error (ListResponse GroupIdentifier))
-pgListGroupsBySearchTerm search (Range offset' maybeLimit) = do
+pgListGroupsBySearchTerm search (Range offset' maybeLimit) sort order = do
   let limit' = fromMaybe 100 maybeLimit
   let likeExpr = "%" <> pgEscapeLike search <> "%"
-  result <- statement (likeExpr, fromIntegral offset', fromIntegral limit')
-    selectGroupIdentifiersLike
+  let query = case (sort, order) of
+        (SortGroupsById, Ascending) -> selectGroupIdentifiersLikeOrderByIdAsc
+        (SortGroupsById, Descending) -> selectGroupIdentifiersLikeOrderByIdDesc
+        (SortGroupsByName, Ascending) -> selectGroupIdentifiersLikeOrderByNameAsc
+        (SortGroupsByName, Descending) -> selectGroupIdentifiersLikeOrderByNameDesc
+  result <- statement (likeExpr, fromIntegral offset', fromIntegral limit') query
   let items' = map groupIdentifier $ toList result
   total' <- statement likeExpr selectGroupCountLike
   return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'

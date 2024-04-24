@@ -776,8 +776,9 @@ selectGroupIdByName =
   |]
 
 
-selectGroupIdentifiers :: Statement (Int32, Int32) (Vector (UUID, Maybe Text))
-selectGroupIdentifiers =
+selectGroupIdentifiersOrderByIdAsc ::
+  Statement (Int32, Int32) (Vector (UUID, Maybe Text))
+selectGroupIdentifiersOrderByIdAsc =
   [vectorStatement|
     SELECT
       groups.group_uuid :: uuid,
@@ -789,8 +790,7 @@ selectGroupIdentifiers =
     ON
       groups.group_uuid = groups_names.group_uuid
     ORDER BY
-      groups_names.group_name,
-      groups.group_uuid
+      groups.group_uuid ASC
     OFFSET
       $1 :: int
     LIMIT
@@ -798,8 +798,77 @@ selectGroupIdentifiers =
   |]
 
 
-selectGroupIdentifiersLike :: Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text))
-selectGroupIdentifiersLike =
+selectGroupIdentifiersOrderByIdDesc ::
+  Statement (Int32, Int32) (Vector (UUID, Maybe Text))
+selectGroupIdentifiersOrderByIdDesc =
+  [vectorStatement|
+    SELECT
+      groups.group_uuid :: uuid,
+      groups_names.group_name :: text?
+    FROM
+      groups
+    LEFT JOIN
+      groups_names
+    ON
+      groups.group_uuid = groups_names.group_uuid
+    ORDER BY
+      groups.group_uuid DESC
+    OFFSET
+      $1 :: int
+    LIMIT
+      $2 :: int
+  |]
+
+
+selectGroupIdentifiersOrderByNameAsc ::
+  Statement (Int32, Int32) (Vector (UUID, Maybe Text))
+selectGroupIdentifiersOrderByNameAsc =
+  [vectorStatement|
+    SELECT
+      groups.group_uuid :: uuid,
+      groups_names.group_name :: text?
+    FROM
+      groups
+    LEFT JOIN
+      groups_names
+    ON
+      groups.group_uuid = groups_names.group_uuid
+    ORDER BY
+      groups_names.group_name ASC,
+      groups.group_uuid ASC
+    OFFSET
+      $1 :: int
+    LIMIT
+      $2 :: int
+  |]
+
+
+selectGroupIdentifiersOrderByNameDesc ::
+  Statement (Int32, Int32) (Vector (UUID, Maybe Text))
+selectGroupIdentifiersOrderByNameDesc =
+  [vectorStatement|
+    SELECT
+      groups.group_uuid :: uuid,
+      groups_names.group_name :: text?
+    FROM
+      groups
+    LEFT JOIN
+      groups_names
+    ON
+      groups.group_uuid = groups_names.group_uuid
+    ORDER BY
+      groups_names.group_name DESC,
+      groups.group_uuid DESC
+    OFFSET
+      $1 :: int
+    LIMIT
+      $2 :: int
+  |]
+
+
+selectGroupIdentifiersLikeOrderByIdAsc ::
+  Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text))
+selectGroupIdentifiersLikeOrderByIdAsc =
   [vectorStatement|
     SELECT
       groups.group_uuid :: uuid,
@@ -815,8 +884,87 @@ selectGroupIdentifiersLike =
     OR
       groups_names.group_name LIKE $1 :: text
     ORDER BY
-      groups_names.group_name,
-      groups.group_uuid
+      groups.group_uuid ASC
+    OFFSET
+      $2 :: int
+    LIMIT
+      $3 :: int
+  |]
+
+
+selectGroupIdentifiersLikeOrderByIdDesc ::
+  Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text))
+selectGroupIdentifiersLikeOrderByIdDesc =
+  [vectorStatement|
+    SELECT
+      groups.group_uuid :: uuid,
+      groups_names.group_name :: text?
+    FROM
+      groups
+    LEFT JOIN
+      groups_names
+    ON
+      groups.group_uuid = groups_names.group_uuid
+    WHERE
+      groups.group_uuid :: text LIKE $1 :: text
+    OR
+      groups_names.group_name LIKE $1 :: text
+    ORDER BY
+      groups.group_uuid DESC
+    OFFSET
+      $2 :: int
+    LIMIT
+      $3 :: int
+  |]
+
+
+selectGroupIdentifiersLikeOrderByNameAsc ::
+  Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text))
+selectGroupIdentifiersLikeOrderByNameAsc =
+  [vectorStatement|
+    SELECT
+      groups.group_uuid :: uuid,
+      groups_names.group_name :: text?
+    FROM
+      groups
+    LEFT JOIN
+      groups_names
+    ON
+      groups.group_uuid = groups_names.group_uuid
+    WHERE
+      groups.group_uuid :: text LIKE $1 :: text
+    OR
+      groups_names.group_name LIKE $1 :: text
+    ORDER BY
+      groups_names.group_name ASC,
+      groups.group_uuid ASC
+    OFFSET
+      $2 :: int
+    LIMIT
+      $3 :: int
+  |]
+
+
+selectGroupIdentifiersLikeOrderByNameDesc ::
+  Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text))
+selectGroupIdentifiersLikeOrderByNameDesc =
+  [vectorStatement|
+    SELECT
+      groups.group_uuid :: uuid,
+      groups_names.group_name :: text?
+    FROM
+      groups
+    LEFT JOIN
+      groups_names
+    ON
+      groups.group_uuid = groups_names.group_uuid
+    WHERE
+      groups.group_uuid :: text LIKE $1 :: text
+    OR
+      groups_names.group_name LIKE $1 :: text
+    ORDER BY
+      groups_names.group_name DESC,
+      groups.group_uuid DESC
     OFFSET
       $2 :: int
     LIMIT

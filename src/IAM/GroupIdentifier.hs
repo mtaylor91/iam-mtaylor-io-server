@@ -16,6 +16,9 @@ newtype GroupId = GroupUUID { unGroupId :: UUID } deriving (Eq, Show)
 
 $(deriveJSON defaultOptions { unwrapUnaryRecords = True } ''GroupId)
 
+instance Ord GroupId where
+  compare (GroupUUID a) (GroupUUID b) = compare a b
+
 
 data GroupIdentifier
   = GroupName !Text
@@ -59,6 +62,11 @@ unGroupIdentifier :: GroupIdentifier -> Either Text GroupId
 unGroupIdentifier (GroupName name) = Left name
 unGroupIdentifier (GroupId gid) = Right gid
 unGroupIdentifier (GroupIdAndName gid _) = Right gid
+
+unGroupIdentifierId :: GroupIdentifier -> Maybe GroupId
+unGroupIdentifierId (GroupId gid) = Just gid
+unGroupIdentifierId (GroupIdAndName gid _) = Just gid
+unGroupIdentifierId _ = Nothing
 
 unGroupIdentifierName :: GroupIdentifier -> Maybe Text
 unGroupIdentifierName (GroupName name) = Just name

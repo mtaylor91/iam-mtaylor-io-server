@@ -15,6 +15,7 @@ import Servant.Client
 
 import IAM.Client.Auth
 import IAM.Client.Util
+import IAM.Sort
 import qualified IAM.Client
 
 
@@ -27,13 +28,21 @@ data ListGroupsOptions = ListGroupsOptions
 
 listGroups :: ListGroupsOptions -> IO ()
 listGroups opts = do
+  let mSort = Nothing
+  let mOrder = Nothing
+  listGroups' opts mSort mOrder
+
+
+listGroups' :: ListGroupsOptions -> Maybe SortGroupsBy -> Maybe SortOrder -> IO ()
+listGroups' opts mSort mOrder = do
   let search = listGroupsSearch opts
   let offset = listGroupsOffset opts
   let limit = listGroupsLimit opts
   url <- serverUrl
   auth <- clientAuthInfo
   mgr <- newManager tlsManagerSettings { managerModifyRequest = clientAuth auth }
-  result <- runClientM (IAM.Client.listGroups search offset limit) $ mkClientEnv mgr url
+  let clientOp = IAM.Client.listGroups search mSort mOrder offset limit
+  result <- runClientM clientOp $ mkClientEnv mgr url
   case result of
     Right groups ->
       putStrLn $ T.unpack (decodeUtf8 $ toStrict $ encode $ toJSON groups)

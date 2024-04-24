@@ -86,7 +86,10 @@ type UserSessionAPI
     )
 
 type GroupsAPI
-  = ( QueryParam "search" Text :> ListAPI GroupIdentifier
+  = ( QueryParam "search" Text
+    :> QueryParam "sort" SortGroupsBy
+    :> QueryParam "order" SortOrder
+    :> ListAPI GroupIdentifier
   :<|> ( ReqBody '[JSON] Group :> PostCreated '[JSON] Group )
   :<|> ( Capture "group" GroupIdentifier :> GroupAPI )
     )

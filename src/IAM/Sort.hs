@@ -51,3 +51,25 @@ parseSortUsersBy "id" = Just SortUsersById
 parseSortUsersBy "name" = Just SortUsersByName
 parseSortUsersBy "email" = Just SortUsersByEmail
 parseSortUsersBy _ = Nothing
+
+
+data SortGroupsBy = SortGroupsById | SortGroupsByName
+
+
+instance FromHttpApiData SortGroupsBy where
+  parseUrlPiece = maybe (Left "Invalid sort") Right . parseSortGroupsBy
+
+
+instance ToHttpApiData SortGroupsBy where
+  toUrlPiece = sortGroupByText
+
+
+sortGroupByText :: SortGroupsBy -> Text
+sortGroupByText SortGroupsById = "id"
+sortGroupByText SortGroupsByName = "name"
+
+
+parseSortGroupsBy :: Text -> Maybe SortGroupsBy
+parseSortGroupsBy "id" = Just SortGroupsById
+parseSortGroupsBy "name" = Just SortGroupsByName
+parseSortGroupsBy _ = Nothing

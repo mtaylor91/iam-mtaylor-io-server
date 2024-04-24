@@ -123,9 +123,9 @@ instance DB InMemory where
       Just g -> return g
       Nothing -> throwError $ NotFound $ GroupIdentifier gid
 
-  listGroups (InMemory tvar) (Range offset' maybeLimit) = do
+  listGroups (InMemory tvar) (Range offset' maybeLimit) sort order = do
     s <- liftIO $ readTVarIO tvar
-    let gs = resolveGroup s <$> groups s
+    let gs = sortGroups sort order $ resolveGroup s <$> groups s
     case maybeLimit of
       Just limit' ->
         let items' = Prelude.take limit' $ Prelude.drop offset' gs
@@ -145,10 +145,10 @@ instance DB InMemory where
             Nothing -> GroupId gid
             Just name -> GroupIdAndName gid name
 
-  listGroupsBySearchTerm (InMemory tvar) search (Range offset' maybeLimit) = do
+  listGroupsBySearchTerm (InMemory tvar) search (Range offset' maybeLimit) sort order = do
     s <- liftIO $ readTVarIO tvar
     let gs = resolveGroup s <$> groups s
-    let gs' = Prelude.filter f gs
+    let gs' = sortGroups sort order $ Prelude.filter f gs
     case maybeLimit of
       Just limit' ->
         let items' = Prelude.take limit' $ Prelude.drop offset' gs'
@@ -488,3 +488,18 @@ sortUsers sort order = sortBy f where
         compare (unUserIdentifierEmail uid1) (unUserIdentifierEmail uid2)
       (SortUsersByEmail, Descending) ->
         compare (unUserIdentifierEmail uid2) (unUserIdentifierEmail uid1)
+
+
+sortGroups :: SortGroupsBy -> SortOrder -> [GroupIdentifier] -> [GroupIdentifier]
+sortGroups sort order = sortBy f where
+  f :: GroupIdentifier -> GroupIdentifier -> Ordering
+  f gid1 gid2 =
+    case (sort, order) of
+      (SortGroupsById, Ascending) ->
+        compare (unGroupIdentifierId gid1) (unGroupIdentifierId gid2)
+      (SortGroupsById, Descending) ->
+        compare (unGroupIdentifierId gid2) (unGroupIdentifierId gid1)
+      (SortGroupsByName, Ascending) ->
+        compare (unGroupIdentifierName gid1) (unGroupIdentifierName gid2)
+      (SortGroupsByName, Descending) ->
+        compare (unGroupIdentifierName gid2) (unGroupIdentifierName gid1)

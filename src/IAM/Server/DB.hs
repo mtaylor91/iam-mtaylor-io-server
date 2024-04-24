@@ -54,10 +54,10 @@ class DB db where
 
   -- | listGroups returns a list of all groups in the database.
   listGroups :: (MonadIO m, MonadError Error m) =>
-    db -> Range -> m (ListResponse GroupIdentifier)
+    db -> Range -> SortGroupsBy -> SortOrder -> m (ListResponse GroupIdentifier)
 
   listGroupsBySearchTerm :: (MonadIO m, MonadError Error m) =>
-    db -> Text -> Range -> m (ListResponse GroupIdentifier)
+    db -> Text -> Range -> SortGroupsBy -> SortOrder -> m (ListResponse GroupIdentifier)
 
   -- | createGroup adds a new group to the database.
   createGroup :: (MonadIO m, MonadError Error m) =>

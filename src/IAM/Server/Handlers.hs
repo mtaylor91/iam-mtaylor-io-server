@@ -110,21 +110,26 @@ getGroupHandler ctx auth gid = do
     Left err     -> errorHandler err
 
 
-listGroupsHandler ::
-  DB db => Ctx db -> Auth -> Maybe Text -> Maybe Int -> Maybe Int ->
-    Handler (ListResponse GroupIdentifier)
-listGroupsHandler ctx auth Nothing maybeOffset maybeLimit = do
+listGroupsHandler :: DB db =>
+  Ctx db -> Auth -> Maybe Text -> Maybe SortGroupsBy -> Maybe SortOrder ->
+    Maybe Int -> Maybe Int -> Handler (ListResponse GroupIdentifier)
+listGroupsHandler ctx auth Nothing sort order maybeOffset maybeLimit = do
   requireSession auth
   let offset' = fromMaybe 0 maybeOffset
-  result <- liftIO $ runExceptT $ listGroups (ctxDB ctx) $ Range offset' maybeLimit
+      sort' = fromMaybe SortGroupsByName sort
+      order' = fromMaybe Ascending order
+  result <- liftIO $ runExceptT $
+    listGroups (ctxDB ctx) (Range offset' maybeLimit) sort' order'
   case result of
     Right groups' -> return groups'
     Left err      -> errorHandler err
-listGroupsHandler ctx auth (Just search) maybeOffset maybeLimit = do
+listGroupsHandler ctx auth (Just search) sort order maybeOffset maybeLimit = do
   requireSession auth
   let offset' = fromMaybe 0 maybeOffset
-  result <- liftIO $ runExceptT $ listGroupsBySearchTerm (ctxDB ctx) search $
-    Range offset' maybeLimit
+      sort' = fromMaybe SortGroupsByName sort
+      order' = fromMaybe Ascending order
+  result <- liftIO $ runExceptT $ listGroupsBySearchTerm (ctxDB ctx) search
+    (Range offset' maybeLimit) sort' order'
   case result of
     Right groups' -> return groups'
     Left err      -> errorHandler err
