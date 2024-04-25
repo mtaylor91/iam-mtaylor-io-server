@@ -15,6 +15,7 @@ import IAM.Policy
 import IAM.Server.DB
 import IAM.User
 import IAM.UserIdentifier
+import IAM.UserPublicKey
 
 
 initDB :: DB db => Text -> Text -> Text -> db -> IO db

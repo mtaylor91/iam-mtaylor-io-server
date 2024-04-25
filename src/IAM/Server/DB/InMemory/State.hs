@@ -10,6 +10,7 @@ import IAM.Group
 import IAM.GroupIdentifier
 import IAM.Policy
 import IAM.User
+import IAM.UserPublicKey
 import IAM.UserIdentifier
 import IAM.Session
 

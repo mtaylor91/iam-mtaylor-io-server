@@ -84,6 +84,7 @@ library
       IAM.User
       IAM.UserIdentifier
       IAM.UserPolicy
+      IAM.UserPublicKey
       IAM.Util
   other-modules:
       Paths_iam_mtaylor_io

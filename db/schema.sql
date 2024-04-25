@@ -16,14 +16,17 @@ CREATE TABLE IF NOT EXISTS "policies" (
   PRIMARY KEY ("policy_uuid")
 );
 
-CREATE TABLE IF NOT EXISTS "login_requests" {
-  "login_request_uuid" UUID NOT NULL,
+CREATE TABLE IF NOT EXISTS "logins" {
+  "login_uuid" UUID NOT NULL,
   "user_uuid" UUID NOT NULL,
   "public_key" BYTEA NOT NULL,
+  "description" TEXT NOT NULL,
   "session_uuid" UUID,
-  "login_request_expires" TIMESTAMP NOT NULL,
-  "login_request_denied" BOOLEAN NOT NULL,
-  PRIMARY KEY ("login_request_uuid"),
+  "login_addr" INET NOT NULL,
+  "login_expires" TIMESTAMP NOT NULL,
+  "login_granted" BOOLEAN NOT NULL,
+  "login_denied" BOOLEAN NOT NULL,
+  PRIMARY KEY ("login_uuid"),
   FOREIGN KEY ("user_uuid") REFERENCES "users" ("user_uuid") ON DELETE CASCADE
   FOREIGN KEY ("session_uuid") REFERENCES "sessions" ("session_uuid") ON DELETE CASCADE
 }

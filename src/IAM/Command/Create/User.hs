@@ -26,6 +26,7 @@ import IAM.GroupIdentifier
 import IAM.Policy
 import IAM.User
 import IAM.UserIdentifier
+import IAM.UserPublicKey
 import qualified IAM.Client
 
 

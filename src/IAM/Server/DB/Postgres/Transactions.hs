@@ -27,6 +27,7 @@ import IAM.Session
 import IAM.Sort
 import IAM.User
 import IAM.UserPolicy
+import IAM.UserPublicKey
 import IAM.UserIdentifier
 
 
@@ -38,14 +39,16 @@ pgEscapeLike = pack . concatMap escapeChar . unpack
     escapeChar c = [c]
 
 
-pgCreateLoginRequest :: LoginResponse -> Transaction (Either Error LoginResponse)
-pgCreateLoginRequest lr = do
+pgCreateLoginResponse :: LoginResponse -> Transaction (Either Error LoginResponse)
+pgCreateLoginResponse lr = do
   let params =
         ( unLoginRequestId $ loginResponseRequest lr
         , unUserId $ loginResponseUserId lr
         , unPublicKey $ userPublicKey $ loginResponsePublicKey lr
         , unSessionId . sessionId <$> loginResponseSession lr
+        , unIpAddr $ loginResponseIp lr
         , loginResponseExpires lr
+        , loginResponseStatus lr == LoginRequestGranted
         , loginResponseStatus lr == LoginRequestDenied
         )
   statement params insertLoginRequest
@@ -705,13 +708,7 @@ pgGetSessionById :: UserIdentifier -> SessionId -> Transaction (Either Error Ses
 pgGetSessionById uid sid = do
   maybeUid <- resolveUserIdentifier uid
   case maybeUid of
-    Just (UserUUID uuid) -> do
-      result <- statement (uuid, unSessionId sid) selectSessionById
-      case result of
-        Nothing ->
-          return $ Left $ NotFound $ SessionIdentifier $ Just sid
-        Just (addr, expires) ->
-          return $ Right $ Session sid (IpAddr addr) (UserUUID uuid) expires
+    Just uid' -> loadSession uid' sid
     Nothing -> return $ Left $ NotFound $ UserIdentifier' uid
 
 
@@ -810,3 +807,12 @@ resolvePolicies (pident:rest) = do
       case result' of
         Left e -> return $ Left e
         Right pids -> return $ Right $ PolicyUUID pid : pids
+
+
+loadSession :: UserId -> SessionId -> Transaction (Either Error Session)
+loadSession (UserUUID uid) sid = do
+  result <- statement (uid, unSessionId sid) selectSessionById
+  case result of
+    Nothing -> return $ Left $ NotFound $ SessionIdentifier $ Just sid
+    Just (addr, expires) ->
+      return $ Right $ Session sid (IpAddr addr) (UserUUID uid) expires

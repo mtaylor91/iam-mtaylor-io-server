@@ -29,6 +29,7 @@ import IAM.Server.DB.InMemory
 import IAM.Session hiding (createSession)
 import IAM.User
 import IAM.UserIdentifier
+import IAM.UserPublicKey
 
 
 main :: IO ()

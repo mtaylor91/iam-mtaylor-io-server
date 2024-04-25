@@ -16,21 +16,32 @@ import Network.IP.Addr (NetAddr, IP)
 
 
 insertLoginRequest ::
-  Statement (UUID, UUID, ByteString, Maybe UUID, UTCTime, Bool) ()
+  Statement (UUID, UUID, ByteString, Maybe UUID, NetAddr IP, UTCTime, Bool, Bool) ()
 insertLoginRequest =
   [resultlessStatement|
     INSERT INTO
-      login_requests
+      logins
         (
-          login_request_uuid,
+          login_uuid,
           user_uuid,
           public_key,
           session_uuid,
-          login_request_expires,
-          login_request_denied
+          login_addr,
+          login_expires,
+          login_granted,
+          login_denied
         )
     VALUES
-      ($1 :: uuid, $2 :: uuid, $3 :: bytea, $4 :: uuid?, $5 :: timestamptz, $6 :: bool)
+      (
+        $1 :: uuid,
+        $2 :: uuid,
+        $3 :: bytea,
+        $4 :: uuid?,
+        $5 :: inet,
+        $6 :: timestamptz,
+        $7 :: bool,
+        $8 :: bool
+      )
   |]
 
 
@@ -193,6 +204,26 @@ insertSession =
       sessions (session_uuid, user_uuid, session_addr, session_token, session_expires)
     VALUES
       ($1 :: uuid, $2 :: uuid, $3 :: inet, $4 :: text, $5 :: timestamptz)
+  |]
+
+
+selectLoginRequest ::
+  Statement (UUID, UUID) (Maybe (ByteString, Maybe UUID, NetAddr IP, UTCTime, Bool, Bool))
+selectLoginRequest =
+  [maybeStatement|
+    SELECT
+      logins.public_key :: bytea,
+      logins.session_uuid :: uuid?,
+      logins.login_addr :: inet,
+      logins.login_expires :: timestamptz,
+      logins.login_granted :: bool,
+      logins.login_denied :: bool
+    FROM
+      logins
+    WHERE
+      logins.login_uuid = $2 :: uuid
+    AND
+      logins.user_uuid = $1 :: uuid
   |]
 
 

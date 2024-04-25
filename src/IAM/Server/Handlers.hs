@@ -14,6 +14,7 @@ import IAM.Error
 import IAM.Group
 import IAM.GroupPolicy
 import IAM.GroupIdentifier
+import IAM.Identifier
 import IAM.Ip
 import IAM.ListResponse
 import IAM.Login
@@ -32,17 +33,28 @@ import IAM.UserIdentifier
 
 loginRequestHandler :: DB db => Ctx db -> Auth -> LoginRequest -> Handler LoginResponse
 loginRequestHandler ctx auth req = do
-  uidResult <- liftIO $ runExceptT $ getUserId (ctxDB ctx) (loginRequestUser req)
-  let maybeAddr = fromSockAddr $ authAddr auth
-  case (uidResult, maybeAddr) of
-    (Left err, _) -> errorHandler err
-    (_, Nothing) -> errorHandler $ InternalError "Invalid address"
-    (Right uid, Just ip) -> do
-      resp <- liftIO $ createLoginRequest req ip uid
-      result <- liftIO $ runExceptT $ createLoginResponse (ctxDB ctx) resp
-      case result of
-        Right resp' -> return resp'
-        Left err    -> errorHandler err
+  -- Check if the login request already exists
+  let lid = loginRequestId req
+  let uid = loginRequestUser req
+  lrResult <- liftIO $ runExceptT $ getLoginResponse (ctxDB ctx) uid lid
+  case lrResult of
+    Right r -> return r -- Return the existing login request
+    Left (NotFound (LoginIdentifier lid')) | lid == lid' -> do
+      -- Look up the user ID
+      uidResult <- liftIO $ runExceptT $ getUserId (ctxDB ctx) (loginRequestUser req)
+      -- Look up the IP address
+      let maybeAddr = fromSockAddr $ authAddr auth
+      case (uidResult, maybeAddr) of
+        (Left err, _) -> errorHandler err
+        (_, Nothing) -> errorHandler $ InternalError "Invalid address"
+        (Right uid', Just ip) -> do
+          -- Create the login request
+          resp <- liftIO $ createLoginRequest req ip uid'
+          result <- liftIO $ runExceptT $ createLoginResponse (ctxDB ctx) resp
+          case result of
+            Right resp' -> return resp'
+            Left err    -> errorHandler err
+    Left err -> errorHandler err
 
 
 listLoginRequestsHandler :: DB db =>

@@ -42,6 +42,9 @@ runTransaction pool t = do
 
 instance DB PostgresDB where
 
+  createLoginResponse (PostgresDB pool) lr =
+    runTransaction pool $ pgCreateLoginResponse lr
+
   getUser (PostgresDB pool) uid =
     runTransaction pool $ pgGetUser uid
 

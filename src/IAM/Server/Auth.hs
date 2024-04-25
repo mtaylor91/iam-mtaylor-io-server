@@ -40,6 +40,7 @@ import IAM.Server.DB
 import IAM.Session
 import IAM.User
 import IAM.UserIdentifier
+import IAM.UserPublicKey
 
 
 data Auth

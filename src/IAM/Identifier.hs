@@ -8,13 +8,15 @@ import Data.Aeson
 import Data.Text
 
 import IAM.GroupIdentifier
+import IAM.Login
 import IAM.Policy
 import IAM.Session
 import IAM.UserIdentifier
 
 
 data Identifier
-  = UserIdentifier' UserIdentifier
+  = LoginIdentifier LoginRequestId
+  | UserIdentifier' UserIdentifier
   | GroupIdentifier GroupIdentifier
   | PolicyIdentifier PolicyIdentifier
   | SessionIdentifier (Maybe SessionId)
@@ -24,6 +26,10 @@ data Identifier
   deriving (Show, Eq)
 
 instance ToJSON Identifier where
+  toJSON (LoginIdentifier rid) = object
+    [ "kind" .= ("Login" :: Text)
+    , "login" .= toJSON rid
+    ]
   toJSON (UserIdentifier' uid) = object
     [ "kind" .= ("User" :: Text)
     , "user" .= toJSON uid
@@ -60,6 +66,7 @@ instance FromJSON Identifier where
   parseJSON (Object obj) = do
     kind :: Text <- obj .: "kind"
     case kind of
+      "Login" -> LoginIdentifier <$> obj .: "login"
       "User" -> UserIdentifier' <$> obj .: "user"
       "Group" -> GroupIdentifier <$> obj .: "group"
       "Policy" -> PolicyIdentifier <$> obj .: "policy"
