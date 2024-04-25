@@ -8,7 +8,10 @@ import Data.Aeson
 import Data.ByteString.Base64
 import Data.Text
 import Data.Text.Encoding
+import Data.UUID
+import Text.Email.Validate
 
+import IAM.Error
 import IAM.GroupIdentifier
 import IAM.UserIdentifier
 import IAM.Policy
@@ -43,6 +46,37 @@ instance ToJSON User where
     , "policies" .= policies
     , "publicKeys" .= toJSON pks
     ]
+
+
+validateUser :: User -> Either Error User
+validateUser u = do
+  validateUserName $ userName u
+  validateUserEmail $ userEmail u
+  return u
+
+
+validateUserName :: Maybe Text -> Either Error ()
+validateUserName Nothing = Right ()
+validateUserName (Just name) = do
+  if name == ""
+    then Left $ ValidationError "Name cannot be empty."
+    else Right ()
+  case fromText name of
+    Just _ ->
+      Left $ ValidationError "Name cannot be a UUID."
+    Nothing ->
+      Right ()
+
+
+validateUserEmail :: Maybe Text -> Either Error ()
+validateUserEmail Nothing = Right ()
+validateUserEmail (Just email) = do
+  if email == ""
+    then Left $ ValidationError "Email cannot be empty."
+    else Right ()
+  if isValid $ encodeUtf8 email
+    then Right ()
+    else Left $ ValidationError "Invalid email address."
 
 
 data UserPublicKey = UserPublicKey

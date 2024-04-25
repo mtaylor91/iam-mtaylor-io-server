@@ -85,6 +85,9 @@ listUsersHandler ctx auth (Just search) maybeSort maybeOrder maybeOffset maybeLi
 
 createUserHandler :: DB db => Ctx db -> Auth -> User -> Handler User
 createUserHandler ctx auth userPrincipal = do
+  case validateUser userPrincipal of
+    Left err -> errorHandler err
+    Right _  -> return ()
   requireSession auth
   result <- liftIO $ runExceptT $ createUser (ctxDB ctx) userPrincipal
   case result of

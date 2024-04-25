@@ -17,6 +17,7 @@ data Error
   | AlreadyExists
   | NotFound Identifier
   | InternalError Text
+  | ValidationError Text
   | NotImplemented
   deriving (Show, Eq)
 
@@ -37,6 +38,10 @@ instance ToJSON Error where
     [ "error" .= ("Internal error" :: Text) ]
   toJSON NotImplemented = object
     [ "error" .= ("Not implemented" :: Text) ]
+  toJSON (ValidationError e) = object
+    [ "error" .= ("Validation error" :: Text)
+    , "message" .= e
+    ]
 
 
 data AuthenticationError
@@ -73,6 +78,7 @@ toServerError e@(NotFound _)              = augmentError e err404
 toServerError e@AlreadyExists             = augmentError e err409
 toServerError e@(InternalError _)         = augmentError e err500
 toServerError e@NotImplemented            = augmentError e err501
+toServerError e@(ValidationError _)       = augmentError e err400
 
 
 augmentError :: Error -> ServerError -> ServerError
