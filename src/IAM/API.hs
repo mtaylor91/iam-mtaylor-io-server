@@ -3,7 +3,8 @@
 module IAM.API
   ( API
   , LoginAPI
-  , SignedAPI
+  , LoginRequestAPI
+  , LoginRequestsAPI
   , UserAPI
   , UsersAPI
   , UserPolicyAPI
@@ -16,6 +17,7 @@ module IAM.API
   , PolicyAPI
   , PoliciesAPI
   , AuthorizeAPI
+  , SignedAPI
   , api
   , iamAPI
   ) where
@@ -70,8 +72,21 @@ type UsersAPI
 type UserAPI
   = ( Get '[JSON] User
   :<|> Delete '[JSON] User
+  :<|> "login-requests" :> LoginRequestsAPI
   :<|> "policies" :> Capture "policy" PolicyIdentifier :> UserPolicyAPI
   :<|> "sessions" :> UserSessionsAPI
+    )
+
+type LoginRequestsAPI
+  = ( ListAPI LoginRequest
+  :<|> Capture "login-request" LoginRequestId :> LoginRequestAPI
+    )
+
+type LoginRequestAPI
+  = ( Get '[JSON] LoginRequest
+  :<|> Delete '[JSON] LoginRequest
+  :<|> "deny" :> Post '[JSON] LoginRequest
+  :<|> "grant" :> Post '[JSON] LoginRequest
     )
 
 type UserPolicyAPI
@@ -136,7 +151,7 @@ type AuthorizeAPI
 
 
 type LoginAPI
-  = ReqBody '[JSON] LoginRequest :> Post '[JSON] LoginRequestResponse
+  = ReqBody '[JSON] LoginRequest :> Post '[JSON] LoginResponse
 
 
 api :: Proxy API

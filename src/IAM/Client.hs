@@ -4,6 +4,8 @@
 module IAM.Client
   ( getCaller
   , deleteCaller
+  , listCallerLoginRequests
+  , mkCallerLoginRequestClient
   , mkCallerPolicyClient
   , mkCallerSessionsClient
   , listUsers
@@ -19,6 +21,8 @@ module IAM.Client
   , deleteMembership
   , authorizeClient
   , UserClient(..)
+  , LoginRequestsClient(..)
+  , LoginRequestClient(..)
   , UserPolicyClient(..)
   , UserSessionsClient(..)
   , UserSessionClient(..)
@@ -37,6 +41,7 @@ import IAM.Group
 import IAM.GroupPolicy
 import IAM.GroupIdentifier
 import IAM.ListResponse
+import IAM.Login
 import IAM.Membership
 import IAM.Policy
 import IAM.Session
@@ -56,8 +61,21 @@ type UsersClientM
 type UserClientM =
     ClientM User
     :<|> ClientM User
+    :<|> LoginRequestsClientM
     :<|> (PolicyIdentifier -> UserPolicyClientM)
     :<|> UserSessionsClientM
+
+
+type LoginRequestsClientM
+  = (Maybe Int -> Maybe Int -> ClientM (ListResponse LoginRequest))
+  :<|> (LoginRequestId -> LoginRequestClientM)
+
+
+type LoginRequestClientM
+  = ClientM LoginRequest
+  :<|> ClientM LoginRequest
+  :<|> ClientM LoginRequest
+  :<|> ClientM LoginRequest
 
 
 type UserPolicyClientM
@@ -119,8 +137,23 @@ type AuthorizationClientM
 data UserClient = UserClient
   { getUser :: !(ClientM User)
   , deleteUser :: !(ClientM User)
+  , loginRequestsClient :: !LoginRequestsClient
   , userPolicyClient :: !(PolicyIdentifier -> UserPolicyClient)
   , userSessionsClient :: !UserSessionsClient
+  }
+
+
+data LoginRequestsClient = LoginRequestsClient
+  { listLoginRequests :: !(Maybe Int -> Maybe Int -> ClientM (ListResponse LoginRequest))
+  , loginRequestClient :: !(LoginRequestId -> LoginRequestClient)
+  }
+
+
+data LoginRequestClient = LoginRequestClient
+  { getLoginRequest :: !(ClientM LoginRequest)
+  , deleteLoginRequest :: !(ClientM LoginRequest)
+  , denyLoginRequest :: !(ClientM LoginRequest)
+  , grantLoginRequest :: !(ClientM LoginRequest)
   }
 
 
@@ -187,12 +220,33 @@ callerClient
 
 getCaller :: ClientM User
 deleteCaller :: ClientM User
+callerLoginRequestsClient :: LoginRequestsClientM
 callerPolicyClient :: PolicyIdentifier -> UserPolicyClientM
 callerSessionClient :: UserSessionsClientM
 
 
-(getCaller :<|> deleteCaller :<|> callerPolicyClient :<|> callerSessionClient) =
-  callerClient
+( getCaller
+  :<|> deleteCaller
+  :<|> callerLoginRequestsClient
+  :<|> callerPolicyClient
+  :<|> callerSessionClient ) = callerClient
+
+
+listCallerLoginRequests :: Maybe Int -> Maybe Int -> ClientM (ListResponse LoginRequest)
+callerLoginRequestClient :: LoginRequestId -> LoginRequestClientM
+
+
+( listCallerLoginRequests :<|> callerLoginRequestClient ) = callerLoginRequestsClient
+
+
+mkCallerLoginRequestClient :: LoginRequestId -> LoginRequestClient
+mkCallerLoginRequestClient lid =
+  let ( getLoginRequest'
+        :<|> deleteLoginRequest'
+        :<|> denyLoginRequest'
+        :<|> grantLoginRequest') = callerLoginRequestClient lid
+  in LoginRequestClient
+    getLoginRequest' deleteLoginRequest' denyLoginRequest' grantLoginRequest'
 
 
 mkCallerPolicyClient :: PolicyIdentifier -> UserPolicyClient
@@ -225,13 +279,34 @@ userClient :: UserIdentifier -> UserClientM
 
 mkUserClient :: UserIdentifier -> UserClient
 mkUserClient uid =
-  let (getUser' :<|> deleteUser' :<|> userPolicyClient' :<|> userSessionClient') =
-        userClient uid
+  let ( getUser'
+        :<|> deleteUser'
+        :<|> userLoginRequestsClient'
+        :<|> userPolicyClient'
+        :<|> userSessionClient' ) = userClient uid
+      userLoginRequestsClient'' = mkLoginRequestsClient userLoginRequestsClient'
       userPolicyClient'' = mkUserPolicyClient userPolicyClient'
       userSessionClient'' = mkUserSessionsClient userSessionClient'
-  in UserClient getUser' deleteUser' userPolicyClient'' userSessionClient''
+  in UserClient
+    getUser' deleteUser' userLoginRequestsClient'' userPolicyClient'' userSessionClient''
 
   where
+
+  mkLoginRequestsClient :: LoginRequestsClientM -> LoginRequestsClient
+  mkLoginRequestsClient c =
+    let (listLoginRequests' :<|> loginRequestClient') = c
+        loginRequestClient'' = mkLoginRequestClient loginRequestClient'
+    in LoginRequestsClient listLoginRequests' loginRequestClient''
+
+  mkLoginRequestClient ::
+    (LoginRequestId -> LoginRequestClientM) -> LoginRequestId -> LoginRequestClient
+  mkLoginRequestClient f lid =
+    let ( getLoginRequest'
+          :<|> deleteLoginRequest'
+          :<|> denyLoginRequest'
+          :<|> grantLoginRequest') = f lid
+    in LoginRequestClient
+      getLoginRequest' deleteLoginRequest' denyLoginRequest' grantLoginRequest'
 
   mkUserPolicyClient ::
     (PolicyIdentifier -> UserPolicyClientM) -> PolicyIdentifier -> UserPolicyClient

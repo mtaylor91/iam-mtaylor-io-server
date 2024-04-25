@@ -14,6 +14,7 @@ import Servant
 
 import IAM.API
 import IAM.GroupIdentifier
+import IAM.Login
 import IAM.Policy
 import IAM.Server.Auth
 import IAM.Server.Context
@@ -25,7 +26,7 @@ import IAM.UserIdentifier
 
 
 server :: DB db => Ctx db -> Server API
-server ctx = loginHandler ctx :<|> signedAPI ctx
+server ctx = loginRequestHandler ctx :<|> signedAPI ctx
 
 
 signedAPI :: DB db => Ctx db -> Server SignedAPI
@@ -41,6 +42,7 @@ callerAPI :: DB db => Ctx db -> Auth -> Server UserAPI
 callerAPI ctx caller
   = getUserHandler ctx caller callerId
   :<|> deleteUserHandler ctx caller callerId
+  :<|> loginRequestsAPI ctx caller callerId
   :<|> userPolicyAPI ctx caller callerId
   :<|> userSessionsAPI ctx caller callerId
   where
@@ -59,8 +61,24 @@ userAPI :: DB db => Ctx db -> Auth -> UserIdentifier -> Server UserAPI
 userAPI ctx caller uid
   = getUserHandler ctx caller uid
   :<|> deleteUserHandler ctx caller uid
+  :<|> loginRequestsAPI ctx caller uid
   :<|> userPolicyAPI ctx caller uid
   :<|> userSessionsAPI ctx caller uid
+
+
+loginRequestsAPI :: DB db => Ctx db -> Auth -> UserIdentifier -> Server LoginRequestsAPI
+loginRequestsAPI ctx caller uid
+  = listLoginRequestsHandler ctx caller uid
+  :<|> loginRequestAPI ctx caller uid
+
+
+loginRequestAPI :: DB db =>
+  Ctx db -> Auth -> UserIdentifier -> LoginRequestId -> Server LoginRequestAPI
+loginRequestAPI ctx caller uid lid
+  = getLoginRequestHandler ctx caller uid lid
+  :<|> deleteLoginRequestHandler ctx caller uid lid
+  :<|> updateLoginRequestHandler ctx caller uid lid LoginRequestDenied
+  :<|> updateLoginRequestHandler ctx caller uid lid LoginRequestGranted
 
 
 userPolicyAPI ::

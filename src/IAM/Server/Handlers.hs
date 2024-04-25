@@ -1,30 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module IAM.Server.Handlers
-  ( loginHandler
-  , getUserHandler
-  , listUsersHandler
-  , createUserHandler
-  , deleteUserHandler
-  , getGroupHandler
-  , listGroupsHandler
-  , createGroupHandler
-  , deleteGroupHandler
-  , getPolicyHandler
-  , listPoliciesHandler
-  , createPolicyHandler
-  , deletePolicyHandler
-  , createMembershipHandler
-  , deleteMembershipHandler
-  , createUserPolicyAttachmentHandler
-  , deleteUserPolicyAttachmentHandler
-  , createGroupPolicyAttachmentHandler
-  , deleteGroupPolicyAttachmentHandler
-  , createSessionHandler
-  , listUserSessionsHandler
-  , getUserSessionHandler
-  , deleteUserSessionHandler
-  , refreshUserSessionHandler
-  , authorizeHandler
+  ( module IAM.Server.Handlers
   ) where
 
 import Control.Monad.IO.Class
@@ -54,8 +30,35 @@ import IAM.UserPolicy
 import IAM.UserIdentifier
 
 
-loginHandler :: DB db => Ctx db -> LoginRequest -> Handler LoginRequestResponse
-loginHandler ctx req = errorHandler NotImplemented
+loginRequestHandler :: DB db => Ctx db -> LoginRequest -> Handler LoginResponse
+loginRequestHandler ctx req =
+  errorHandler NotImplemented
+
+
+listLoginRequestsHandler :: DB db =>
+  Ctx db -> Auth -> UserIdentifier -> Maybe Int -> Maybe Int ->
+    Handler (ListResponse LoginRequest)
+listLoginRequestsHandler ctx auth uid maybeOffset maybeLimit =
+  errorHandler NotImplemented
+
+
+getLoginRequestHandler :: DB db =>
+  Ctx db -> Auth -> UserIdentifier -> LoginRequestId -> Handler LoginRequest
+getLoginRequestHandler ctx auth uid lrid =
+  errorHandler NotImplemented
+
+
+deleteLoginRequestHandler :: DB db =>
+  Ctx db -> Auth -> UserIdentifier -> LoginRequestId -> Handler LoginRequest
+deleteLoginRequestHandler ctx auth uid lrid =
+  errorHandler NotImplemented
+
+
+updateLoginRequestHandler :: DB db =>
+  Ctx db -> Auth -> UserIdentifier -> LoginRequestId -> LoginStatus ->
+    Handler LoginRequest
+updateLoginRequestHandler ctx auth uid lrid status =
+  errorHandler NotImplemented
 
 
 getUserHandler :: DB db => Ctx db -> Auth -> UserIdentifier -> Handler User
