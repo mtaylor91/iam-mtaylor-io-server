@@ -61,6 +61,9 @@ validateUserName (Just name) = do
   if name == ""
     then Left $ ValidationError "Name cannot be empty."
     else Right ()
+  if isValid $ encodeUtf8 name
+    then Left $ ValidationError "Name cannot be an email address."
+    else Right ()
   case fromText name of
     Just _ ->
       Left $ ValidationError "Name cannot be a UUID."
