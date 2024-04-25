@@ -15,6 +15,25 @@ import Hasql.TH (maybeStatement, resultlessStatement, singletonStatement, vector
 import Network.IP.Addr (NetAddr, IP)
 
 
+insertLoginRequest ::
+  Statement (UUID, UUID, ByteString, Maybe UUID, UTCTime, Bool) ()
+insertLoginRequest =
+  [resultlessStatement|
+    INSERT INTO
+      login_requests
+        (
+          login_request_uuid,
+          user_uuid,
+          public_key,
+          session_uuid,
+          login_request_expires,
+          login_request_denied
+        )
+    VALUES
+      ($1 :: uuid, $2 :: uuid, $3 :: bytea, $4 :: uuid?, $5 :: timestamptz, $6 :: bool)
+  |]
+
+
 insertUserId :: Statement UUID ()
 insertUserId =
   [resultlessStatement|

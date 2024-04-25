@@ -45,7 +45,7 @@ instance ToJSON Error where
 
 
 data AuthenticationError
-  = InvalidHeaders
+  = AuthenticationRequired
   | InvalidHost
   | InvalidSignature
   | SessionRequired
@@ -54,7 +54,7 @@ data AuthenticationError
   deriving (Show, Eq)
 
 instance ToJSON AuthenticationError where
-  toJSON InvalidHeaders = String "Missing or invalid authentication headers"
+  toJSON AuthenticationRequired = String "Authentication required"
   toJSON InvalidHost = String "Invalid Host"
   toJSON InvalidSignature = String "Invalid Signature"
   toJSON SessionRequired = String "Session authentication required"

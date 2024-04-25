@@ -3,7 +3,10 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE OverloadedStrings #-}
 module IAM.Server.Auth
-  ( authContext
+  ( authN
+  , authZ
+  , authAddr
+  , authContext
   , authHandler
   , stringToSign
   , Auth(..)
@@ -39,10 +42,22 @@ import IAM.User
 import IAM.UserIdentifier
 
 
-data Auth = Auth
-  { authentication :: !Authentication
-  , authorization :: !Authorization
-  } deriving (Eq, Show)
+data Auth
+  = SignatureAuth !Authentication !Authorization !SockAddr
+  | Unauthenticated !SockAddr
+  deriving (Eq, Show)
+
+authN :: Auth -> Maybe Authentication
+authN (SignatureAuth auth _ _) = Just auth
+authN _ = Nothing
+
+authZ :: Auth -> Maybe Authorization
+authZ (SignatureAuth _ auth _) = Just auth
+authZ _ = Nothing
+
+authAddr :: Auth -> SockAddr
+authAddr (SignatureAuth _ _ addr) = addr
+authAddr (Unauthenticated addr) = addr
 
 
 data Authentication = Authentication
@@ -58,8 +73,7 @@ data Authorization = Authorization
 
 
 data AuthRequest = AuthRequest
-  { authRequestAddr :: !SockAddr
-  , authRequestAuthorization :: !ByteString
+  { authRequestAuthorization :: !ByteString
   , authRequestHost :: !ByteString
   , authRequestPublicKey :: !PublicKey
   , authRequestSessionToken :: !(Maybe Text)
@@ -77,13 +91,17 @@ authContext host ctx = authHandler host ctx :. EmptyContext
 
 authHandler :: DB db => Text -> Ctx db -> AuthHandler Request Auth
 authHandler host ctx = mkAuthHandler $ \req -> do
-  (authReq, user) <- authenticate host ctx req
-  authorize host ctx req $ Authentication user authReq
-
-
-authenticate :: DB db => Text -> Ctx db -> Request -> Handler (AuthRequest, User)
-authenticate host ctx req = do
   let addr = remoteHost req
+  result <- authenticate host ctx req
+  case result of
+    Just (authReq, user) -> do
+      authZ' <- authorize host ctx req $ Authentication user authReq
+      return $ SignatureAuth (Authentication user authReq) authZ' addr
+    Nothing -> return $ Unauthenticated addr
+
+
+authenticate :: DB db => Text -> Ctx db -> Request -> Handler (Maybe (AuthRequest, User))
+authenticate host ctx req = do
   let maybeSessionToken = do
         token <- lookupHeader req "Session-Token"
         return $ decodeUtf8 token
@@ -97,8 +115,7 @@ authenticate host ctx req = do
         pk <- parsePublicKey publicKeyBase64
         requestId <- fromString $ unpack $ decodeUtf8 requestIdString
         return $ AuthRequest
-          { authRequestAddr = addr
-          , authRequestAuthorization = authHeader
+          { authRequestAuthorization = authHeader
           , authRequestHost = hostHeader
           , authRequestPublicKey = pk
           , authRequestSessionToken = maybeSessionToken
@@ -111,7 +128,7 @@ authenticate host ctx req = do
       case result of
         Right user -> do
           case authReqError authReq user of
-            Nothing -> return (authReq, user)
+            Nothing -> return $ Just (authReq, user)
             Just err -> errorHandler $ AuthenticationFailed err
         Left (NotFound _) -> do
           errorHandler $ AuthenticationFailed UserNotFound
@@ -120,7 +137,7 @@ authenticate host ctx req = do
         Left e ->
           errorHandler $ InternalError $ pack $ show e
     Nothing -> do
-      errorHandler $ AuthenticationFailed InvalidHeaders
+      return Nothing
   where
     authReqError :: AuthRequest -> User -> Maybe AuthenticationError
     authReqError authReq user =
@@ -142,11 +159,12 @@ authenticate host ctx req = do
     removeHostPort = takeWhile (not . (==) 58)
 
 
-authorize :: DB db => Text -> Ctx db -> Request -> Authentication -> Handler Auth
-authorize host ctx req authN = do
-  let callerUserId = userId $ authUser authN
+authorize :: DB db =>
+  Text -> Ctx db -> Request -> Authentication -> Handler Authorization
+authorize host ctx req authN' = do
+  let callerUserId = userId $ authUser authN'
 
-  maybeSession <- case authRequestSessionToken $ authRequest authN of
+  maybeSession <- case authRequestSessionToken $ authRequest authN' of
     Nothing -> return Nothing
     Just token -> do
       let uid = UserIdentifier (Just callerUserId) Nothing Nothing
@@ -165,7 +183,7 @@ authorize host ctx req authN = do
   case policiesResult of
     Right policies -> do
       if authorized req policies
-        then let authZ = Authorization policies maybeSession in return $ Auth authN authZ
+        then return $ Authorization policies maybeSession
         else errorHandler NotAuthorized
     Left (InternalError e) -> errorHandler $ InternalError e
     Left e -> errorHandler $ InternalError $ pack $ show e

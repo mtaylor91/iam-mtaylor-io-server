@@ -4,9 +4,11 @@ module IAM.Login
   ) where
 
 import Data.Aeson
+import Data.Time.Clock
 import Data.UUID
 import Servant
 
+import IAM.Ip
 import IAM.Session
 import IAM.User
 import IAM.UserIdentifier
@@ -60,6 +62,13 @@ instance ToJSON LoginRequest where
     ]
 
 
+createLoginRequest :: LoginRequest -> IpAddr -> UserId -> IO LoginResponse
+createLoginRequest (LoginRequest lid _ publicKey) ip uid = do
+  now <- getCurrentTime
+  let expires = addUTCTime 3600 now
+  return $ LoginResponse ip lid uid publicKey expires Nothing LoginRequestPending
+
+
 data LoginStatus
   = LoginRequestPending
   | LoginRequestGranted
@@ -81,9 +90,11 @@ instance ToJSON LoginStatus where
 
 
 data LoginResponse = LoginResponse
-  { loginResponseRequest :: LoginRequestId
-  , loginResponseUser :: UserIdentifier
+  { loginResponseIp :: IpAddr
+  , loginResponseRequest :: LoginRequestId
+  , loginResponseUserId :: UserId
   , loginResponsePublicKey :: UserPublicKey
+  , loginResponseExpires :: UTCTime
   , loginResponseSession :: Maybe Session
   , loginResponseStatus :: LoginStatus
   } deriving (Eq, Show)
@@ -91,20 +102,24 @@ data LoginResponse = LoginResponse
 
 instance FromJSON LoginResponse where
   parseJSON (Object obj) = do
+    ip <- obj .: "ip"
     lid <- obj .: "id"
     user <- obj .: "user"
     publicKey <- obj .: "publicKey"
+    expires <- obj .: "expires"
     session <- obj .: "session"
     status <- obj .: "status"
-    return $ LoginResponse lid user publicKey session status
+    return $ LoginResponse ip lid user publicKey expires session status
   parseJSON _ = fail "Invalid JSON"
 
 
 instance ToJSON LoginResponse where
-  toJSON (LoginResponse lid user publicKey session status) = object
-    [ "id" .= lid
+  toJSON (LoginResponse ip lid user publicKey expires session status) = object
+    [ "ip" .= ip
+    , "id" .= lid
     , "user" .= user
     , "publicKey" .= publicKey
+    , "expires" .= expires
     , "session" .= session
     , "status" .= status
     ]

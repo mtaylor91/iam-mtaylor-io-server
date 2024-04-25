@@ -2,7 +2,8 @@
 {-# LANGUAGE TypeOperators #-}
 
 module IAM.Client
-  ( getCaller
+  ( login
+  , getCaller
   , deleteCaller
   , listCallerLoginRequests
   , mkCallerLoginRequestClient
@@ -67,15 +68,15 @@ type UserClientM =
 
 
 type LoginRequestsClientM
-  = (Maybe Int -> Maybe Int -> ClientM (ListResponse LoginRequest))
+  = (Maybe Int -> Maybe Int -> ClientM (ListResponse LoginResponse))
   :<|> (LoginRequestId -> LoginRequestClientM)
 
 
 type LoginRequestClientM
-  = ClientM LoginRequest
-  :<|> ClientM LoginRequest
-  :<|> ClientM LoginRequest
-  :<|> ClientM LoginRequest
+  = ClientM LoginResponse
+  :<|> ClientM LoginResponse
+  :<|> ClientM LoginResponse
+  :<|> ClientM LoginResponse
 
 
 type UserPolicyClientM
@@ -144,16 +145,16 @@ data UserClient = UserClient
 
 
 data LoginRequestsClient = LoginRequestsClient
-  { listLoginRequests :: !(Maybe Int -> Maybe Int -> ClientM (ListResponse LoginRequest))
+  { listLoginRequests :: !(Maybe Int -> Maybe Int -> ClientM (ListResponse LoginResponse))
   , loginRequestClient :: !(LoginRequestId -> LoginRequestClient)
   }
 
 
 data LoginRequestClient = LoginRequestClient
-  { getLoginRequest :: !(ClientM LoginRequest)
-  , deleteLoginRequest :: !(ClientM LoginRequest)
-  , denyLoginRequest :: !(ClientM LoginRequest)
-  , grantLoginRequest :: !(ClientM LoginRequest)
+  { getLoginRequest :: !(ClientM LoginResponse)
+  , deleteLoginRequest :: !(ClientM LoginResponse)
+  , denyLoginRequest :: !(ClientM LoginResponse)
+  , grantLoginRequest :: !(ClientM LoginResponse)
   }
 
 
@@ -208,6 +209,7 @@ usersClient :: UsersClientM
 groupsClient :: GroupsClientM
 policiesClient :: PoliciesClientM
 authorizeClient :: AuthorizationClientM
+login :: LoginRequest -> ClientM LoginResponse
 
 
 callerClient
@@ -215,6 +217,7 @@ callerClient
   :<|> groupsClient
   :<|> policiesClient
   :<|> authorizeClient
+  :<|> login
   = client iamAPI
 
 
@@ -232,7 +235,7 @@ callerSessionClient :: UserSessionsClientM
   :<|> callerSessionClient ) = callerClient
 
 
-listCallerLoginRequests :: Maybe Int -> Maybe Int -> ClientM (ListResponse LoginRequest)
+listCallerLoginRequests :: Maybe Int -> Maybe Int -> ClientM (ListResponse LoginResponse)
 callerLoginRequestClient :: LoginRequestId -> LoginRequestClientM
 
 

@@ -18,6 +18,7 @@ import IAM.GroupIdentifier
 import IAM.Identifier
 import IAM.Ip
 import IAM.ListResponse
+import IAM.Login
 import IAM.Membership
 import IAM.Policy
 import IAM.Server.DB.Postgres.Queries
@@ -35,6 +36,20 @@ pgEscapeLike = pack . concatMap escapeChar . unpack
     escapeChar '%' = ['\\', '%']
     escapeChar '_' = ['\\', '_']
     escapeChar c = [c]
+
+
+pgCreateLoginRequest :: LoginResponse -> Transaction (Either Error LoginResponse)
+pgCreateLoginRequest lr = do
+  let params =
+        ( unLoginRequestId $ loginResponseRequest lr
+        , unUserId $ loginResponseUserId lr
+        , unPublicKey $ userPublicKey $ loginResponsePublicKey lr
+        , unSessionId . sessionId <$> loginResponseSession lr
+        , loginResponseExpires lr
+        , loginResponseStatus lr == LoginRequestDenied
+        )
+  statement params insertLoginRequest
+  return $ Right lr
 
 
 pgGetUser :: UserIdentifier -> Transaction (Either Error User)

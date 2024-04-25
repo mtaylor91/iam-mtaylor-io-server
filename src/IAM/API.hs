@@ -3,8 +3,7 @@
 module IAM.API
   ( API
   , LoginAPI
-  , LoginRequestAPI
-  , LoginRequestsAPI
+  , LoginsAPI
   , UserAPI
   , UsersAPI
   , UserPolicyAPI
@@ -40,7 +39,7 @@ import IAM.UserPolicy
 import IAM.UserIdentifier
 
 
-type API = LoginAPI :<|> SignedAPI
+type API = SignedAPI
 
 
 type SignedAPI = AuthProtect "signature-auth" :> IAMAPI
@@ -58,6 +57,7 @@ type IAMAPI
   :<|> ( "groups" :> GroupsAPI )
   :<|> ( "policies" :> PoliciesAPI )
   :<|> ( "authorize" :> AuthorizeAPI )
+  :<|> ( "login" :> ReqBody '[JSON] LoginRequest :> Post '[JSON] LoginResponse )
     )
 
 type UsersAPI
@@ -72,21 +72,21 @@ type UsersAPI
 type UserAPI
   = ( Get '[JSON] User
   :<|> Delete '[JSON] User
-  :<|> "login-requests" :> LoginRequestsAPI
+  :<|> "login-requests" :> LoginsAPI
   :<|> "policies" :> Capture "policy" PolicyIdentifier :> UserPolicyAPI
   :<|> "sessions" :> UserSessionsAPI
     )
 
-type LoginRequestsAPI
-  = ( ListAPI LoginRequest
-  :<|> Capture "login-request" LoginRequestId :> LoginRequestAPI
+type LoginsAPI
+  = ( ListAPI LoginResponse
+  :<|> Capture "login-request" LoginRequestId :> LoginAPI
     )
 
-type LoginRequestAPI
-  = ( Get '[JSON] LoginRequest
-  :<|> Delete '[JSON] LoginRequest
-  :<|> "deny" :> Post '[JSON] LoginRequest
-  :<|> "grant" :> Post '[JSON] LoginRequest
+type LoginAPI
+  = ( Get '[JSON] LoginResponse
+  :<|> Delete '[JSON] LoginResponse
+  :<|> "deny" :> Post '[JSON] LoginResponse
+  :<|> "grant" :> Post '[JSON] LoginResponse
     )
 
 type UserPolicyAPI
@@ -148,10 +148,6 @@ type PolicyAPI
 
 type AuthorizeAPI
   = ReqBody '[JSON] AuthorizationRequest :> Post '[JSON] AuthorizationResponse
-
-
-type LoginAPI
-  = ReqBody '[JSON] LoginRequest :> Post '[JSON] LoginResponse
 
 
 api :: Proxy API

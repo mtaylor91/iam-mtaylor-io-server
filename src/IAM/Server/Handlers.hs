@@ -30,40 +30,71 @@ import IAM.UserPolicy
 import IAM.UserIdentifier
 
 
-loginRequestHandler :: DB db => Ctx db -> LoginRequest -> Handler LoginResponse
-loginRequestHandler ctx req =
-  errorHandler NotImplemented
+loginRequestHandler :: DB db => Ctx db -> Auth -> LoginRequest -> Handler LoginResponse
+loginRequestHandler ctx auth req = do
+  uidResult <- liftIO $ runExceptT $ getUserId (ctxDB ctx) (loginRequestUser req)
+  let maybeAddr = fromSockAddr $ authAddr auth
+  case (uidResult, maybeAddr) of
+    (Left err, _) -> errorHandler err
+    (_, Nothing) -> errorHandler $ InternalError "Invalid address"
+    (Right uid, Just ip) -> do
+      resp <- liftIO $ createLoginRequest req ip uid
+      result <- liftIO $ runExceptT $ createLoginResponse (ctxDB ctx) resp
+      case result of
+        Right resp' -> return resp'
+        Left err    -> errorHandler err
 
 
 listLoginRequestsHandler :: DB db =>
   Ctx db -> Auth -> UserIdentifier -> Maybe Int -> Maybe Int ->
-    Handler (ListResponse LoginRequest)
-listLoginRequestsHandler ctx auth uid maybeOffset maybeLimit =
-  errorHandler NotImplemented
+    Handler (ListResponse LoginResponse)
+listLoginRequestsHandler ctx auth uid maybeOffset maybeLimit = do
+  _ <- requireSession auth
+  result <- liftIO $ runExceptT $ listLoginResponses (ctxDB ctx) uid range
+  case result of
+    Right loginRequests -> return loginRequests
+    Left err            -> errorHandler err
+  where
+    range = Range offset' maybeLimit
+    offset' = fromMaybe 0 maybeOffset
 
 
 getLoginRequestHandler :: DB db =>
-  Ctx db -> Auth -> UserIdentifier -> LoginRequestId -> Handler LoginRequest
-getLoginRequestHandler ctx auth uid lrid =
-  errorHandler NotImplemented
+  Ctx db -> Auth -> UserIdentifier -> LoginRequestId -> Handler LoginResponse
+getLoginRequestHandler ctx auth uid lrid = do
+  _ <- requireSession auth
+  result <- liftIO $ runExceptT $ getLoginResponse (ctxDB ctx) uid lrid
+  case result of
+    Right resp -> return resp
+    Left err   -> errorHandler err
 
 
 deleteLoginRequestHandler :: DB db =>
-  Ctx db -> Auth -> UserIdentifier -> LoginRequestId -> Handler LoginRequest
-deleteLoginRequestHandler ctx auth uid lrid =
-  errorHandler NotImplemented
+  Ctx db -> Auth -> UserIdentifier -> LoginRequestId -> Handler LoginResponse
+deleteLoginRequestHandler ctx auth uid lrid = do
+  _ <- requireSession auth
+  result <- liftIO $ runExceptT $ deleteLoginResponse (ctxDB ctx) uid lrid
+  case result of
+    Right resp -> return resp
+    Left err   -> errorHandler err
 
 
 updateLoginRequestHandler :: DB db =>
   Ctx db -> Auth -> UserIdentifier -> LoginRequestId -> LoginStatus ->
-    Handler LoginRequest
-updateLoginRequestHandler ctx auth uid lrid status =
-  errorHandler NotImplemented
+    Handler LoginResponse
+updateLoginRequestHandler ctx auth uid lrid status = do
+  _ <- requireSession auth
+  result <- liftIO $ runExceptT $ updateLoginResponse (ctxDB ctx) uid lrid f
+  case result of
+    Right resp -> return resp
+    Left err   -> errorHandler err
+  where
+    f resp = resp { loginResponseStatus = status }
 
 
 getUserHandler :: DB db => Ctx db -> Auth -> UserIdentifier -> Handler User
 getUserHandler ctx auth uid = do
-  requireSession auth
+  _ <- requireSession auth
   result <- liftIO $ runExceptT $ getUser (ctxDB ctx) uid
   case result of
     Right user' -> return user'
@@ -74,7 +105,7 @@ listUsersHandler ::
   DB db => Ctx db -> Auth -> Maybe Text -> Maybe SortUsersBy -> Maybe SortOrder ->
     Maybe Int -> Maybe Int -> Handler (ListResponse UserIdentifier)
 listUsersHandler ctx auth Nothing maybeSort maybeOrder maybeOffset maybeLimit = do
-  requireSession auth
+  _ <- requireSession auth
   let offset' = fromMaybe 0 maybeOffset
   result <- liftIO $ runExceptT $ listUsers (ctxDB ctx) (Range offset' maybeLimit)
     (fromMaybe SortUsersByEmail maybeSort) (fromMaybe Ascending maybeOrder)
@@ -82,7 +113,7 @@ listUsersHandler ctx auth Nothing maybeSort maybeOrder maybeOffset maybeLimit = 
     Right users' -> return users'
     Left err     -> errorHandler err
 listUsersHandler ctx auth (Just search) maybeSort maybeOrder maybeOffset maybeLimit = do
-  requireSession auth
+  _ <- requireSession auth
   let offset' = fromMaybe 0 maybeOffset
   result <- liftIO $ runExceptT $ listUsersBySearchTerm (ctxDB ctx) search
     (Range offset' maybeLimit) (fromMaybe SortUsersByEmail maybeSort)
@@ -97,7 +128,7 @@ createUserHandler ctx auth userPrincipal = do
   case validateUser userPrincipal of
     Left err -> errorHandler err
     Right _  -> return ()
-  requireSession auth
+  _ <- requireSession auth
   result <- liftIO $ runExceptT $ createUser (ctxDB ctx) userPrincipal
   case result of
     Right user' -> return user'
@@ -106,7 +137,7 @@ createUserHandler ctx auth userPrincipal = do
 
 deleteUserHandler :: DB db => Ctx db -> Auth -> UserIdentifier -> Handler User
 deleteUserHandler ctx auth uid = do
-  requireSession auth
+  _ <- requireSession auth
   result <- liftIO $ runExceptT $ deleteUser (ctxDB ctx) uid
   case result of
     Right user' -> return user'
@@ -115,7 +146,7 @@ deleteUserHandler ctx auth uid = do
 
 getGroupHandler :: DB db => Ctx db -> Auth -> GroupIdentifier -> Handler Group
 getGroupHandler ctx auth gid = do
-  requireSession auth
+  _ <- requireSession auth
   result <- liftIO $ runExceptT $ getGroup (ctxDB ctx) gid
   case result of
     Right group' -> return group'
@@ -126,7 +157,7 @@ listGroupsHandler :: DB db =>
   Ctx db -> Auth -> Maybe Text -> Maybe SortGroupsBy -> Maybe SortOrder ->
     Maybe Int -> Maybe Int -> Handler (ListResponse GroupIdentifier)
 listGroupsHandler ctx auth Nothing sort order maybeOffset maybeLimit = do
-  requireSession auth
+  _ <- requireSession auth
   let offset' = fromMaybe 0 maybeOffset
       sort' = fromMaybe SortGroupsByName sort
       order' = fromMaybe Ascending order
@@ -136,7 +167,7 @@ listGroupsHandler ctx auth Nothing sort order maybeOffset maybeLimit = do
     Right groups' -> return groups'
     Left err      -> errorHandler err
 listGroupsHandler ctx auth (Just search) sort order maybeOffset maybeLimit = do
-  requireSession auth
+  _ <- requireSession auth
   let offset' = fromMaybe 0 maybeOffset
       sort' = fromMaybe SortGroupsByName sort
       order' = fromMaybe Ascending order
@@ -149,7 +180,7 @@ listGroupsHandler ctx auth (Just search) sort order maybeOffset maybeLimit = do
 
 createGroupHandler :: DB db => Ctx db -> Auth -> Group -> Handler Group
 createGroupHandler ctx auth group' = do
-  requireSession auth
+  _ <- requireSession auth
   result <- liftIO $ runExceptT $ createGroup (ctxDB ctx) group'
   case result of
     Right group'' -> return group''
@@ -158,7 +189,7 @@ createGroupHandler ctx auth group' = do
 
 deleteGroupHandler :: DB db => Ctx db -> Auth -> GroupIdentifier -> Handler Group
 deleteGroupHandler ctx auth gid = do
-  requireSession auth
+  _ <- requireSession auth
   result <- liftIO $ runExceptT $ deleteGroup (ctxDB ctx) gid
   case result of
     Right g -> return g
@@ -167,7 +198,7 @@ deleteGroupHandler ctx auth gid = do
 
 getPolicyHandler :: DB db => Ctx db -> Auth -> PolicyIdentifier -> Handler Policy
 getPolicyHandler ctx auth policy = do
-  requireSession auth
+  _ <- requireSession auth
   result <- liftIO $ runExceptT $ getPolicy (ctxDB ctx) policy
   case result of
     Right policy' -> return policy'
@@ -178,7 +209,7 @@ listPoliciesHandler ::
   DB db => Ctx db -> Auth -> Maybe Text -> Maybe SortPoliciesBy -> Maybe SortOrder ->
     Maybe Int -> Maybe Int -> Handler (ListResponse PolicyIdentifier)
 listPoliciesHandler ctx auth Nothing mSort mOrder mOffset mLimit = do
-  requireSession auth
+  _ <- requireSession auth
   let offset' = fromMaybe 0 mOffset
   let sort' = fromMaybe SortPoliciesByName mSort
   let order' = fromMaybe Ascending mOrder
@@ -188,7 +219,7 @@ listPoliciesHandler ctx auth Nothing mSort mOrder mOffset mLimit = do
     Right pids -> return pids
     Left err   -> errorHandler err
 listPoliciesHandler ctx auth (Just search) mSort mOrder mOffset mLimit = do
-  requireSession auth
+  _ <- requireSession auth
   let offset' = fromMaybe 0 mOffset
   let sort' = fromMaybe SortPoliciesByName mSort
   let order' = fromMaybe Ascending mOrder
@@ -202,8 +233,9 @@ listPoliciesHandler ctx auth (Just search) mSort mOrder mOffset mLimit = do
 
 createPolicyHandler :: DB db => Ctx db -> Auth -> Policy -> Handler Policy
 createPolicyHandler ctx auth policy = do
-  requireSession auth
-  let callerPolicies = authPolicies $ authorization auth
+  _ <- requireSession auth
+  authZ' <- requireAuthorization auth
+  let callerPolicies = authPolicies authZ'
   if policy `isAllowedBy` policyRules callerPolicies
     then createPolicy'
     else errorHandler NotAuthorized
@@ -217,7 +249,7 @@ createPolicyHandler ctx auth policy = do
 
 deletePolicyHandler :: DB db => Ctx db -> Auth -> PolicyIdentifier -> Handler Policy
 deletePolicyHandler ctx auth policy = do
-  requireSession auth
+  _ <- requireSession auth
   result <- liftIO $ runExceptT $ deletePolicy (ctxDB ctx) policy
   case result of
     Right policy' -> return policy'
@@ -227,7 +259,7 @@ deletePolicyHandler ctx auth policy = do
 createMembershipHandler ::
   DB db => Ctx db -> Auth -> GroupIdentifier -> UserIdentifier -> Handler Membership
 createMembershipHandler ctx auth gid uid = do
-  requireSession auth
+  _ <- requireSession auth
   result <- liftIO $ runExceptT $ createMembership (ctxDB ctx) uid gid
   case result of
     Right membership -> return membership
@@ -237,7 +269,7 @@ createMembershipHandler ctx auth gid uid = do
 deleteMembershipHandler ::
   DB db => Ctx db -> Auth -> GroupIdentifier -> UserIdentifier -> Handler Membership
 deleteMembershipHandler ctx auth gid uid = do
-  requireSession auth
+  _ <- requireSession auth
   result <- liftIO $ runExceptT $ deleteMembership (ctxDB ctx) uid gid
   case result of
     Right membership -> return membership
@@ -247,16 +279,16 @@ deleteMembershipHandler ctx auth gid uid = do
 createUserPolicyAttachmentHandler :: DB db =>
   Ctx db -> Auth -> UserIdentifier -> PolicyIdentifier -> Handler UserPolicyAttachment
 createUserPolicyAttachmentHandler ctx auth uid pid = do
-  requireSession auth
+  _ <- requireSession auth
+  authZ' <- requireAuthorization auth
   result0 <- liftIO $ runExceptT $ getPolicy (ctxDB ctx) pid
   case result0 of
     Right policy -> do
-      if policy `isAllowedBy` policyRules callerPolicies
+      if policy `isAllowedBy` policyRules (authPolicies authZ')
         then createUserPolicyAttachment'
         else errorHandler NotAuthorized
     Left err -> errorHandler err
   where
-    callerPolicies = authPolicies $ authorization auth
     createUserPolicyAttachment' = do
       result <- liftIO $ runExceptT $ createUserPolicyAttachment (ctxDB ctx) uid pid
       case result of
@@ -267,7 +299,7 @@ createUserPolicyAttachmentHandler ctx auth uid pid = do
 deleteUserPolicyAttachmentHandler :: DB db =>
   Ctx db -> Auth -> UserIdentifier -> PolicyIdentifier -> Handler UserPolicyAttachment
 deleteUserPolicyAttachmentHandler ctx auth uid pid = do
-  requireSession auth
+  _ <- requireSession auth
   result <- liftIO $ runExceptT $ deleteUserPolicyAttachment (ctxDB ctx) uid pid
   case result of
     Right attachment -> return attachment
@@ -277,16 +309,16 @@ deleteUserPolicyAttachmentHandler ctx auth uid pid = do
 createGroupPolicyAttachmentHandler :: DB db =>
   Ctx db -> Auth -> GroupIdentifier -> PolicyIdentifier -> Handler GroupPolicyAttachment
 createGroupPolicyAttachmentHandler ctx auth gid pid = do
-  requireSession auth
+  _ <- requireSession auth
+  authZ' <- requireAuthorization auth
   result <- liftIO $ runExceptT $ getPolicy (ctxDB ctx) pid
   case result of
     Right policy -> do
-      if policy `isAllowedBy` policyRules callerPolicies
+      if policy `isAllowedBy` policyRules (authPolicies authZ')
         then createGroupPolicyAttachment'
         else errorHandler NotAuthorized
     Left err -> errorHandler err
   where
-    callerPolicies = authPolicies $ authorization auth
     createGroupPolicyAttachment' = do
       result <- liftIO $ runExceptT $ createGroupPolicyAttachment (ctxDB ctx) gid pid
       case result of
@@ -297,7 +329,7 @@ createGroupPolicyAttachmentHandler ctx auth gid pid = do
 deleteGroupPolicyAttachmentHandler :: DB db =>
   Ctx db -> Auth -> GroupIdentifier -> PolicyIdentifier -> Handler GroupPolicyAttachment
 deleteGroupPolicyAttachmentHandler ctx auth gid pid = do
-  requireSession auth
+  _ <- requireSession auth
   result <- liftIO $ runExceptT $ deleteGroupPolicyAttachment (ctxDB ctx) gid pid
   case result of
     Right attachment -> return attachment
@@ -307,11 +339,12 @@ deleteGroupPolicyAttachmentHandler ctx auth gid pid = do
 createSessionHandler :: DB db =>
   Ctx db -> Auth -> UserIdentifier -> Handler CreateSession
 createSessionHandler ctx auth uid = do
+  _ <- requireAuthentication auth
   r0 <- liftIO $ runExceptT $ getUserId (ctxDB ctx) uid
   case r0 of
     Left e -> errorHandler e
     Right uid' -> do
-      case fromSockAddr $ authRequestAddr $ authRequest $ authentication auth of
+      case fromSockAddr $ authAddr auth of
         Nothing -> errorHandler $ InternalError "Invalid address"
         Just addr -> do
           let dbOp = IAM.Server.DB.createSession (ctxDB ctx) addr uid'
@@ -325,7 +358,7 @@ listUserSessionsHandler :: DB db =>
   Ctx db -> Auth -> UserIdentifier -> Maybe Int -> Maybe Int ->
     Handler (ListResponse Session)
 listUserSessionsHandler ctx auth uid maybeOffset maybeLimit = do
-  requireSession auth
+  _ <- requireSession auth
   let offset' = fromMaybe 0 maybeOffset
   let dbOp = listUserSessions (ctxDB ctx) uid $ Range offset' maybeLimit
   result <- liftIO $ runExceptT dbOp
@@ -337,7 +370,7 @@ listUserSessionsHandler ctx auth uid maybeOffset maybeLimit = do
 getUserSessionHandler :: DB db =>
   Ctx db -> Auth -> UserIdentifier -> SessionId -> Handler Session
 getUserSessionHandler ctx auth uid sid = do
-  requireSession auth
+  _ <- requireSession auth
   result <- liftIO $ runExceptT $ getSessionById (ctxDB ctx) uid sid
   case result of
     Right session -> return session
@@ -347,7 +380,7 @@ getUserSessionHandler ctx auth uid sid = do
 deleteUserSessionHandler :: DB db =>
   Ctx db -> Auth -> UserIdentifier -> SessionId -> Handler Session
 deleteUserSessionHandler ctx auth uid sid = do
-  requireSession auth
+  _ <- requireSession auth
   result <- liftIO $ runExceptT $ deleteSession (ctxDB ctx) uid sid
   case result of
     Right session -> return session
@@ -357,7 +390,7 @@ deleteUserSessionHandler ctx auth uid sid = do
 refreshUserSessionHandler :: DB db =>
   Ctx db -> Auth -> UserIdentifier -> SessionId -> Handler Session
 refreshUserSessionHandler ctx auth uid sid = do
-  requireSession auth
+  _ <- requireSession auth
   result' <- liftIO $ runExceptT $ IAM.Server.DB.refreshSession (ctxDB ctx) uid sid
   case result' of
     Right session' -> return session'
@@ -389,8 +422,23 @@ authorizeHandler ctx req = do
   reqResource = authorizationRequestResource req
 
 
-requireSession :: Auth -> Handler ()
+requireAuthentication :: Auth -> Handler Authentication
+requireAuthentication auth = do
+  case authN auth of
+    Just authN' -> return authN'
+    Nothing     -> errorHandler $ AuthenticationFailed AuthenticationRequired
+
+
+requireAuthorization :: Auth -> Handler Authorization
+requireAuthorization auth = do
+  case authZ auth of
+    Just authZ' -> return authZ'
+    Nothing     -> errorHandler $ AuthenticationFailed AuthenticationRequired
+
+
+requireSession :: Auth -> Handler Session
 requireSession auth = do
-  case authSession $ authorization auth of
-    Just Session{} -> return ()
-    Nothing        -> errorHandler $ AuthenticationFailed SessionRequired
+  authZ' <- requireAuthorization auth
+  case authSession authZ' of
+    Just s  -> return s
+    Nothing -> errorHandler $ AuthenticationFailed SessionRequired

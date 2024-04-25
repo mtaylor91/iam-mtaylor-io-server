@@ -11,7 +11,7 @@ import Network.HTTP.Client
 import Network.HTTP.Client.TLS
 import Servant.Client
 
-import IAM.Client
+import IAM.Client hiding (login)
 import IAM.Client.Auth
 import IAM.Client.Util
 import IAM.Config

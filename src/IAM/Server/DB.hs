@@ -10,6 +10,7 @@ import IAM.Group
 import IAM.GroupPolicy
 import IAM.GroupIdentifier
 import IAM.Ip
+import IAM.Login
 import IAM.ListResponse
 import IAM.Membership
 import IAM.Policy
@@ -22,6 +23,27 @@ import IAM.Sort
 
 
 class DB db where
+
+  -- | createLoginResponse adds a new login request to the database.
+  createLoginResponse :: (MonadIO m, MonadError Error m) =>
+    db -> LoginResponse -> m LoginResponse
+
+  -- | getLoginResponse returns a login request from the database by its id.
+  getLoginResponse :: (MonadIO m, MonadError Error m) =>
+    db -> UserIdentifier -> LoginRequestId -> m LoginResponse
+
+  -- | listLoginResponses returns a list of all login requests for a user.
+  listLoginResponses :: (MonadIO m, MonadError Error m) =>
+    db -> UserIdentifier -> Range -> m (ListResponse LoginResponse)
+
+  -- | updateLoginResponse updates an existing login request in the database.
+  updateLoginResponse :: (MonadIO m, MonadError Error m) =>
+    db -> UserIdentifier -> LoginRequestId -> (LoginResponse -> LoginResponse) ->
+      m LoginResponse
+
+  -- | deleteLoginResponse removes a login request from the database by its id.
+  deleteLoginResponse :: (MonadIO m, MonadError Error m) =>
+    db -> UserIdentifier -> LoginRequestId -> m LoginResponse
 
   -- | getUser returns a user from the database by its identifier.
   getUser :: (MonadIO m, MonadError Error m) =>
