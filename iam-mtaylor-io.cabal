@@ -63,6 +63,7 @@ library
       IAM.Identifier
       IAM.Ip
       IAM.ListResponse
+      IAM.Login
       IAM.Membership
       IAM.Policy
       IAM.Range

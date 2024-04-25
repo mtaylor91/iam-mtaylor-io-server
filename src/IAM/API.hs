@@ -2,6 +2,8 @@
 {-# LANGUAGE TypeOperators   #-}
 module IAM.API
   ( API
+  , LoginAPI
+  , SignedAPI
   , UserAPI
   , UsersAPI
   , UserPolicyAPI
@@ -26,6 +28,7 @@ import IAM.Group
 import IAM.GroupPolicy
 import IAM.GroupIdentifier
 import IAM.ListResponse
+import IAM.Login
 import IAM.Membership
 import IAM.Policy
 import IAM.Session
@@ -35,7 +38,10 @@ import IAM.UserPolicy
 import IAM.UserIdentifier
 
 
-type API = AuthProtect "signature-auth" :> IAMAPI
+type API = LoginAPI :<|> SignedAPI
+
+
+type SignedAPI = AuthProtect "signature-auth" :> IAMAPI
 
 
 type ListAPI a
@@ -127,6 +133,10 @@ type PolicyAPI
 
 type AuthorizeAPI
   = ReqBody '[JSON] AuthorizationRequest :> Post '[JSON] AuthorizationResponse
+
+
+type LoginAPI
+  = ReqBody '[JSON] LoginRequest :> Post '[JSON] LoginRequestResponse
 
 
 api :: Proxy API

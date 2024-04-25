@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module IAM.Server.Handlers
-  ( getUserHandler
+  ( loginHandler
+  , getUserHandler
   , listUsersHandler
   , createUserHandler
   , deleteUserHandler
@@ -39,6 +40,7 @@ import IAM.GroupPolicy
 import IAM.GroupIdentifier
 import IAM.Ip
 import IAM.ListResponse
+import IAM.Login
 import IAM.Membership
 import IAM.Policy
 import IAM.Range
@@ -50,6 +52,10 @@ import IAM.Sort
 import IAM.User
 import IAM.UserPolicy
 import IAM.UserIdentifier
+
+
+loginHandler :: DB db => Ctx db -> LoginRequest -> Handler LoginRequestResponse
+loginHandler ctx req = errorHandler NotImplemented
 
 
 getUserHandler :: DB db => Ctx db -> Auth -> UserIdentifier -> Handler User
