@@ -73,3 +73,25 @@ parseSortGroupsBy :: Text -> Maybe SortGroupsBy
 parseSortGroupsBy "id" = Just SortGroupsById
 parseSortGroupsBy "name" = Just SortGroupsByName
 parseSortGroupsBy _ = Nothing
+
+
+data SortPoliciesBy = SortPoliciesById | SortPoliciesByName
+
+
+instance FromHttpApiData SortPoliciesBy where
+  parseUrlPiece = maybe (Left "Invalid sort") Right . parseSortPoliciesBy
+
+
+instance ToHttpApiData SortPoliciesBy where
+  toUrlPiece = sortPolicyByText
+
+
+sortPolicyByText :: SortPoliciesBy -> Text
+sortPolicyByText SortPoliciesById = "id"
+sortPolicyByText SortPoliciesByName = "name"
+
+
+parseSortPoliciesBy :: Text -> Maybe SortPoliciesBy
+parseSortPoliciesBy "id" = Just SortPoliciesById
+parseSortPoliciesBy "name" = Just SortPoliciesByName
+parseSortPoliciesBy _ = Nothing

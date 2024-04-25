@@ -199,25 +199,26 @@ instance DB InMemory where
           Just p -> return p
           Nothing -> throwError $ NotFound $ PolicyIdentifier $ PolicyId pid
 
-  listPolicyIds (InMemory tvar) (Range offset' maybeLimit) = do
+  listPolicyIds (InMemory tvar) (Range offset' mLimit) sort order = do
     s <- liftIO $ readTVarIO tvar
     let policyIds = lookupPolicyIdentifier s . policyId <$> policies s
-    case maybeLimit of
+    let policyIds' = sortPolicies sort order policyIds
+    case mLimit of
       Just limit' ->
-        let items' = Prelude.take limit' $ Prelude.drop offset' policyIds
-            total' = Prelude.length policyIds
+        let items' = Prelude.take limit' $ Prelude.drop offset' policyIds'
+            total' = Prelude.length policyIds'
          in return $ ListResponse items' limit' offset' total'
       Nothing ->
-        let items' = Prelude.drop offset' policyIds
-            total' = Prelude.length policyIds
+        let items' = Prelude.drop offset' policyIds'
+            total' = Prelude.length policyIds'
             limit' = total'
          in return $ ListResponse items' limit' offset' total'
 
-  listPolicyIdsBySearchTerm (InMemory tvar) search (Range offset' maybeLimit) = do
+  listPolicyIdsBySearchTerm (InMemory tvar) search (Range offset' mLimit) sort order = do
     s <- liftIO $ readTVarIO tvar
     let policyIds = lookupPolicyIdentifier s . policyId <$> policies s
-    let policyIds' = Prelude.filter f policyIds
-    case maybeLimit of
+    let policyIds' = sortPolicies sort order $ Prelude.filter f policyIds
+    case mLimit of
       Just limit' ->
         let items' = Prelude.take limit' $ Prelude.drop offset' policyIds'
             total' = Prelude.length policyIds'
@@ -503,3 +504,18 @@ sortGroups sort order = sortBy f where
         compare (unGroupIdentifierName gid1) (unGroupIdentifierName gid2)
       (SortGroupsByName, Descending) ->
         compare (unGroupIdentifierName gid2) (unGroupIdentifierName gid1)
+
+
+sortPolicies :: SortPoliciesBy -> SortOrder -> [PolicyIdentifier] -> [PolicyIdentifier]
+sortPolicies sort order = sortBy f where
+  f :: PolicyIdentifier -> PolicyIdentifier -> Ordering
+  f pid1 pid2 =
+    case (sort, order) of
+      (SortPoliciesById, Ascending) ->
+        compare (unPolicyIdentifierId pid1) (unPolicyIdentifierId pid2)
+      (SortPoliciesById, Descending) ->
+        compare (unPolicyIdentifierId pid2) (unPolicyIdentifierId pid1)
+      (SortPoliciesByName, Ascending) ->
+        compare (unPolicyIdentifierName pid1) (unPolicyIdentifierName pid2)
+      (SortPoliciesByName, Descending) ->
+        compare (unPolicyIdentifierName pid2) (unPolicyIdentifierName pid1)

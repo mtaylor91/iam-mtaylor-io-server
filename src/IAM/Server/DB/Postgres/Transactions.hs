@@ -435,10 +435,17 @@ pgGetPolicy (PolicyIdAndName (PolicyUUID pid) _) =
   pgGetPolicy $ PolicyId $ PolicyUUID pid
 
 
-pgListPolicies :: Range -> Transaction (Either Error (ListResponse PolicyIdentifier))
-pgListPolicies (Range offset' maybeLimit) = do
+pgListPolicies ::
+  Range -> SortPoliciesBy -> SortOrder ->
+    Transaction (Either Error (ListResponse PolicyIdentifier))
+pgListPolicies (Range offset' maybeLimit) sort order = do
   let limit' = fromMaybe 100 maybeLimit
-  result <- statement (fromIntegral offset', fromIntegral limit') selectPolicyIdentifiers
+  let query = case (sort, order) of
+        (SortPoliciesById, Ascending) -> selectPolicyIdentifiersOrderByIdAsc
+        (SortPoliciesById, Descending) -> selectPolicyIdentifiersOrderByIdDesc
+        (SortPoliciesByName, Ascending) -> selectPolicyIdentifiersOrderByNameAsc
+        (SortPoliciesByName, Descending) -> selectPolicyIdentifiersOrderByNameDesc
+  result <- statement (fromIntegral offset', fromIntegral limit') query
   total' <- statement () selectPolicyCount
   let items' = map policyIdentifier $ toList result
   return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'
@@ -447,13 +454,17 @@ pgListPolicies (Range offset' maybeLimit) = do
     policyIdentifier (pid, Just name) = PolicyIdAndName (PolicyUUID pid) name
 
 
-pgListPoliciesBySearchTerm :: Text -> Range ->
+pgListPoliciesBySearchTerm :: Text -> Range -> SortPoliciesBy -> SortOrder ->
   Transaction (Either Error (ListResponse PolicyIdentifier))
-pgListPoliciesBySearchTerm search (Range offset' maybeLimit) = do
+pgListPoliciesBySearchTerm search (Range offset' maybeLimit) sort order = do
   let limit' = fromMaybe 100 maybeLimit
   let likeExpr = "%" <> pgEscapeLike search <> "%"
-  result <- statement (likeExpr, fromIntegral offset', fromIntegral limit')
-    selectPolicyIdentifiersLike
+  let query = case (sort, order) of
+        (SortPoliciesById, Ascending) -> selectPolicyIdentifiersLikeOrderByIdAsc
+        (SortPoliciesById, Descending) -> selectPolicyIdentifiersLikeOrderByIdDesc
+        (SortPoliciesByName, Ascending) -> selectPolicyIdentifiersLikeOrderByNameAsc
+        (SortPoliciesByName, Descending) -> selectPolicyIdentifiersLikeOrderByNameDesc
+  result <- statement (likeExpr, fromIntegral offset', fromIntegral limit') query
   total' <- statement likeExpr selectPolicyCountLike
   let items' = map policyIdentifier $ toList result
   return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'

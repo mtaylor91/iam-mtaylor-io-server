@@ -78,11 +78,11 @@ instance DB PostgresDB where
   getPolicy (PostgresDB pool) pid =
     runTransaction pool $ pgGetPolicy pid
 
-  listPolicyIds (PostgresDB pool) range =
-    runTransaction pool $ pgListPolicies range
+  listPolicyIds (PostgresDB pool) range sort order =
+    runTransaction pool $ pgListPolicies range sort order
 
-  listPolicyIdsBySearchTerm (PostgresDB pool) search range =
-    runTransaction pool $ pgListPoliciesBySearchTerm search range
+  listPolicyIdsBySearchTerm (PostgresDB pool) search range sort order =
+    runTransaction pool $ pgListPoliciesBySearchTerm search range sort order
 
   listPoliciesForUser (PostgresDB pool) uid host =
     runTransaction pool $ pgListPoliciesForUser host uid

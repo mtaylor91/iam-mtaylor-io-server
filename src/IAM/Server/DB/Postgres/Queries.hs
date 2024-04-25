@@ -1085,8 +1085,9 @@ selectPolicyIds =
   |]
 
 
-selectPolicyIdentifiers :: Statement (Int32, Int32) (Vector (UUID, Maybe Text))
-selectPolicyIdentifiers =
+selectPolicyIdentifiersOrderByIdAsc ::
+  Statement (Int32, Int32) (Vector (UUID, Maybe Text))
+selectPolicyIdentifiersOrderByIdAsc =
   [vectorStatement|
     SELECT
       policies.policy_uuid :: uuid,
@@ -1098,8 +1099,7 @@ selectPolicyIdentifiers =
     ON
       policies.policy_uuid = policies_names.policy_uuid
     ORDER BY
-      policies_names.policy_name,
-      policies.policy_uuid
+      policies.policy_uuid ASC
     OFFSET
       $1 :: int
     LIMIT
@@ -1107,8 +1107,77 @@ selectPolicyIdentifiers =
   |]
 
 
-selectPolicyIdentifiersLike :: Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text))
-selectPolicyIdentifiersLike =
+selectPolicyIdentifiersOrderByIdDesc ::
+  Statement (Int32, Int32) (Vector (UUID, Maybe Text))
+selectPolicyIdentifiersOrderByIdDesc =
+  [vectorStatement|
+    SELECT
+      policies.policy_uuid :: uuid,
+      policies_names.policy_name :: text?
+    FROM
+      policies
+    LEFT JOIN
+      policies_names
+    ON
+      policies.policy_uuid = policies_names.policy_uuid
+    ORDER BY
+      policies.policy_uuid DESC
+    OFFSET
+      $1 :: int
+    LIMIT
+      $2 :: int
+  |]
+
+
+selectPolicyIdentifiersOrderByNameAsc ::
+  Statement (Int32, Int32) (Vector (UUID, Maybe Text))
+selectPolicyIdentifiersOrderByNameAsc =
+  [vectorStatement|
+    SELECT
+      policies.policy_uuid :: uuid,
+      policies_names.policy_name :: text?
+    FROM
+      policies
+    LEFT JOIN
+      policies_names
+    ON
+      policies.policy_uuid = policies_names.policy_uuid
+    ORDER BY
+      policies_names.policy_name ASC,
+      policies.policy_uuid ASC
+    OFFSET
+      $1 :: int
+    LIMIT
+      $2 :: int
+  |]
+
+
+selectPolicyIdentifiersOrderByNameDesc ::
+  Statement (Int32, Int32) (Vector (UUID, Maybe Text))
+selectPolicyIdentifiersOrderByNameDesc =
+  [vectorStatement|
+    SELECT
+      policies.policy_uuid :: uuid,
+      policies_names.policy_name :: text?
+    FROM
+      policies
+    LEFT JOIN
+      policies_names
+    ON
+      policies.policy_uuid = policies_names.policy_uuid
+    ORDER BY
+      policies_names.policy_name DESC,
+      policies.policy_uuid DESC
+    OFFSET
+      $1 :: int
+    LIMIT
+      $2 :: int
+  |]
+
+
+selectPolicyIdentifiersLikeOrderByIdAsc ::
+  Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text))
+selectPolicyIdentifiersLikeOrderByIdAsc =
   [vectorStatement|
     SELECT
       policies.policy_uuid :: uuid,
@@ -1124,8 +1193,87 @@ selectPolicyIdentifiersLike =
     OR
       policies_names.policy_name LIKE $1 :: text
     ORDER BY
-      policies_names.policy_name,
-      policies.policy_uuid
+      policies.policy_uuid ASC
+    OFFSET
+      $2 :: int
+    LIMIT
+      $3 :: int
+  |]
+
+
+selectPolicyIdentifiersLikeOrderByIdDesc ::
+  Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text))
+selectPolicyIdentifiersLikeOrderByIdDesc =
+  [vectorStatement|
+    SELECT
+      policies.policy_uuid :: uuid,
+      policies_names.policy_name :: text?
+    FROM
+      policies
+    LEFT JOIN
+      policies_names
+    ON
+      policies.policy_uuid = policies_names.policy_uuid
+    WHERE
+      policies.policy_uuid :: text LIKE $1 :: text
+    OR
+      policies_names.policy_name LIKE $1 :: text
+    ORDER BY
+      policies.policy_uuid DESC
+    OFFSET
+      $2 :: int
+    LIMIT
+      $3 :: int
+  |]
+
+
+selectPolicyIdentifiersLikeOrderByNameAsc ::
+  Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text))
+selectPolicyIdentifiersLikeOrderByNameAsc =
+  [vectorStatement|
+    SELECT
+      policies.policy_uuid :: uuid,
+      policies_names.policy_name :: text?
+    FROM
+      policies
+    LEFT JOIN
+      policies_names
+    ON
+      policies.policy_uuid = policies_names.policy_uuid
+    WHERE
+      policies.policy_uuid :: text LIKE $1 :: text
+    OR
+      policies_names.policy_name LIKE $1 :: text
+    ORDER BY
+      policies_names.policy_name ASC,
+      policies.policy_uuid ASC
+    OFFSET
+      $2 :: int
+    LIMIT
+      $3 :: int
+  |]
+
+
+selectPolicyIdentifiersLikeOrderByNameDesc ::
+  Statement (Text, Int32, Int32) (Vector (UUID, Maybe Text))
+selectPolicyIdentifiersLikeOrderByNameDesc =
+  [vectorStatement|
+    SELECT
+      policies.policy_uuid :: uuid,
+      policies_names.policy_name :: text?
+    FROM
+      policies
+    LEFT JOIN
+      policies_names
+    ON
+      policies.policy_uuid = policies_names.policy_uuid
+    WHERE
+      policies.policy_uuid :: text LIKE $1 :: text
+    OR
+      policies_names.policy_name LIKE $1 :: text
+    ORDER BY
+      policies_names.policy_name DESC,
+      policies.policy_uuid DESC
     OFFSET
       $2 :: int
     LIMIT

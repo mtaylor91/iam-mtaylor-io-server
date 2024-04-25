@@ -73,12 +73,12 @@ class DB db where
 
   -- | listPolicyIds returns a list of all policies in the database.
   listPolicyIds :: (MonadIO m, MonadError Error m) =>
-    db -> Range -> m (ListResponse PolicyIdentifier)
+    db -> Range -> SortPoliciesBy -> SortOrder -> m (ListResponse PolicyIdentifier)
 
   -- | listPolicyIdsBySearchTerm returns a list of all policies in the
   -- | database that match a search term.
   listPolicyIdsBySearchTerm :: (MonadIO m, MonadError Error m) =>
-    db -> Text -> Range -> m (ListResponse PolicyIdentifier)
+    db -> Text -> Range -> SortPoliciesBy -> SortOrder -> m (ListResponse PolicyIdentifier)
 
   -- | listPoliciesForUser returns a list of all policies attached
   -- | to a user and its groups.

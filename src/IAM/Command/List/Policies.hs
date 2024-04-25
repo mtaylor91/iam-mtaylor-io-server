@@ -15,6 +15,7 @@ import Servant.Client
 
 import IAM.Client.Auth
 import IAM.Client.Util
+import IAM.Sort
 import qualified IAM.Client
 
 
@@ -26,14 +27,18 @@ data ListPoliciesOptions = ListPoliciesOptions
 
 
 listPolicies :: ListPoliciesOptions -> IO ()
-listPolicies opts = do
+listPolicies opts = listPolicies' opts Nothing Nothing
+
+
+listPolicies' :: ListPoliciesOptions -> Maybe SortPoliciesBy -> Maybe SortOrder -> IO ()
+listPolicies' opts mSort mOrder = do
   let search = listPoliciesSearch opts
   let offset = listPoliciesOffset opts
   let limit = listPoliciesLimit opts
   url <- serverUrl
   auth <- clientAuthInfo
   mgr <- newManager tlsManagerSettings { managerModifyRequest = clientAuth auth }
-  let clientOp = IAM.Client.listPolicies search offset limit
+  let clientOp = IAM.Client.listPolicies search mSort mOrder offset limit
   result <- runClientM clientOp $ mkClientEnv mgr url
   case result of
     Right policies ->

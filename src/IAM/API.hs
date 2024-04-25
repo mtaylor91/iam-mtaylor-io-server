@@ -112,7 +112,10 @@ type MembershipAPI
     )
 
 type PoliciesAPI
-  = ( QueryParam "search" Text :> ListAPI PolicyIdentifier
+  = ( QueryParam "search" Text
+    :> QueryParam "sort" SortPoliciesBy
+    :> QueryParam "order" SortOrder
+    :> ListAPI PolicyIdentifier
   :<|> ( ReqBody '[JSON] Policy :> PostCreated '[JSON] Policy )
   :<|> ( Capture "policy" PolicyIdentifier :> PolicyAPI )
     )

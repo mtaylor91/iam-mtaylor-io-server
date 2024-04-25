@@ -163,20 +163,26 @@ getPolicyHandler ctx auth policy = do
 
 
 listPoliciesHandler ::
-  DB db => Ctx db -> Auth -> Maybe Text -> Maybe Int -> Maybe Int ->
-    Handler (ListResponse PolicyIdentifier)
-listPoliciesHandler ctx auth Nothing maybeOffset maybeLimit = do
+  DB db => Ctx db -> Auth -> Maybe Text -> Maybe SortPoliciesBy -> Maybe SortOrder ->
+    Maybe Int -> Maybe Int -> Handler (ListResponse PolicyIdentifier)
+listPoliciesHandler ctx auth Nothing mSort mOrder mOffset mLimit = do
   requireSession auth
-  let offset' = fromMaybe 0 maybeOffset
-  result <- liftIO $ runExceptT $ listPolicyIds (ctxDB ctx) $ Range offset' maybeLimit
+  let offset' = fromMaybe 0 mOffset
+  let sort' = fromMaybe SortPoliciesByName mSort
+  let order' = fromMaybe Ascending mOrder
+  let dbOp = listPolicyIds (ctxDB ctx) (Range offset' mLimit) sort' order'
+  result <- liftIO $ runExceptT dbOp
   case result of
     Right pids -> return pids
     Left err   -> errorHandler err
-listPoliciesHandler ctx auth (Just search) maybeOffset maybeLimit = do
+listPoliciesHandler ctx auth (Just search) mSort mOrder mOffset mLimit = do
   requireSession auth
-  let offset' = fromMaybe 0 maybeOffset
-  result <- liftIO $ runExceptT $ listPolicyIdsBySearchTerm (ctxDB ctx) search $
-    Range offset' maybeLimit
+  let offset' = fromMaybe 0 mOffset
+  let sort' = fromMaybe SortPoliciesByName mSort
+  let order' = fromMaybe Ascending mOrder
+  let range = Range offset' mLimit
+  let dbOp = listPolicyIdsBySearchTerm (ctxDB ctx) search range sort' order'
+  result <- liftIO $ runExceptT dbOp
   case result of
     Right pids -> return pids
     Left err   -> errorHandler err

@@ -24,6 +24,9 @@ instance FromHttpApiData PolicyId where
 instance ToHttpApiData PolicyId where
   toUrlPiece (PolicyUUID uuid) = toText uuid
 
+instance Ord PolicyId where
+  compare (PolicyUUID a) (PolicyUUID b) = compare a b
+
 
 data PolicyIdentifier
   = PolicyName !Text
@@ -67,6 +70,11 @@ unPolicyIdentifier :: PolicyIdentifier -> Either Text PolicyId
 unPolicyIdentifier (PolicyName name) = Left name
 unPolicyIdentifier (PolicyId gid) = Right gid
 unPolicyIdentifier (PolicyIdAndName gid _) = Right gid
+
+unPolicyIdentifierId :: PolicyIdentifier -> Maybe PolicyId
+unPolicyIdentifierId (PolicyId gid) = Just gid
+unPolicyIdentifierId (PolicyIdAndName gid _) = Just gid
+unPolicyIdentifierId _ = Nothing
 
 unPolicyIdentifierName :: PolicyIdentifier -> Maybe Text
 unPolicyIdentifierName (PolicyName name) = Just name
