@@ -19,15 +19,19 @@ import IAM.Client.Util
 
 
 data ListLoginsOptions = ListLoginsOptions
-  deriving (Show)
+  { listLoginsOffset :: Maybe Int
+  , listLoginsLimit :: Maybe Int
+  } deriving (Show)
 
 
 listLogins :: ListLoginsOptions -> IO ()
-listLogins _ = do
+listLogins opts = do
+  let offset = listLoginsOffset opts
+  let limit = listLoginsLimit opts
   url <- serverUrl
   auth <- clientAuthInfo
   mgr <- newManager tlsManagerSettings { managerModifyRequest = clientAuth auth }
-  let clientReq = listCallerLoginRequests Nothing Nothing
+  let clientReq = listCallerLoginRequests offset limit
   result <- runClientM clientReq $ mkClientEnv mgr url
   case result of
     Left err ->
@@ -37,4 +41,14 @@ listLogins _ = do
 
 
 listLoginsOptions :: Parser ListLoginsOptions
-listLoginsOptions = pure ListLoginsOptions
+listLoginsOptions = ListLoginsOptions
+  <$> optional (option auto
+    ( long "offset"
+    <> short 'o'
+    <> metavar "OFFSET"
+    <> help "Offset for pagination" ))
+  <*> optional (option auto
+    ( long "limit"
+    <> short 'l'
+    <> metavar "LIMIT"
+    <> help "Limit for pagination" ))
