@@ -31,14 +31,15 @@ import IAM.UserPolicy
 import IAM.UserIdentifier
 
 
-loginRequestHandler :: DB db => Ctx db -> Auth -> LoginRequest -> Handler LoginResponse
+loginRequestHandler :: DB db => Ctx db -> Auth -> LoginRequest ->
+  Handler (LoginResponse CreateSession)
 loginRequestHandler ctx auth req = do
   -- Check if the login request already exists
   let lid = loginRequestId req
   let uid = loginRequestUser req
   lrResult <- liftIO $ runExceptT $ getLoginResponse (ctxDB ctx) uid lid
   case lrResult of
-    Right r -> return r -- Return the existing login request
+    Right r -> ret r -- Return the existing login request
     Left (NotFound (LoginIdentifier lid')) | lid == lid' -> do
       -- Look up the user ID
       uidResult <- liftIO $ runExceptT $ getUserId (ctxDB ctx) (loginRequestUser req)
@@ -52,14 +53,28 @@ loginRequestHandler ctx auth req = do
           resp <- liftIO $ createLoginRequest req ip uid'
           result <- liftIO $ runExceptT $ createLoginResponse (ctxDB ctx) resp
           case result of
-            Right resp' -> return resp'
+            Right resp' -> ret resp'
             Left err    -> errorHandler err
     Left err -> errorHandler err
+
+  where
+
+    ret :: LoginResponse SessionId -> Handler (LoginResponse CreateSession)
+    ret resp = case (loginResponseStatus resp, loginResponseSession resp) of
+      (LoginRequestGranted, Nothing) -> do
+        -- Create a session
+        let ip = loginResponseIp resp
+        let uid = loginResponseUserId resp
+        s <- liftIO $ runExceptT $ IAM.Server.DB.createSession (ctxDB ctx) ip uid
+        case s of
+          Right s' -> return $ resp { loginResponseSession = Just s' }
+          Left err -> errorHandler err
+      (_, _) -> return $ resp { loginResponseSession = Nothing }
 
 
 listLoginRequestsHandler :: DB db =>
   Ctx db -> Auth -> UserIdentifier -> Maybe Int -> Maybe Int ->
-    Handler (ListResponse LoginResponse)
+    Handler (ListResponse (LoginResponse SessionId))
 listLoginRequestsHandler ctx auth uid maybeOffset maybeLimit = do
   _ <- requireSession auth
   result <- liftIO $ runExceptT $ listLoginResponses (ctxDB ctx) uid range
@@ -72,7 +87,7 @@ listLoginRequestsHandler ctx auth uid maybeOffset maybeLimit = do
 
 
 getLoginRequestHandler :: DB db =>
-  Ctx db -> Auth -> UserIdentifier -> LoginRequestId -> Handler LoginResponse
+  Ctx db -> Auth -> UserIdentifier -> LoginRequestId -> Handler (LoginResponse SessionId)
 getLoginRequestHandler ctx auth uid lrid = do
   _ <- requireSession auth
   result <- liftIO $ runExceptT $ getLoginResponse (ctxDB ctx) uid lrid
@@ -82,7 +97,7 @@ getLoginRequestHandler ctx auth uid lrid = do
 
 
 deleteLoginRequestHandler :: DB db =>
-  Ctx db -> Auth -> UserIdentifier -> LoginRequestId -> Handler LoginResponse
+  Ctx db -> Auth -> UserIdentifier -> LoginRequestId -> Handler (LoginResponse SessionId)
 deleteLoginRequestHandler ctx auth uid lrid = do
   _ <- requireSession auth
   result <- liftIO $ runExceptT $ deleteLoginResponse (ctxDB ctx) uid lrid
@@ -93,7 +108,7 @@ deleteLoginRequestHandler ctx auth uid lrid = do
 
 updateLoginRequestHandler :: DB db =>
   Ctx db -> Auth -> UserIdentifier -> LoginRequestId -> LoginStatus ->
-    Handler LoginResponse
+    Handler (LoginResponse SessionId)
 updateLoginRequestHandler ctx auth uid lrid status = do
   _ <- requireSession auth
   result <- liftIO $ runExceptT $ updateLoginResponse (ctxDB ctx) uid lrid f

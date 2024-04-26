@@ -51,13 +51,17 @@ type ListAPI a
   :> Get '[JSON] (ListResponse a)
 
 
+type LoginHandlerAPI =
+  ReqBody '[JSON] LoginRequest :> Post '[JSON] (LoginResponse CreateSession)
+
+
 type IAMAPI
   = ( "user" :> UserAPI
   :<|> ("users" :> UsersAPI)
   :<|> ( "groups" :> GroupsAPI )
   :<|> ( "policies" :> PoliciesAPI )
   :<|> ( "authorize" :> AuthorizeAPI )
-  :<|> ( "login" :> ReqBody '[JSON] LoginRequest :> Post '[JSON] LoginResponse )
+  :<|> ( "login" :> LoginHandlerAPI )
     )
 
 type UsersAPI
@@ -78,15 +82,15 @@ type UserAPI
     )
 
 type LoginsAPI
-  = ( ListAPI LoginResponse
+  = ( ListAPI (LoginResponse SessionId)
   :<|> Capture "login-request" LoginRequestId :> LoginAPI
     )
 
 type LoginAPI
-  = ( Get '[JSON] LoginResponse
-  :<|> Delete '[JSON] LoginResponse
-  :<|> "deny" :> Post '[JSON] LoginResponse
-  :<|> "grant" :> Post '[JSON] LoginResponse
+  = ( Get '[JSON] (LoginResponse SessionId)
+  :<|> Delete '[JSON] (LoginResponse SessionId)
+  :<|> "deny" :> Post '[JSON] (LoginResponse SessionId)
+  :<|> "grant" :> Post '[JSON] (LoginResponse SessionId)
     )
 
 type UserPolicyAPI

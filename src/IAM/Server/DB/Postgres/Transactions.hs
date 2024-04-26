@@ -39,10 +39,74 @@ pgEscapeLike = pack . concatMap escapeChar . unpack
     escapeChar c = [c]
 
 
-pgCreateLoginResponse :: LoginResponse -> Transaction (Either Error LoginResponse)
+pgCreateLoginResponse ::
+  LoginResponse SessionId -> Transaction (Either Error (LoginResponse SessionId))
 pgCreateLoginResponse lr = do
   statement lr insertLoginRequest
   return $ Right lr
+
+
+pgGetLoginResponse ::
+  UserIdentifier -> LoginRequestId -> Transaction (Either Error (LoginResponse SessionId))
+pgGetLoginResponse uident lid = do
+  maybeUid <- resolveUserIdentifier uident
+  case maybeUid of
+    Nothing -> return $ Left $ NotFound $ UserIdentifier' uident
+    Just uid -> do
+      result <- statement (uid, lid) selectLoginRequest
+      case result of
+        Nothing -> return $ Left $ NotFound $ LoginIdentifier lid
+        Just lr -> return $ Right lr
+
+
+pgListLoginResponses ::
+  UserIdentifier -> Range ->
+    Transaction (Either Error (ListResponse (LoginResponse SessionId)))
+pgListLoginResponses uident (Range offset' maybeLimit) = do
+  maybeUid <- resolveUserIdentifier uident
+  case maybeUid of
+    Nothing -> return $ Left $ NotFound $ UserIdentifier' uident
+    Just uid -> do
+      let limit' = fromMaybe 100 maybeLimit
+      let offset'' = fromIntegral offset'
+      let limit'' = fromIntegral limit'
+      total' <- statement uid selectLoginRequestsByUserIdCount
+      result <- statement (uid, (offset'', limit'')) selectLoginRequestsByUserId
+      return $ Right $ ListResponse result limit' offset' $ fromIntegral total'
+
+
+pgDeleteLoginResponse ::
+  UserIdentifier -> LoginRequestId ->
+    Transaction (Either Error (LoginResponse SessionId))
+pgDeleteLoginResponse uident lid = do
+  maybeUid <- resolveUserIdentifier uident
+  case maybeUid of
+    Nothing -> return $ Left $ NotFound $ UserIdentifier' uident
+    Just uid -> do
+      result <- statement (uid, lid) selectLoginRequest
+      case result of
+        Nothing -> return $ Left $ NotFound $ LoginIdentifier lid
+        Just lr -> do
+          statement (uid, lid) deleteLoginRequest
+          return $ Right lr
+
+
+pgUpdateLoginResponse ::
+  UserIdentifier -> LoginRequestId ->
+    (LoginResponse SessionId -> LoginResponse SessionId) ->
+      Transaction (Either Error (LoginResponse SessionId))
+pgUpdateLoginResponse uident lid f = do
+  maybeUid <- resolveUserIdentifier uident
+  case maybeUid of
+    Nothing -> return $ Left $ NotFound $ UserIdentifier' uident
+    Just uid -> do
+      result <- statement (uid, lid) selectLoginRequest
+      case result of
+        Nothing -> return $ Left $ NotFound $ LoginIdentifier lid
+        Just lr -> do
+          let lr' = f lr
+          statement lr' upsertLoginRequest
+          return $ Right lr'
 
 
 pgGetUser :: UserIdentifier -> Transaction (Either Error User)

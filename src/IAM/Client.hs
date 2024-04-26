@@ -68,15 +68,15 @@ type UserClientM =
 
 
 type LoginRequestsClientM
-  = (Maybe Int -> Maybe Int -> ClientM (ListResponse LoginResponse))
+  = (Maybe Int -> Maybe Int -> ClientM (ListResponse (LoginResponse SessionId)))
   :<|> (LoginRequestId -> LoginRequestClientM)
 
 
 type LoginRequestClientM
-  = ClientM LoginResponse
-  :<|> ClientM LoginResponse
-  :<|> ClientM LoginResponse
-  :<|> ClientM LoginResponse
+  = ClientM (LoginResponse SessionId)
+  :<|> ClientM (LoginResponse SessionId)
+  :<|> ClientM (LoginResponse SessionId)
+  :<|> ClientM (LoginResponse SessionId)
 
 
 type UserPolicyClientM
@@ -145,16 +145,17 @@ data UserClient = UserClient
 
 
 data LoginRequestsClient = LoginRequestsClient
-  { listLoginRequests :: !(Maybe Int -> Maybe Int -> ClientM (ListResponse LoginResponse))
+  { listLoginRequests ::
+    !(Maybe Int -> Maybe Int -> ClientM (ListResponse (LoginResponse SessionId)))
   , loginRequestClient :: !(LoginRequestId -> LoginRequestClient)
   }
 
 
 data LoginRequestClient = LoginRequestClient
-  { getLoginRequest :: !(ClientM LoginResponse)
-  , deleteLoginRequest :: !(ClientM LoginResponse)
-  , denyLoginRequest :: !(ClientM LoginResponse)
-  , grantLoginRequest :: !(ClientM LoginResponse)
+  { getLoginRequest :: !(ClientM (LoginResponse SessionId))
+  , deleteLoginRequest :: !(ClientM (LoginResponse SessionId))
+  , denyLoginRequest :: !(ClientM (LoginResponse SessionId))
+  , grantLoginRequest :: !(ClientM (LoginResponse SessionId))
   }
 
 
@@ -209,7 +210,7 @@ usersClient :: UsersClientM
 groupsClient :: GroupsClientM
 policiesClient :: PoliciesClientM
 authorizeClient :: AuthorizationClientM
-login :: LoginRequest -> ClientM LoginResponse
+login :: LoginRequest -> ClientM (LoginResponse CreateSession)
 
 
 callerClient
@@ -235,7 +236,8 @@ callerSessionClient :: UserSessionsClientM
   :<|> callerSessionClient ) = callerClient
 
 
-listCallerLoginRequests :: Maybe Int -> Maybe Int -> ClientM (ListResponse LoginResponse)
+listCallerLoginRequests ::
+  Maybe Int -> Maybe Int -> ClientM (ListResponse (LoginResponse SessionId))
 callerLoginRequestClient :: LoginRequestId -> LoginRequestClientM
 
 

@@ -9,7 +9,6 @@ import Data.UUID
 import Servant
 
 import IAM.Ip
-import IAM.Session
 import IAM.UserPublicKey
 import IAM.UserIdentifier
 
@@ -62,7 +61,7 @@ instance ToJSON LoginRequest where
     ]
 
 
-createLoginRequest :: LoginRequest -> IpAddr -> UserId -> IO LoginResponse
+createLoginRequest :: LoginRequest -> IpAddr -> UserId -> IO (LoginResponse s)
 createLoginRequest (LoginRequest lid _ publicKey) ip uid = do
   now <- getCurrentTime
   let expires = addUTCTime 3600 now
@@ -89,18 +88,18 @@ instance ToJSON LoginStatus where
   toJSON LoginRequestDenied = "denied"
 
 
-data LoginResponse = LoginResponse
+data LoginResponse s = LoginResponse
   { loginResponseIp :: IpAddr
   , loginResponseRequest :: LoginRequestId
   , loginResponseUserId :: UserId
   , loginResponsePublicKey :: UserPublicKey
   , loginResponseExpires :: UTCTime
-  , loginResponseSession :: Maybe SessionId
+  , loginResponseSession :: Maybe s
   , loginResponseStatus :: LoginStatus
   } deriving (Eq, Show)
 
 
-instance FromJSON LoginResponse where
+instance FromJSON s => FromJSON (LoginResponse s) where
   parseJSON (Object obj) = do
     ip <- obj .: "ip"
     lid <- obj .: "id"
@@ -113,7 +112,7 @@ instance FromJSON LoginResponse where
   parseJSON _ = fail "Invalid JSON"
 
 
-instance ToJSON LoginResponse where
+instance ToJSON s => ToJSON (LoginResponse s) where
   toJSON (LoginResponse ip lid user publicKey expires session status) = object
     [ "ip" .= ip
     , "id" .= lid

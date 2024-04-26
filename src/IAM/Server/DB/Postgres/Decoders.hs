@@ -16,7 +16,7 @@ import IAM.UserIdentifier
 import IAM.UserPublicKey
 
 
-loginResponseDecoder :: D.Row LoginResponse
+loginResponseDecoder :: D.Row (LoginResponse SessionId)
 loginResponseDecoder =
   (constructLoginResponse .
   LoginRequestId <$> D.column (D.nonNullable D.uuid)) <*>
@@ -32,7 +32,7 @@ loginResponseDecoder =
 
 constructLoginResponse ::
   LoginRequestId -> UserId -> PublicKey -> Text -> Maybe UUID -> IpAddr ->
-    UTCTime -> Bool -> Bool -> LoginResponse
+    UTCTime -> Bool -> Bool -> LoginResponse SessionId
 constructLoginResponse lid uid pk desc sid ip ex g d = LoginResponse
   { loginResponseIp = ip
   , loginResponseRequest = lid

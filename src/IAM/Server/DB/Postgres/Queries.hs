@@ -17,10 +17,13 @@ import Network.IP.Addr (NetAddr, IP)
 import qualified Hasql.Decoders as D
 
 import IAM.Login
+import IAM.Session
 import IAM.Server.DB.Postgres.Encoders
+import IAM.Server.DB.Postgres.Decoders
+import IAM.UserIdentifier
 
 
-insertLoginRequest :: Statement LoginResponse ()
+insertLoginRequest :: Statement (LoginResponse SessionId) ()
 insertLoginRequest =
   Statement sql loginResponseEncoder D.noResult True
   where
@@ -193,23 +196,50 @@ insertSession =
 
 
 selectLoginRequest ::
-  Statement (UUID, UUID) (Maybe (ByteString, Maybe UUID, NetAddr IP, UTCTime, Bool, Bool))
+  Statement (UserId, LoginRequestId) (Maybe (LoginResponse SessionId))
 selectLoginRequest =
-  [maybeStatement|
-    SELECT
-      logins.public_key :: bytea,
-      logins.session_uuid :: uuid?,
-      logins.login_addr :: inet,
-      logins.login_expires :: timestamptz,
-      logins.login_granted :: bool,
-      logins.login_denied :: bool
-    FROM
-      logins
-    WHERE
-      logins.login_uuid = $2 :: uuid
-    AND
-      logins.user_uuid = $1 :: uuid
-  |]
+  Statement sql loginIdentityEncoder (D.rowMaybe loginResponseDecoder) True
+  where
+    sql = "SELECT \
+          \logins.login_uuid, \
+          \logins.user_uuid, \
+          \logins.public_key, \
+          \logins.description, \
+          \logins.session_uuid, \
+          \logins.login_addr, \
+          \logins.login_expires, \
+          \logins.login_granted, \
+          \logins.login_denied \
+          \FROM logins \
+          \WHERE logins.user_uuid = $1 AND logins.login_uuid = $2"
+
+
+selectLoginRequestsByUserId ::
+  Statement (UserId, (Int32, Int32)) [LoginResponse SessionId]
+selectLoginRequestsByUserId =
+  Statement sql userIdRangeEncoder (D.rowList loginResponseDecoder) True
+  where
+    sql = "SELECT \
+          \logins.login_uuid, \
+          \logins.user_uuid, \
+          \logins.public_key, \
+          \logins.description, \
+          \logins.session_uuid, \
+          \logins.login_addr, \
+          \logins.login_expires, \
+          \logins.login_granted, \
+          \logins.login_denied \
+          \FROM logins \
+          \WHERE logins.user_uuid = $1 \
+          \ORDER BY logins.login_uuid ASC \
+          \OFFSET $2 LIMIT $3"
+
+
+selectLoginRequestsByUserIdCount :: Statement UserId Int32
+selectLoginRequestsByUserIdCount =
+  Statement sql userIdEncoder (D.singleRow (D.column (D.nonNullable D.int4))) True
+  where
+    sql = "SELECT COUNT(*) FROM logins WHERE logins.user_uuid = $1"
 
 
 selectUserCount :: Statement () Int32
@@ -1426,6 +1456,30 @@ updateSessionExpiration =
     WHERE
       session_uuid = $1 :: uuid
   |]
+
+
+upsertLoginRequest :: Statement (LoginResponse SessionId) ()
+upsertLoginRequest = Statement sql loginResponseEncoder D.noResult True where
+  sql = "INSERT INTO logins \
+        \(login_uuid, user_uuid, public_key, description, session_uuid,\
+        \ login_addr, login_expires, login_granted, login_denied) \
+        \VALUES \
+        \($1, $2, $3, $4, $5, $6, $7, $8, $9) \
+        \ON CONFLICT (login_uuid) DO UPDATE \
+        \SET \
+        \user_uuid = $2, \
+        \public_key = $3, \
+        \description = $4, \
+        \session_uuid = $5, \
+        \login_addr = $6, \
+        \login_expires = $7, \
+        \login_granted = $8, \
+        \login_denied = $9"
+
+
+deleteLoginRequest :: Statement (UserId, LoginRequestId) ()
+deleteLoginRequest = Statement sql loginIdentityEncoder D.noResult True where
+  sql = "DELETE FROM logins WHERE user_uuid = $1 AND login_uuid = $2"
 
 
 deleteUserId :: Statement UUID ()

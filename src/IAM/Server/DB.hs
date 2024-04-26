@@ -26,24 +26,25 @@ class DB db where
 
   -- | createLoginResponse adds a new login request to the database.
   createLoginResponse :: (MonadIO m, MonadError Error m) =>
-    db -> LoginResponse -> m LoginResponse
+    db -> LoginResponse SessionId -> m (LoginResponse SessionId)
 
   -- | getLoginResponse returns a login request from the database by its id.
   getLoginResponse :: (MonadIO m, MonadError Error m) =>
-    db -> UserIdentifier -> LoginRequestId -> m LoginResponse
+    db -> UserIdentifier -> LoginRequestId -> m (LoginResponse SessionId)
 
   -- | listLoginResponses returns a list of all login requests for a user.
   listLoginResponses :: (MonadIO m, MonadError Error m) =>
-    db -> UserIdentifier -> Range -> m (ListResponse LoginResponse)
+    db -> UserIdentifier -> Range -> m (ListResponse (LoginResponse SessionId))
 
   -- | updateLoginResponse updates an existing login request in the database.
   updateLoginResponse :: (MonadIO m, MonadError Error m) =>
-    db -> UserIdentifier -> LoginRequestId -> (LoginResponse -> LoginResponse) ->
-      m LoginResponse
+    db -> UserIdentifier -> LoginRequestId ->
+      (LoginResponse SessionId -> LoginResponse SessionId) ->
+        m (LoginResponse SessionId)
 
   -- | deleteLoginResponse removes a login request from the database by its id.
   deleteLoginResponse :: (MonadIO m, MonadError Error m) =>
-    db -> UserIdentifier -> LoginRequestId -> m LoginResponse
+    db -> UserIdentifier -> LoginRequestId -> m (LoginResponse SessionId)
 
   -- | getUser returns a user from the database by its identifier.
   getUser :: (MonadIO m, MonadError Error m) =>

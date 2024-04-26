@@ -45,6 +45,18 @@ instance DB PostgresDB where
   createLoginResponse (PostgresDB pool) lr =
     runTransaction pool $ pgCreateLoginResponse lr
 
+  getLoginResponse (PostgresDB pool) uid lid =
+    runTransaction pool $ pgGetLoginResponse uid lid
+
+  listLoginResponses (PostgresDB pool) uid range =
+    runTransaction pool $ pgListLoginResponses uid range
+
+  updateLoginResponse (PostgresDB pool) uid lid f =
+    runTransaction pool $ pgUpdateLoginResponse uid lid f
+
+  deleteLoginResponse (PostgresDB pool) uid lid =
+    runTransaction pool $ pgDeleteLoginResponse uid lid
+
   getUser (PostgresDB pool) uid =
     runTransaction pool $ pgGetUser uid
 

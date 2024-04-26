@@ -5,6 +5,7 @@ module IAM.Server.DB.Postgres.Encoders
 import Crypto.Sign.Ed25519 (PublicKey(..))
 import Data.ByteString (ByteString)
 import Data.Functor.Contravariant ((>$<))
+import Data.Int (Int32)
 import Data.Text (Text)
 import Data.UUID (UUID)
 import qualified Hasql.Encoders as E
@@ -24,11 +25,18 @@ userIdEncoder :: E.Params UserId
 userIdEncoder = unUserId >$< E.param (E.nonNullable E.uuid)
 
 
+userIdRangeEncoder :: E.Params (UserId, (Int32, Int32))
+userIdRangeEncoder =
+  (fst >$< userIdEncoder) <>
+  (fst . snd >$< E.param (E.nonNullable E.int4)) <>
+  (snd . snd >$< E.param (E.nonNullable E.int4))
+
+
 loginIdentityEncoder :: E.Params (UserId, LoginRequestId)
 loginIdentityEncoder = (fst >$< userIdEncoder) <> (snd >$< loginIdEncoder)
 
 
-loginResponseEncoder :: E.Params LoginResponse
+loginResponseEncoder :: E.Params (LoginResponse SessionId)
 loginResponseEncoder =
   ((unLoginRequestId . loginResponseRequest) >$< E.param (E.nonNullable E.uuid)) <>
   ((unUserId . loginResponseUserId) >$< E.param (E.nonNullable E.uuid)) <>
@@ -42,17 +50,17 @@ loginResponseEncoder =
 
   where
 
-  pk :: LoginResponse -> ByteString
+  pk :: LoginResponse SessionId -> ByteString
   pk = unPublicKey . userPublicKey . loginResponsePublicKey
 
-  pkDesc :: LoginResponse -> Text
+  pkDesc :: LoginResponse SessionId -> Text
   pkDesc = userPublicKeyDescription . loginResponsePublicKey
 
-  sid :: LoginResponse -> Maybe UUID
+  sid :: LoginResponse SessionId -> Maybe UUID
   sid = fmap unSessionId . loginResponseSession
 
-  loginResponseGranted :: LoginResponse -> Bool
+  loginResponseGranted :: LoginResponse SessionId -> Bool
   loginResponseGranted lr = loginResponseStatus lr == LoginRequestGranted
 
-  loginResponseDenied :: LoginResponse -> Bool
+  loginResponseDenied :: LoginResponse SessionId -> Bool
   loginResponseDenied lr = loginResponseStatus lr == LoginRequestDenied
