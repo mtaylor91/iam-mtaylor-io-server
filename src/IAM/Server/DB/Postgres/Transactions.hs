@@ -292,6 +292,13 @@ pgCreateUser (User (UserUUID uuid) mName mEmail groups policies publicKeys) = do
     statement (uuid, pk, description) insertUserPublicKey
 
 
+pgUpsertUserPublicKey ::
+  UserId -> UserPublicKey -> Transaction (Either Error UserPublicKey)
+pgUpsertUserPublicKey uid pk = do
+  statement (uid, pk) upsertUserPublicKey
+  return $ Right pk
+
+
 pgDeleteUser :: UserIdentifier -> Transaction (Either Error User)
 pgDeleteUser (UserIdentifier (Just uid) _ _) = pgDeleteUserById uid
 pgDeleteUser (UserIdentifier Nothing (Just name) _) = pgDeleteUserByName name

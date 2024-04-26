@@ -15,8 +15,9 @@ import IAM.ListResponse
 import IAM.Membership
 import IAM.Policy
 import IAM.User
-import IAM.UserPolicy
 import IAM.UserIdentifier
+import IAM.UserPolicy
+import IAM.UserPublicKey
 import IAM.Range
 import IAM.Session
 import IAM.Sort
@@ -66,6 +67,10 @@ class DB db where
   -- | createUser adds a new user to the database.
   createUser :: (MonadIO m, MonadError Error m) =>
     db -> User -> m User
+
+  -- | upsertUserPublicKey adds or updates a public key for a user.
+  upsertUserPublicKey :: (MonadIO m, MonadError Error m) =>
+    db -> UserId -> UserPublicKey -> m UserPublicKey
 
   -- | deleteUser removes a user from the database by its email.
   deleteUser :: (MonadIO m, MonadError Error m) =>

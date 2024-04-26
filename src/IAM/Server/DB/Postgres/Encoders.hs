@@ -64,3 +64,10 @@ loginResponseEncoder =
 
   loginResponseDenied :: LoginResponse SessionId -> Bool
   loginResponseDenied lr = loginResponseStatus lr == LoginRequestDenied
+
+
+userIdUserPublicKeyEncoder :: E.Params (UserId, UserPublicKey)
+userIdUserPublicKeyEncoder =
+  (fst >$< userIdEncoder) <>
+  (unPublicKey . userPublicKey . snd >$< E.param (E.nonNullable E.bytea)) <>
+  (userPublicKeyDescription . snd >$< E.param (E.nonNullable E.text))

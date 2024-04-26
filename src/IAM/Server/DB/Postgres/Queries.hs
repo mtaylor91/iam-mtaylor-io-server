@@ -21,6 +21,7 @@ import IAM.Session
 import IAM.Server.DB.Postgres.Encoders
 import IAM.Server.DB.Postgres.Decoders
 import IAM.UserIdentifier
+import IAM.UserPublicKey
 
 
 insertLoginRequest :: Statement (LoginResponse SessionId) ()
@@ -1475,6 +1476,17 @@ upsertLoginRequest = Statement sql loginResponseEncoder D.noResult True where
         \login_expires = $7, \
         \login_granted = $8, \
         \login_denied = $9"
+
+
+upsertUserPublicKey :: Statement (UserId, UserPublicKey) ()
+upsertUserPublicKey = Statement sql userIdUserPublicKeyEncoder D.noResult True where
+  sql = "INSERT INTO users_public_keys \
+        \(user_uuid, public_key, description) \
+        \VALUES \
+        \($1, $2, $3) \
+        \ON CONFLICT (user_uuid, public_key) DO UPDATE \
+        \SET \
+        \description = $3"
 
 
 deleteLoginRequest :: Statement (UserId, LoginRequestId) ()

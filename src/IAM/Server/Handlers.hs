@@ -119,10 +119,20 @@ updateLoginRequestHandler :: DB db =>
     Handler (LoginResponse SessionId)
 updateLoginRequestHandler ctx auth uid lrid status = do
   _ <- requireSession auth
-  result <- liftIO $ runExceptT $ updateLoginResponse (ctxDB ctx) uid lrid f
-  case result of
-    Right resp -> return resp
-    Left err   -> errorHandler err
+  result0 <- liftIO $ runExceptT $ updateLoginResponse (ctxDB ctx) uid lrid f
+  case result0 of
+    Left err -> errorHandler err
+    Right resp -> case status of
+      LoginRequestGranted -> do
+        -- Associate the login key with the user
+        let key = loginResponsePublicKey resp
+        let uid' = loginResponseUserId resp
+        let dbOp = upsertUserPublicKey (ctxDB ctx) uid' key
+        result1 <- liftIO $ runExceptT dbOp
+        case result1 of
+          Left err -> errorHandler err
+          Right _  -> return resp
+      _ -> return resp
   where
     f resp = resp { loginResponseStatus = status }
 

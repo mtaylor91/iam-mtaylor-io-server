@@ -72,6 +72,9 @@ instance DB PostgresDB where
   createUser (PostgresDB pool) u =
     runTransaction pool $ pgCreateUser u
 
+  upsertUserPublicKey (PostgresDB pool) uid pk =
+    runTransaction pool $ pgUpsertUserPublicKey uid pk
+
   deleteUser (PostgresDB pool) uid =
     runTransaction pool $ pgDeleteUser uid
 
