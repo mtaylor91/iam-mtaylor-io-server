@@ -16,21 +16,6 @@ CREATE TABLE IF NOT EXISTS "policies" (
   PRIMARY KEY ("policy_uuid")
 );
 
-CREATE TABLE IF NOT EXISTS "logins" {
-  "login_uuid" UUID NOT NULL,
-  "user_uuid" UUID NOT NULL,
-  "public_key" BYTEA NOT NULL,
-  "description" TEXT NOT NULL,
-  "session_uuid" UUID,
-  "login_addr" INET NOT NULL,
-  "login_expires" TIMESTAMP NOT NULL,
-  "login_granted" BOOLEAN NOT NULL,
-  "login_denied" BOOLEAN NOT NULL,
-  PRIMARY KEY ("login_uuid"),
-  FOREIGN KEY ("user_uuid") REFERENCES "users" ("user_uuid") ON DELETE CASCADE
-  FOREIGN KEY ("session_uuid") REFERENCES "sessions" ("session_uuid") ON DELETE CASCADE
-}
-
 CREATE TABLE IF NOT EXISTS "users_names" (
   "user_uuid" UUID NOT NULL,
   "user_name" TEXT NOT NULL UNIQUE,
@@ -99,4 +84,19 @@ CREATE TABLE IF NOT EXISTS "groups_policies" (
   PRIMARY KEY ("group_uuid", "policy_uuid"),
   FOREIGN KEY ("group_uuid") REFERENCES "groups" ("group_uuid") ON DELETE CASCADE,
   FOREIGN KEY ("policy_uuid") REFERENCES "policies" ("policy_uuid") ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS "logins" (
+  "login_uuid" UUID NOT NULL,
+  "user_uuid" UUID NOT NULL,
+  "public_key" BYTEA NOT NULL,
+  "description" TEXT NOT NULL,
+  "session_uuid" UUID,
+  "login_addr" INET NOT NULL,
+  "login_expires" TIMESTAMP NOT NULL,
+  "login_granted" BOOLEAN NOT NULL,
+  "login_denied" BOOLEAN NOT NULL,
+  PRIMARY KEY ("login_uuid"),
+  FOREIGN KEY ("user_uuid") REFERENCES "users" ("user_uuid") ON DELETE CASCADE,
+  FOREIGN KEY ("session_uuid") REFERENCES "sessions" ("session_uuid") ON DELETE CASCADE
 );
