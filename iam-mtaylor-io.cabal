@@ -33,6 +33,8 @@ library
       IAM.Client.Util
       IAM.Command
       IAM.Command.Authorize
+      IAM.Command.Authorize.Login
+      IAM.Command.Authorize.Request
       IAM.Command.Create
       IAM.Command.Create.Group
       IAM.Command.Create.Policy

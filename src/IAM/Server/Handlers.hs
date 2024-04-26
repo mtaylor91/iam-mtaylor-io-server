@@ -67,8 +67,16 @@ loginRequestHandler ctx auth req = do
         let uid = loginResponseUserId resp
         s <- liftIO $ runExceptT $ IAM.Server.DB.createSession (ctxDB ctx) ip uid
         case s of
-          Right s' -> return $ resp { loginResponseSession = Just s' }
           Left err -> errorHandler err
+          Right s' -> do
+            -- Update the login request with the session ID
+            let f r = r { loginResponseSession = Just (createSessionId s') }
+            result <- liftIO $ runExceptT $ updateLoginResponse (ctxDB ctx)
+              (UserIdentifier (Just uid) Nothing Nothing) (loginResponseRequest resp) f
+            case result of
+              Left err -> errorHandler err
+              -- Return the updated login request
+              Right _ -> return $ resp { loginResponseSession = Just s' }
       (_, _) -> return $ resp { loginResponseSession = Nothing }
 
 
