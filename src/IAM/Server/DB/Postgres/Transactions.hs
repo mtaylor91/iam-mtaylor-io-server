@@ -41,17 +41,7 @@ pgEscapeLike = pack . concatMap escapeChar . unpack
 
 pgCreateLoginResponse :: LoginResponse -> Transaction (Either Error LoginResponse)
 pgCreateLoginResponse lr = do
-  let params =
-        ( unLoginRequestId $ loginResponseRequest lr
-        , unUserId $ loginResponseUserId lr
-        , unPublicKey $ userPublicKey $ loginResponsePublicKey lr
-        , unSessionId . sessionId <$> loginResponseSession lr
-        , unIpAddr $ loginResponseIp lr
-        , loginResponseExpires lr
-        , loginResponseStatus lr == LoginRequestGranted
-        , loginResponseStatus lr == LoginRequestDenied
-        )
-  statement params insertLoginRequest
+  statement lr insertLoginRequest
   return $ Right lr
 
 

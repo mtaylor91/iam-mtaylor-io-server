@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 module IAM.Server.DB.Postgres.Queries
   ( module IAM.Server.DB.Postgres.Queries
@@ -10,39 +11,23 @@ import Data.Text (Text)
 import Data.Time (UTCTime)
 import Data.UUID (UUID)
 import Data.Vector (Vector)
-import Hasql.Statement (Statement)
+import Hasql.Statement (Statement(..))
 import Hasql.TH (maybeStatement, resultlessStatement, singletonStatement, vectorStatement)
 import Network.IP.Addr (NetAddr, IP)
+import qualified Hasql.Decoders as D
+
+import IAM.Login
+import IAM.Server.DB.Postgres.Encoders
 
 
-insertLoginRequest ::
-  Statement (UUID, UUID, ByteString, Maybe UUID, NetAddr IP, UTCTime, Bool, Bool) ()
+insertLoginRequest :: Statement LoginResponse ()
 insertLoginRequest =
-  [resultlessStatement|
-    INSERT INTO
-      logins
-        (
-          login_uuid,
-          user_uuid,
-          public_key,
-          session_uuid,
-          login_addr,
-          login_expires,
-          login_granted,
-          login_denied
-        )
-    VALUES
-      (
-        $1 :: uuid,
-        $2 :: uuid,
-        $3 :: bytea,
-        $4 :: uuid?,
-        $5 :: inet,
-        $6 :: timestamptz,
-        $7 :: bool,
-        $8 :: bool
-      )
-  |]
+  Statement sql loginResponseEncoder D.noResult True
+  where
+    sql = "INSERT INTO logins \
+          \(login_uuid, user_uuid, public_key, description, session_uuid,\
+          \ login_addr, login_expires, login_granted, login_denied) \
+          \VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
 
 
 insertUserId :: Statement UUID ()

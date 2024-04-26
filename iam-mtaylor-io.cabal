@@ -75,6 +75,8 @@ library
       IAM.Server.DB.InMemory
       IAM.Server.DB.InMemory.State
       IAM.Server.DB.Postgres
+      IAM.Server.DB.Postgres.Decoders
+      IAM.Server.DB.Postgres.Encoders
       IAM.Server.DB.Postgres.Queries
       IAM.Server.DB.Postgres.Transactions
       IAM.Server.Handlers
