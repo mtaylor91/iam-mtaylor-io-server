@@ -13,6 +13,7 @@ import IAM.Group
 import IAM.GroupPolicy
 import IAM.GroupIdentifier
 import IAM.Identifier
+import IAM.Login
 import IAM.ListResponse
 import IAM.Membership
 import IAM.Policy
@@ -35,6 +36,58 @@ inMemory = InMemory <$> newTVarIO newInMemoryState
 
 
 instance DB InMemory where
+
+  createLoginResponse (InMemory tvar) lr = do
+    liftIO $ atomically $ do
+      s <- readTVar tvar
+      writeTVar tvar $ s & loginState (loginResponseRequest lr) ?~ lr
+    return lr
+
+  getLoginResponse (InMemory tvar) _ lid = do
+    s <- liftIO $ readTVarIO tvar
+    case s ^. loginState lid of
+      Just lr -> return lr
+      Nothing -> throwError $ NotFound $ LoginIdentifier lid
+
+  listLoginResponses (InMemory tvar) uid (Range offset' maybeLimit) = do
+    s <- liftIO $ readTVarIO tvar
+    case resolveUserIdentifier s uid of
+      Just uid' -> do
+        let lrs = [lr | lr <- logins s, loginResponseUserId lr == uid']
+        case maybeLimit of
+          Just limit' ->
+            let items' = Prelude.take limit' $ Prelude.drop offset' lrs
+                total' = Prelude.length lrs
+             in return $ ListResponse items' limit' offset' total'
+          Nothing ->
+            let items' = Prelude.drop offset' lrs
+                total' = Prelude.length lrs
+                limit' = total'
+             in return $ ListResponse items' limit' offset' total'
+      Nothing ->
+        throwError $ NotFound $ UserIdentifier' uid
+
+  updateLoginResponse (InMemory tvar) _ lid f = do
+    s <- liftIO $ readTVarIO tvar
+    case s ^. loginState lid of
+      Just lr -> do
+        let lr' = f lr
+        liftIO $ atomically $ do
+          s' <- readTVar tvar
+          writeTVar tvar $ s' & loginState lid ?~ lr'
+        return lr'
+      Nothing ->
+        throwError $ NotFound $ LoginIdentifier lid
+
+  deleteLoginResponse (InMemory tvar) _ lid = do
+    result <- liftIO $ atomically $
+      readTVar tvar >>= \s -> case s ^. loginState lid of
+        Just lr -> do
+          writeTVar tvar $ s & loginState lid .~ Nothing
+          return $ Right lr
+        Nothing ->
+          return $ Left $ NotFound $ LoginIdentifier lid
+    either throwError return result
 
   getUser (InMemory tvar) uid = do
     s <- liftIO $ readTVarIO tvar
@@ -105,6 +158,20 @@ instance DB InMemory where
       s <- readTVar tvar
       writeTVar tvar $ s & userIdState uid ?~ u
     return u
+
+  upsertUserPublicKey (InMemory tvar) uid pk = do
+    result <- liftIO $ atomically $
+      readTVar tvar >>= \s -> case s ^. userIdState uid of
+        Just u -> do
+          let pks = userPublicKeys u
+          let pks' = pk : Prelude.filter (/= pk) pks
+          let u' = u { userPublicKeys = pks' }
+          writeTVar tvar $ s & userIdState uid ?~ u'
+          return $ Right pk
+        Nothing ->
+          return $ Left $ NotFound $ UserIdentifier' $
+            UserIdentifier (Just uid) Nothing Nothing
+    either throwError return result
 
   deleteUser (InMemory tvar) uid = do
     result <- liftIO $ atomically $ do

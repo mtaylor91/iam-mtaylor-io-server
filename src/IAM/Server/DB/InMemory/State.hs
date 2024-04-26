@@ -8,6 +8,7 @@ import Data.Text
 
 import IAM.Group
 import IAM.GroupIdentifier
+import IAM.Login
 import IAM.Policy
 import IAM.User
 import IAM.UserPublicKey
@@ -18,6 +19,7 @@ import IAM.Session
 data InMemoryState = InMemoryState
   { users :: ![UserId]
   , groups :: ![GroupId]
+  , logins :: ![LoginResponse SessionId]
   , policies :: ![Policy]
   , sessions :: ![(Text, Session)]
   , usersNames :: ![(UserId, Text)]
@@ -34,6 +36,7 @@ newInMemoryState :: InMemoryState
 newInMemoryState = InMemoryState
   { users = []
   , groups = []
+  , logins = []
   , policies = []
   , sessions = []
   , usersNames = []
@@ -88,6 +91,17 @@ lookupGroup s gid maybeName =
       us = [lookupUserIdentifier s uid |
             (uid, gid') <- memberships s, gid' == gid]
    in Group gid maybeName us ps
+
+
+loginState :: forall f. Functor f =>
+  LoginRequestId ->
+    (Maybe (LoginResponse SessionId) -> f (Maybe (LoginResponse SessionId))) ->
+      InMemoryState -> f InMemoryState
+loginState lid f s =
+  case Prelude.filter ((== lid) . loginResponseRequest) $ logins s of
+    [] -> l <$> f Nothing
+    login:_ -> l <$> f (Just login)
+  where l = updateLoginState s lid
 
 
 userIdState :: forall f. Functor f =>
@@ -156,6 +170,14 @@ sessionStateByToken token f s =
     [] -> g <$> f Nothing
     (_, session):_ -> g <$> f (Just session)
   where g = updateSessionStateByToken s token
+
+
+updateLoginState ::
+  InMemoryState -> LoginRequestId -> Maybe (LoginResponse SessionId) -> InMemoryState
+updateLoginState s lid Nothing = s
+  { logins = Prelude.filter ((/= lid) . loginResponseRequest) (logins s) }
+updateLoginState s lid (Just login) = s
+  { logins = login : Prelude.filter ((/= lid) . loginResponseRequest) (logins s) }
 
 
 updateUserState :: InMemoryState -> UserId -> Maybe User -> InMemoryState
