@@ -18,7 +18,7 @@ module IAM.Server.Auth
 import Control.Monad.Except
 import Crypto.Sign.Ed25519
 import Data.ByteString (ByteString, splitAt, takeWhile)
-import Data.ByteString.Base64
+import Data.ByteString.Base64.URL
 import Data.CaseInsensitive
 import Data.Text (Text, pack, unpack)
 import Data.Text.Encoding

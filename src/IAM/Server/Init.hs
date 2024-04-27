@@ -3,7 +3,7 @@ module IAM.Server.Init (initDB) where
 
 import Control.Monad.Except
 import Crypto.Sign.Ed25519
-import Data.ByteString.Base64
+import Data.ByteString.Base64.URL
 import Data.Text
 import Data.Text.Encoding
 import Data.UUID.V4

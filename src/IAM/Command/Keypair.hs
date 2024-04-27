@@ -7,7 +7,7 @@ module IAM.Command.Keypair
 
 import Crypto.Sign.Ed25519
 import Data.Aeson
-import Data.ByteString.Base64
+import Data.ByteString.Base64.URL
 import Data.ByteString.Lazy (toStrict)
 import Data.Text.Encoding
 import Options.Applicative

@@ -6,7 +6,7 @@ module IAM.Session
 
 import Data.Aeson
 import Data.Aeson.TH
-import Data.ByteString.Base64
+import Data.ByteString.Base64.URL
 import Data.Text
 import Data.Time.Clock
 import Data.UUID

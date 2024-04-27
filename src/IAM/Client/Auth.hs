@@ -7,7 +7,7 @@ module IAM.Client.Auth
 import Control.Exception
 import Crypto.Sign.Ed25519
 import Data.ByteString hiding (pack, unpack)
-import Data.ByteString.Base64
+import Data.ByteString.Base64.URL
 import Data.CaseInsensitive
 import Data.Text
 import Data.Text.Encoding

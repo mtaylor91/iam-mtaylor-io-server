@@ -5,7 +5,7 @@ module IAM.Util
 
 
 import Crypto.Sign.Ed25519
-import Data.ByteString.Base64
+import Data.ByteString.Base64.URL
 import qualified Data.Text as T
 
 

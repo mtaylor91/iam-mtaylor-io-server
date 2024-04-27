@@ -5,7 +5,7 @@ module IAM.UserPublicKey
 
 import Crypto.Sign.Ed25519
 import Data.Aeson
-import Data.ByteString.Base64
+import Data.ByteString.Base64.URL
 import Data.Text
 import Data.Text.Encoding
 

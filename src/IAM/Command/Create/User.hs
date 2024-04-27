@@ -6,7 +6,7 @@ module IAM.Command.Create.User
   ) where
 
 import Crypto.Sign.Ed25519
-import Data.ByteString.Base64
+import Data.ByteString.Base64.URL
 import Data.Maybe
 import Data.Text as T
 import Data.Text.Encoding
