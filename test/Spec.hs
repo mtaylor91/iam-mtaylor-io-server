@@ -6,7 +6,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Except
 import Crypto.Sign.Ed25519
 import Data.Aeson
-import Data.ByteString.Base64
+import Data.ByteString.Base64.URL
 import Data.Text
 import Data.Text.Encoding
 import Data.Textual hiding (toString)
