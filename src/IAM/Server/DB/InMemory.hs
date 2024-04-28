@@ -23,8 +23,9 @@ import IAM.Server.DB.InMemory.State
 import IAM.Session
 import IAM.Sort
 import IAM.User
-import IAM.UserPolicy
 import IAM.UserIdentifier
+import IAM.UserPolicy
+import IAM.UserPublicKey
 
 
 -- | InMemory is an in-memory implementation of the DB typeclass.
@@ -159,6 +160,17 @@ instance DB InMemory where
       writeTVar tvar $ s & userIdState uid ?~ u
     return u
 
+  deleteUser (InMemory tvar) uid = do
+    result <- liftIO $ atomically $ do
+      s <- readTVar tvar
+      case s ^. userIdentifierState uid of
+        Just u -> do
+          writeTVar tvar $ s & userIdentifierState uid .~ Nothing
+          return $ Right u
+        Nothing ->
+          return $ Left $ NotFound $ UserIdentifier' uid
+    either throwError return result
+
   upsertUserPublicKey (InMemory tvar) uid pk = do
     result <- liftIO $ atomically $
       readTVar tvar >>= \s -> case s ^. userIdState uid of
@@ -173,15 +185,53 @@ instance DB InMemory where
             UserIdentifier (Just uid) Nothing Nothing
     either throwError return result
 
-  deleteUser (InMemory tvar) uid = do
-    result <- liftIO $ atomically $ do
-      s <- readTVar tvar
-      case s ^. userIdentifierState uid of
+  listUserPublicKeys (InMemory tvar) uid (Range offset' maybeLimit) = do
+    s <- liftIO $ readTVarIO tvar
+    case s ^. userIdState uid of
+      Just u -> do
+        let pks = userPublicKeys u
+        case maybeLimit of
+          Just limit' ->
+            let items' = Prelude.take limit' $ Prelude.drop offset' pks
+                total' = Prelude.length pks
+             in return $ ListResponse items' limit' offset' total'
+          Nothing ->
+            let items' = Prelude.drop offset' pks
+                total' = Prelude.length pks
+                limit' = total'
+             in return $ ListResponse items' limit' offset' total'
+      Nothing ->
+        throwError $ NotFound $ UserIdentifier' $
+          UserIdentifier (Just uid) Nothing Nothing
+
+  getUserPublicKey (InMemory tvar) uid pk = do
+    s <- liftIO $ readTVarIO tvar
+    case s ^. userIdState uid of
+      Just u -> do
+        let pks = userPublicKeys u
+        case Prelude.filter ((== pk) . userPublicKey) pks of
+          [] -> throwError $ NotFound $ UserPublicKeyIdentifier uid pk
+          pk':_ -> return pk'
+      Nothing ->
+        throwError $ NotFound $ UserIdentifier' $
+          UserIdentifier (Just uid) Nothing Nothing
+
+  deleteUserPublicKey (InMemory tvar) uid pk = do
+    result <- liftIO $ atomically $
+      readTVar tvar >>= \s -> case s ^. userIdState uid of
         Just u -> do
-          writeTVar tvar $ s & userIdentifierState uid .~ Nothing
-          return $ Right u
+          let pks = userPublicKeys u
+          case Prelude.filter ((== pk) . userPublicKey) pks of
+            [] ->
+              return $ Left $ NotFound $ UserPublicKeyIdentifier uid pk
+            pk':_ -> do
+              let pks' = Prelude.filter ((/= pk) . userPublicKey) pks
+              let u' = u { userPublicKeys = pks' }
+              writeTVar tvar $ s & userIdState uid ?~ u'
+              return $ Right pk'
         Nothing ->
-          return $ Left $ NotFound $ UserIdentifier' uid
+          return $ Left $ NotFound $ UserIdentifier' $
+            UserIdentifier (Just uid) Nothing Nothing
     either throwError return result
 
   getGroup (InMemory tvar) gid = do
