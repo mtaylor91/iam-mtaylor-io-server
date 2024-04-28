@@ -66,6 +66,14 @@ loginResponseEncoder =
   loginResponseDenied lr = loginResponseStatus lr == LoginRequestDenied
 
 
+publicKeyEncoder :: E.Params PublicKey
+publicKeyEncoder = unPublicKey >$< E.param (E.nonNullable E.bytea)
+
+
+userPublicKeyIdentityEncoder :: E.Params (UserId, PublicKey)
+userPublicKeyIdentityEncoder = (fst >$< userIdEncoder) <> (snd >$< publicKeyEncoder)
+
+
 userIdUserPublicKeyEncoder :: E.Params (UserId, UserPublicKey)
 userIdUserPublicKeyEncoder =
   (fst >$< userIdEncoder) <>

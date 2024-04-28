@@ -299,6 +299,37 @@ pgUpsertUserPublicKey uid pk = do
   return $ Right pk
 
 
+pgListUserPublicKeys ::
+  UserId -> Range -> Transaction (Either Error (ListResponse UserPublicKey))
+pgListUserPublicKeys uid (Range offset' maybeLimit) = do
+  let limit' = fromMaybe 100 maybeLimit
+  let offset'' = fromIntegral offset'
+  let limit'' = fromIntegral limit'
+  total' <- statement uid selectUserPublicKeysCount
+  items' <- statement (uid, (offset'', limit'')) selectUserPublicKeysRange
+  return $ Right $ ListResponse items' limit' offset' $ fromIntegral total'
+
+
+pgGetUserPublicKey ::
+  UserId -> PublicKey -> Transaction (Either Error UserPublicKey)
+pgGetUserPublicKey uid pk = do
+  result <- statement (uid, pk) selectUserPublicKey
+  case result of
+    Nothing -> return $ Left $ NotFound $ UserPublicKeyIdentifier uid pk
+    Just upk -> return $ Right upk
+
+
+pgDeleteUserPublicKey ::
+  UserId -> PublicKey -> Transaction (Either Error UserPublicKey)
+pgDeleteUserPublicKey uid pk = do
+  result <- pgGetUserPublicKey uid pk
+  case result of
+    Left e -> return $ Left e
+    Right upk -> do
+      statement (uid, pk) deleteUserPublicKey
+      return $ Right upk
+
+
 pgDeleteUser :: UserIdentifier -> Transaction (Either Error User)
 pgDeleteUser (UserIdentifier (Just uid) _ _) = pgDeleteUserById uid
 pgDeleteUser (UserIdentifier Nothing (Just name) _) = pgDeleteUserByName name

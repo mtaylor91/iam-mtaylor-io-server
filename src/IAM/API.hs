@@ -6,6 +6,8 @@ module IAM.API
   , LoginsAPI
   , UserAPI
   , UsersAPI
+  , PublicKeysAPI
+  , PublicKeyAPI
   , UserPolicyAPI
   , UserSessionsAPI
   , UserSessionAPI
@@ -32,11 +34,13 @@ import IAM.ListResponse
 import IAM.Login
 import IAM.Membership
 import IAM.Policy
+import IAM.PublicKey
 import IAM.Session
 import IAM.Sort
 import IAM.User
-import IAM.UserPolicy
 import IAM.UserIdentifier
+import IAM.UserPolicy
+import IAM.UserPublicKey
 
 
 type API = SignedAPI
@@ -77,6 +81,7 @@ type UserAPI
   = ( Get '[JSON] User
   :<|> Delete '[JSON] User
   :<|> "login-requests" :> LoginsAPI
+  :<|> "public-keys" :> PublicKeysAPI
   :<|> "policies" :> Capture "policy" PolicyIdentifier :> UserPolicyAPI
   :<|> "sessions" :> UserSessionsAPI
     )
@@ -91,6 +96,17 @@ type LoginAPI
   :<|> Delete '[JSON] (LoginResponse SessionId)
   :<|> "deny" :> Post '[JSON] (LoginResponse SessionId)
   :<|> "grant" :> Post '[JSON] (LoginResponse SessionId)
+    )
+
+type PublicKeysAPI
+  = ( ListAPI UserPublicKey
+  :<|> ReqBody '[JSON] UserPublicKey :> PostCreated '[JSON] UserPublicKey
+  :<|> Capture "key" PublicKey' :> PublicKeyAPI
+    )
+
+type PublicKeyAPI
+  = ( Get '[JSON] UserPublicKey
+  :<|> Delete '[JSON] UserPublicKey
     )
 
 type UserPolicyAPI

@@ -46,3 +46,9 @@ constructLoginResponse lid uid pk desc sid ip ex g d = LoginResponse
     status True _ = LoginRequestGranted
     status _ True = LoginRequestDenied
     status _ _ = LoginRequestPending
+
+
+userPublicKeyDecoder :: D.Row UserPublicKey
+userPublicKeyDecoder =
+  (UserPublicKey . PublicKey <$> D.column (D.nonNullable D.bytea)) <*>
+  D.column (D.nonNullable D.text)

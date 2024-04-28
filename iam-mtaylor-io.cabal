@@ -69,6 +69,7 @@ library
       IAM.Login
       IAM.Membership
       IAM.Policy
+      IAM.PublicKey
       IAM.Range
       IAM.Server.API
       IAM.Server.App

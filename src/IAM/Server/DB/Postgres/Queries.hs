@@ -4,6 +4,7 @@ module IAM.Server.DB.Postgres.Queries
   ( module IAM.Server.DB.Postgres.Queries
   ) where
 
+import Crypto.Sign.Ed25519 (PublicKey)
 import Data.Aeson (Value)
 import Data.ByteString (ByteString)
 import Data.Int (Int32)
@@ -726,6 +727,17 @@ selectUserGroups =
   |]
 
 
+selectUserPublicKey :: Statement (UserId, PublicKey) (Maybe UserPublicKey)
+selectUserPublicKey =
+  Statement sql userPublicKeyIdentityEncoder (D.rowMaybe userPublicKeyDecoder) True
+  where
+    sql = "SELECT \
+          \users_public_keys.public_key, \
+          \users_public_keys.description \
+          \FROM users_public_keys \
+          \WHERE users_public_keys.user_uuid = $1 AND users_public_keys.public_key = $2"
+
+
 selectUserPublicKeys :: Statement UUID (Vector (ByteString, Text))
 selectUserPublicKeys =
   [vectorStatement|
@@ -737,6 +749,26 @@ selectUserPublicKeys =
     WHERE
       users_public_keys.user_uuid = $1 :: uuid
   |]
+
+
+selectUserPublicKeysCount :: Statement UserId Int32
+selectUserPublicKeysCount =
+  Statement sql userIdEncoder (D.singleRow (D.column (D.nonNullable D.int4))) True
+  where
+    sql = "SELECT COUNT(*) FROM users_public_keys WHERE users_public_keys.user_uuid = $1"
+
+
+selectUserPublicKeysRange :: Statement (UserId, (Int32, Int32)) [UserPublicKey]
+selectUserPublicKeysRange =
+  Statement sql userIdRangeEncoder (D.rowList userPublicKeyDecoder) True
+  where
+    sql = "SELECT \
+          \users_public_keys.public_key, \
+          \users_public_keys.description \
+          \FROM users_public_keys \
+          \WHERE users_public_keys.user_uuid = $1 \
+          \ORDER BY users_public_keys.public_key ASC \
+          \OFFSET $2 LIMIT $3"
 
 
 selectUserPolicyIdentifiers :: Statement UUID (Vector (UUID, Maybe Text))
@@ -1616,6 +1648,13 @@ deleteUserPolicyAttachment =
     AND
       policy_uuid = $2 :: uuid
   |]
+
+
+deleteUserPublicKey :: Statement (UserId, PublicKey) ()
+deleteUserPublicKey =
+  Statement sql userPublicKeyIdentityEncoder D.noResult True
+  where
+    sql = "DELETE FROM users_public_keys WHERE user_uuid = $1 AND public_key = $2"
 
 
 deleteGroupPolicyAttachment :: Statement (UUID, UUID) ()

@@ -16,6 +16,7 @@ import IAM.API
 import IAM.GroupIdentifier
 import IAM.Login
 import IAM.Policy
+import IAM.PublicKey
 import IAM.Server.Auth
 import IAM.Server.Context
 import IAM.Server.DB
@@ -44,6 +45,7 @@ callerAPI ctx auth
   = getUserHandler ctx auth callerId
   :<|> deleteUserHandler ctx auth callerId
   :<|> loginRequestsAPI ctx auth callerId
+  :<|> userPublicKeysAPI ctx auth callerId
   :<|> userPolicyAPI ctx auth callerId
   :<|> userSessionsAPI ctx auth callerId
   where
@@ -66,6 +68,7 @@ userAPI ctx auth uid
   = getUserHandler ctx auth uid
   :<|> deleteUserHandler ctx auth uid
   :<|> loginRequestsAPI ctx auth uid
+  :<|> userPublicKeysAPI ctx auth uid
   :<|> userPolicyAPI ctx auth uid
   :<|> userSessionsAPI ctx auth uid
 
@@ -83,6 +86,20 @@ loginRequestAPI ctx auth uid lid
   :<|> deleteLoginRequestHandler ctx auth uid lid
   :<|> updateLoginRequestHandler ctx auth uid lid LoginRequestDenied
   :<|> updateLoginRequestHandler ctx auth uid lid LoginRequestGranted
+
+
+userPublicKeysAPI :: DB db => Ctx db -> Auth -> UserIdentifier -> Server PublicKeysAPI
+userPublicKeysAPI ctx auth uid
+  = listUserPublicKeysHandler ctx auth uid
+  :<|> createUserPublicKeyHandler ctx auth uid
+  :<|> userPublicKeyAPI ctx auth uid
+
+
+userPublicKeyAPI ::
+  DB db => Ctx db -> Auth -> UserIdentifier -> PublicKey' -> Server PublicKeyAPI
+userPublicKeyAPI ctx auth uid key
+  = getUserPublicKeyHandler ctx auth uid key
+  :<|> deleteUserPublicKeyHandler ctx auth uid key
 
 
 userPolicyAPI ::

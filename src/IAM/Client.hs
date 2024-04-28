@@ -7,6 +7,9 @@ module IAM.Client
   , deleteCaller
   , listCallerLoginRequests
   , mkCallerLoginRequestClient
+  , listCallerPublicKeys
+  , createCallerPublicKey
+  , mkCallerPublicKeyClient
   , mkCallerPolicyClient
   , mkCallerSessionsClient
   , listUsers
@@ -24,6 +27,8 @@ module IAM.Client
   , UserClient(..)
   , LoginRequestsClient(..)
   , LoginRequestClient(..)
+  , PublicKeysClient(..)
+  , PublicKeyClient(..)
   , UserPolicyClient(..)
   , UserSessionsClient(..)
   , UserSessionClient(..)
@@ -45,11 +50,13 @@ import IAM.ListResponse
 import IAM.Login
 import IAM.Membership
 import IAM.Policy
+import IAM.PublicKey
 import IAM.Session
 import IAM.Sort
 import IAM.User
-import IAM.UserPolicy
 import IAM.UserIdentifier
+import IAM.UserPolicy
+import IAM.UserPublicKey
 
 
 type UsersClientM
@@ -63,6 +70,7 @@ type UserClientM =
     ClientM User
     :<|> ClientM User
     :<|> LoginRequestsClientM
+    :<|> PublicKeysClientM
     :<|> (PolicyIdentifier -> UserPolicyClientM)
     :<|> UserSessionsClientM
 
@@ -77,6 +85,17 @@ type LoginRequestClientM
   :<|> ClientM (LoginResponse SessionId)
   :<|> ClientM (LoginResponse SessionId)
   :<|> ClientM (LoginResponse SessionId)
+
+
+type PublicKeysClientM
+  = (Maybe Int -> Maybe Int -> ClientM (ListResponse UserPublicKey))
+  :<|> (UserPublicKey -> ClientM UserPublicKey)
+  :<|> (PublicKey' -> PublicKeyClientM)
+
+
+type PublicKeyClientM
+  = ClientM UserPublicKey
+  :<|> ClientM UserPublicKey
 
 
 type UserPolicyClientM
@@ -139,6 +158,7 @@ data UserClient = UserClient
   { getUser :: !(ClientM User)
   , deleteUser :: !(ClientM User)
   , loginRequestsClient :: !LoginRequestsClient
+  , userPublicKeysClient :: !PublicKeysClient
   , userPolicyClient :: !(PolicyIdentifier -> UserPolicyClient)
   , userSessionsClient :: !UserSessionsClient
   }
@@ -156,6 +176,19 @@ data LoginRequestClient = LoginRequestClient
   , deleteLoginRequest :: !(ClientM (LoginResponse SessionId))
   , denyLoginRequest :: !(ClientM (LoginResponse SessionId))
   , grantLoginRequest :: !(ClientM (LoginResponse SessionId))
+  }
+
+
+data PublicKeysClient = PublicKeysClient
+  { listPublicKeys :: !(Maybe Int -> Maybe Int -> ClientM (ListResponse UserPublicKey))
+  , createUserPublicKey :: !(UserPublicKey -> ClientM UserPublicKey)
+  , publicKeyClient :: !(PublicKey' -> PublicKeyClient)
+  }
+
+
+data PublicKeyClient = PublicKeyClient
+  { getUserPublicKey :: !(ClientM UserPublicKey)
+  , deleteUserPublicKey :: !(ClientM UserPublicKey)
   }
 
 
@@ -225,6 +258,7 @@ callerClient
 getCaller :: ClientM User
 deleteCaller :: ClientM User
 callerLoginRequestsClient :: LoginRequestsClientM
+callerPublicKeysClient :: PublicKeysClientM
 callerPolicyClient :: PolicyIdentifier -> UserPolicyClientM
 callerSessionClient :: UserSessionsClientM
 
@@ -232,6 +266,7 @@ callerSessionClient :: UserSessionsClientM
 ( getCaller
   :<|> deleteCaller
   :<|> callerLoginRequestsClient
+  :<|> callerPublicKeysClient
   :<|> callerPolicyClient
   :<|> callerSessionClient ) = callerClient
 
@@ -252,6 +287,22 @@ mkCallerLoginRequestClient lid =
         :<|> grantLoginRequest') = callerLoginRequestClient lid
   in LoginRequestClient
     getLoginRequest' deleteLoginRequest' denyLoginRequest' grantLoginRequest'
+
+
+listCallerPublicKeys :: Maybe Int -> Maybe Int -> ClientM (ListResponse UserPublicKey)
+createCallerPublicKey :: UserPublicKey -> ClientM UserPublicKey
+callerPublicKeyClient :: PublicKey' -> PublicKeyClientM
+
+
+( listCallerPublicKeys
+  :<|> createCallerPublicKey
+  :<|> callerPublicKeyClient ) = callerPublicKeysClient
+
+
+mkCallerPublicKeyClient :: PublicKey' -> PublicKeyClient
+mkCallerPublicKeyClient pk =
+  let (getUserPublicKey' :<|> deleteUserPublicKey') = callerPublicKeyClient pk
+  in PublicKeyClient getUserPublicKey' deleteUserPublicKey'
 
 
 mkCallerPolicyClient :: PolicyIdentifier -> UserPolicyClient
@@ -287,14 +338,21 @@ mkUserClient uid =
   let ( getUser'
         :<|> deleteUser'
         :<|> userLoginRequestsClient'
+        :<|> userPublicKeysClient'
         :<|> userPolicyClient'
         :<|> userSessionClient' ) = userClient uid
       userLoginRequestsClient'' = mkLoginRequestsClient userLoginRequestsClient'
+      userPublicKeysClient'' = mkPublicKeysClient userPublicKeysClient'
       userPolicyClient'' = mkUserPolicyClient userPolicyClient'
       userSessionClient'' = mkUserSessionsClient userSessionClient'
   in UserClient
-    getUser' deleteUser' userLoginRequestsClient'' userPolicyClient'' userSessionClient''
-
+    { getUser = getUser'
+    , deleteUser = deleteUser'
+    , loginRequestsClient = userLoginRequestsClient''
+    , userPublicKeysClient = userPublicKeysClient''
+    , userPolicyClient = userPolicyClient''
+    , userSessionsClient = userSessionClient''
+    }
   where
 
   mkLoginRequestsClient :: LoginRequestsClientM -> LoginRequestsClient
@@ -312,6 +370,18 @@ mkUserClient uid =
           :<|> grantLoginRequest') = f lid
     in LoginRequestClient
       getLoginRequest' deleteLoginRequest' denyLoginRequest' grantLoginRequest'
+
+  mkPublicKeysClient :: PublicKeysClientM -> PublicKeysClient
+  mkPublicKeysClient c =
+    let (listPublicKeys' :<|> createUserPublicKey' :<|> publicKeyClient') = c
+        publicKeyClient'' = mkPublicKeyClient publicKeyClient'
+     in PublicKeysClient listPublicKeys' createUserPublicKey' publicKeyClient''
+
+  mkPublicKeyClient ::
+    (PublicKey' -> PublicKeyClientM) -> PublicKey' -> PublicKeyClient
+  mkPublicKeyClient publicKeyClient' pk =
+    let (getUserPublicKey' :<|> deleteUserPublicKey') = publicKeyClient' pk
+     in PublicKeyClient getUserPublicKey' deleteUserPublicKey'
 
   mkUserPolicyClient ::
     (PolicyIdentifier -> UserPolicyClientM) -> PolicyIdentifier -> UserPolicyClient

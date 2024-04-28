@@ -4,7 +4,9 @@ module IAM.Identifier
   ( module IAM.Identifier
   ) where
 
+import Crypto.Sign.Ed25519 (PublicKey(..))
 import Data.Aeson
+import Data.ByteString.Base64.URL
 import Data.Text
 
 import IAM.GroupIdentifier
@@ -22,6 +24,7 @@ data Identifier
   | SessionIdentifier (Maybe SessionId)
   | UserGroupIdentifier UserIdentifier GroupIdentifier
   | UserPolicyIdentifier UserIdentifier PolicyIdentifier
+  | UserPublicKeyIdentifier UserId PublicKey
   | GroupPolicyIdentifier GroupIdentifier PolicyIdentifier
   deriving (Show, Eq)
 
@@ -55,6 +58,11 @@ instance ToJSON Identifier where
     [ "kind" .= ("UserPolicy" :: Text)
     , "user" .= toJSON uid
     , "policy" .= toJSON pid
+    ]
+  toJSON (UserPublicKeyIdentifier uid pk) = object
+    [ "kind" .= ("UserPublicKey" :: Text)
+    , "user" .= toJSON uid
+    , "public-key" .= encodeBase64 (unPublicKey pk)
     ]
   toJSON (GroupPolicyIdentifier gid pid) = object
     [ "kind" .= ("GroupPolicy" :: Text)

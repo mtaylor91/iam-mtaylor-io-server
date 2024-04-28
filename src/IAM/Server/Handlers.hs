@@ -20,6 +20,7 @@ import IAM.ListResponse
 import IAM.Login
 import IAM.Membership
 import IAM.Policy
+import IAM.PublicKey
 import IAM.Range
 import IAM.Server.Auth
 import IAM.Server.Context
@@ -27,8 +28,9 @@ import IAM.Server.DB
 import IAM.Session
 import IAM.Sort
 import IAM.User
-import IAM.UserPolicy
 import IAM.UserIdentifier
+import IAM.UserPolicy
+import IAM.UserPublicKey
 
 
 loginRequestHandler :: DB db => Ctx db -> Auth -> LoginRequest ->
@@ -135,6 +137,66 @@ updateLoginRequestHandler ctx auth uid lrid status = do
       _ -> return resp
   where
     f resp = resp { loginResponseStatus = status }
+
+
+createUserPublicKeyHandler :: DB db =>
+  Ctx db -> Auth -> UserIdentifier -> UserPublicKey -> Handler UserPublicKey
+createUserPublicKeyHandler ctx auth uid key = do
+  _ <- requireSession auth
+  r0 <- liftIO $ runExceptT $ getUserId (ctxDB ctx) uid
+  case r0 of
+    Left e -> errorHandler e
+    Right uid' -> do
+      result <- liftIO $ runExceptT $ upsertUserPublicKey (ctxDB ctx) uid' key
+      case result of
+        Right key' -> return key'
+        Left err   -> errorHandler err
+
+
+listUserPublicKeysHandler :: DB db =>
+  Ctx db -> Auth -> UserIdentifier -> Maybe Int -> Maybe Int ->
+    Handler (ListResponse UserPublicKey)
+listUserPublicKeysHandler ctx auth uid maybeOffset maybeLimit = do
+  _ <- requireSession auth
+  r0 <- liftIO $ runExceptT $ getUserId (ctxDB ctx) uid
+  case r0 of
+    Left e -> errorHandler e
+    Right uid' -> do
+      let range = Range offset' maybeLimit
+      result <- liftIO $ runExceptT $ listUserPublicKeys (ctxDB ctx) uid' range
+      case result of
+        Right keys -> return keys
+        Left err   -> errorHandler err
+  where
+    offset' = fromMaybe 0 maybeOffset
+
+
+getUserPublicKeyHandler :: DB db =>
+  Ctx db -> Auth -> UserIdentifier -> PublicKey' -> Handler UserPublicKey
+getUserPublicKeyHandler ctx auth uid (PublicKey' key) = do
+  _ <- requireSession auth
+  r0 <- liftIO $ runExceptT $ getUserId (ctxDB ctx) uid
+  case r0 of
+    Left e -> errorHandler e
+    Right uid' -> do
+      result <- liftIO $ runExceptT $ getUserPublicKey (ctxDB ctx) uid' key
+      case result of
+        Right key' -> return key'
+        Left err   -> errorHandler err
+
+
+deleteUserPublicKeyHandler :: DB db =>
+  Ctx db -> Auth -> UserIdentifier -> PublicKey' -> Handler UserPublicKey
+deleteUserPublicKeyHandler ctx auth uid (PublicKey' key) = do
+  _ <- requireSession auth
+  r0 <- liftIO $ runExceptT $ getUserId (ctxDB ctx) uid
+  case r0 of
+    Left e -> errorHandler e
+    Right uid' -> do
+      result <- liftIO $ runExceptT $ deleteUserPublicKey (ctxDB ctx) uid' key
+      case result of
+        Right key' -> return key'
+        Left err   -> errorHandler err
 
 
 getUserHandler :: DB db => Ctx db -> Auth -> UserIdentifier -> Handler User

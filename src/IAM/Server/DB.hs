@@ -3,6 +3,7 @@ module IAM.Server.DB ( DB(..) ) where
 
 import Control.Monad.IO.Class
 import Control.Monad.Except
+import Crypto.Sign.Ed25519
 import Data.Text
 
 import IAM.Error
@@ -68,13 +69,25 @@ class DB db where
   createUser :: (MonadIO m, MonadError Error m) =>
     db -> User -> m User
 
+  -- | deleteUser removes a user from the database by its email.
+  deleteUser :: (MonadIO m, MonadError Error m) =>
+    db -> UserIdentifier -> m User
+
   -- | upsertUserPublicKey adds or updates a public key for a user.
   upsertUserPublicKey :: (MonadIO m, MonadError Error m) =>
     db -> UserId -> UserPublicKey -> m UserPublicKey
 
-  -- | deleteUser removes a user from the database by its email.
-  deleteUser :: (MonadIO m, MonadError Error m) =>
-    db -> UserIdentifier -> m User
+  -- | listUserPublicKeys returns a list of all public keys for a user.
+  listUserPublicKeys :: (MonadIO m, MonadError Error m) =>
+    db -> UserId -> Range -> m (ListResponse UserPublicKey)
+
+  -- | getUserPublicKey returns a public key for a user
+  getUserPublicKey :: (MonadIO m, MonadError Error m) =>
+    db -> UserId -> PublicKey -> m UserPublicKey
+
+  -- | deleteUserPublicKey removes a public key from a user
+  deleteUserPublicKey :: (MonadIO m, MonadError Error m) =>
+    db -> UserId -> PublicKey -> m UserPublicKey
 
   -- | getGroup returns a group from the database by its name.
   getGroup :: (MonadIO m, MonadError Error m) =>
