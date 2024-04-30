@@ -1522,24 +1522,19 @@ deleteLoginRequest = Statement sql loginIdentityEncoder D.noResult True where
   sql = "DELETE FROM logins WHERE user_uuid = $1 AND login_uuid = $2"
 
 
-deleteUserId :: Statement UUID ()
-deleteUserId =
-  [resultlessStatement|
-    DELETE FROM
-      users
-    WHERE
-      users.user_uuid = $1 :: uuid
-  |]
+deleteUserId :: Statement UserId ()
+deleteUserId = Statement sql userIdEncoder D.noResult True where
+  sql = "DELETE FROM users WHERE user_uuid = $1"
 
 
-deleteUserEmail :: Statement UUID ()
-deleteUserEmail =
-  [resultlessStatement|
-    DELETE FROM
-      users_emails
-    WHERE
-      users_emails.user_uuid = $1 :: uuid
-  |]
+deleteUserEmail :: Statement UserId ()
+deleteUserEmail = Statement sql userIdEncoder D.noResult True where
+  sql = "DELETE FROM users_emails WHERE user_uuid = $1"
+
+
+deleteUserName :: Statement UserId ()
+deleteUserName = Statement sql userIdEncoder D.noResult True where
+  sql = "DELETE FROM users_names WHERE user_uuid = $1"
 
 
 deleteUserGroups :: Statement UUID ()

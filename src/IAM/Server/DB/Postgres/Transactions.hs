@@ -302,11 +302,15 @@ pgUpdateUser uident uupdate = do
       let mEmail = userUpdateEmail uupdate
       case mName of
         Nothing -> return ()
-        Just name -> do
+        Just Nothing -> do
+          statement uid deleteUserName
+        Just (Just name) -> do
           statement (uid, name) upsertUserName
       case mEmail of
         Nothing -> return ()
-        Just email -> do
+        Just Nothing -> do
+          statement uid deleteUserEmail
+        Just (Just email) -> do
           statement (uid, email) upsertUserEmail
       pgGetUserById uid
 
@@ -385,8 +389,8 @@ pgDeleteUserById (UserUUID uuid) = do
       statement uuid deleteUserPublicKeys
       statement uuid deleteUserPolicies
       statement uuid deleteUserGroups
-      statement uuid deleteUserEmail
-      statement uuid deleteUserId
+      statement (UserUUID uuid) deleteUserEmail
+      statement (UserUUID uuid) deleteUserId
       return $ Right user
 
 

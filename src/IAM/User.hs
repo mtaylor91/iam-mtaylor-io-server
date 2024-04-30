@@ -8,6 +8,7 @@ import Data.Text
 import Data.Text.Encoding
 import Data.UUID
 import Text.Email.Validate
+import qualified Data.Aeson.KeyMap as KM
 
 import IAM.Error
 import IAM.GroupIdentifier
@@ -47,23 +48,39 @@ instance ToJSON User where
     ]
 
 
-data UserUpdate = UserUpdate
-  { userUpdateName :: !(Maybe Text)
-  , userUpdateEmail :: !(Maybe Text)
-  } deriving (Eq, Show)
+data UserUpdate
+  = UserUpdateName !(Maybe Text)
+  | UserUpdateEmail !(Maybe Text)
+  | UserUpdateNameEmail !(Maybe Text) !(Maybe Text)
+  deriving (Eq, Show)
 
 instance FromJSON UserUpdate where
-  parseJSON (Object obj) = do
-    maybeName <- obj .:? "name"
-    maybeEmail <- obj .:? "email"
-    return $ UserUpdate maybeName maybeEmail
-  parseJSON _ = fail "Invalid JSON"
+  parseJSON = withObject "UserUpdate" $ \obj ->
+    case (KM.lookup "name" obj, KM.lookup "email" obj) of
+      (Just name, Nothing) ->
+        UserUpdateName <$> parseJSON name
+      (Nothing, Just email) ->
+        UserUpdateEmail <$> parseJSON email
+      (Just name, Just email) ->
+        UserUpdateNameEmail <$> parseJSON name <*> parseJSON email
+      _ -> fail "Invalid JSON"
 
 instance ToJSON UserUpdate where
-  toJSON (UserUpdate name email) = object
-    [ "name" .= name
-    , "email" .= email
-    ]
+  toJSON (UserUpdateName name) = object [ "name" .= name ]
+  toJSON (UserUpdateEmail email) = object [ "email" .= email ]
+  toJSON (UserUpdateNameEmail name email) = object [ "name" .= name , "email" .= email ]
+
+
+userUpdateName :: UserUpdate -> Maybe (Maybe Text)
+userUpdateName (UserUpdateName name) = Just name
+userUpdateName (UserUpdateNameEmail name _) = Just name
+userUpdateName _ = Nothing
+
+
+userUpdateEmail :: UserUpdate -> Maybe (Maybe Text)
+userUpdateEmail (UserUpdateEmail email) = Just email
+userUpdateEmail (UserUpdateNameEmail _ email) = Just email
+userUpdateEmail _ = Nothing
 
 
 validateUser :: User -> Either Error User
@@ -75,8 +92,12 @@ validateUser u = do
 
 validateUserUpdate :: UserUpdate -> Either Error UserUpdate
 validateUserUpdate u = do
-  validateUserName $ userUpdateName u
-  validateUserEmail $ userUpdateEmail u
+  case userUpdateName u of
+    Just name -> validateUserName name
+    Nothing -> Right ()
+  case userUpdateEmail u of
+    Just email -> validateUserEmail email
+    Nothing -> Right ()
   return u
 
 
