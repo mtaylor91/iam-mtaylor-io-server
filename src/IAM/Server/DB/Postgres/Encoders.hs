@@ -25,6 +25,10 @@ userIdEncoder :: E.Params UserId
 userIdEncoder = unUserId >$< E.param (E.nonNullable E.uuid)
 
 
+userIdTextEncoder :: E.Params (UserId, Text)
+userIdTextEncoder = (fst >$< userIdEncoder) <> (snd >$< E.param (E.nonNullable E.text))
+
+
 userIdRangeEncoder :: E.Params (UserId, (Int32, Int32))
 userIdRangeEncoder =
   (fst >$< userIdEncoder) <>

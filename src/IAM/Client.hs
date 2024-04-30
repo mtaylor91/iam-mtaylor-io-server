@@ -4,6 +4,7 @@
 module IAM.Client
   ( login
   , getCaller
+  , updateCaller
   , deleteCaller
   , listCallerLoginRequests
   , mkCallerLoginRequestClient
@@ -68,6 +69,7 @@ type UsersClientM
 
 type UserClientM =
     ClientM User
+    :<|> (UserUpdate -> ClientM User)
     :<|> ClientM User
     :<|> LoginRequestsClientM
     :<|> PublicKeysClientM
@@ -156,6 +158,7 @@ type AuthorizationClientM
 
 data UserClient = UserClient
   { getUser :: !(ClientM User)
+  , updateUser :: !(UserUpdate -> ClientM User)
   , deleteUser :: !(ClientM User)
   , loginRequestsClient :: !LoginRequestsClient
   , userPublicKeysClient :: !PublicKeysClient
@@ -256,6 +259,7 @@ callerClient
 
 
 getCaller :: ClientM User
+updateCaller :: UserUpdate -> ClientM User
 deleteCaller :: ClientM User
 callerLoginRequestsClient :: LoginRequestsClientM
 callerPublicKeysClient :: PublicKeysClientM
@@ -264,6 +268,7 @@ callerSessionClient :: UserSessionsClientM
 
 
 ( getCaller
+  :<|> updateCaller
   :<|> deleteCaller
   :<|> callerLoginRequestsClient
   :<|> callerPublicKeysClient
@@ -336,6 +341,7 @@ userClient :: UserIdentifier -> UserClientM
 mkUserClient :: UserIdentifier -> UserClient
 mkUserClient uid =
   let ( getUser'
+        :<|> updateUser'
         :<|> deleteUser'
         :<|> userLoginRequestsClient'
         :<|> userPublicKeysClient'
@@ -347,6 +353,7 @@ mkUserClient uid =
       userSessionClient'' = mkUserSessionsClient userSessionClient'
   in UserClient
     { getUser = getUser'
+    , updateUser = updateUser'
     , deleteUser = deleteUser'
     , loginRequestsClient = userLoginRequestsClient''
     , userPublicKeysClient = userPublicKeysClient''

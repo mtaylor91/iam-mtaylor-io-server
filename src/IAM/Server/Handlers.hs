@@ -242,6 +242,19 @@ createUserHandler ctx auth userPrincipal = do
     Left err    -> errorHandler err
 
 
+updateUserHandler :: DB db =>
+  Ctx db -> Auth -> UserIdentifier -> UserUpdate -> Handler User
+updateUserHandler ctx auth uid userUpdate = do
+  _ <- requireSession auth
+  case validateUserUpdate userUpdate of
+    Left err -> errorHandler err
+    Right _  -> return ()
+  result <- liftIO $ runExceptT $ updateUser (ctxDB ctx) uid userUpdate
+  case result of
+    Right user' -> return user'
+    Left err    -> errorHandler err
+
+
 deleteUserHandler :: DB db => Ctx db -> Auth -> UserIdentifier -> Handler User
 deleteUserHandler ctx auth uid = do
   _ <- requireSession auth

@@ -43,6 +43,7 @@ signedAPI ctx auth
 callerAPI :: DB db => Ctx db -> Auth -> Server UserAPI
 callerAPI ctx auth
   = getUserHandler ctx auth callerId
+  :<|> updateUserHandler ctx auth callerId
   :<|> deleteUserHandler ctx auth callerId
   :<|> loginRequestsAPI ctx auth callerId
   :<|> userPublicKeysAPI ctx auth callerId
@@ -66,6 +67,7 @@ usersAPI ctx auth
 userAPI :: DB db => Ctx db -> Auth -> UserIdentifier -> Server UserAPI
 userAPI ctx auth uid
   = getUserHandler ctx auth uid
+  :<|> updateUserHandler ctx auth uid
   :<|> deleteUserHandler ctx auth uid
   :<|> loginRequestsAPI ctx auth uid
   :<|> userPublicKeysAPI ctx auth uid

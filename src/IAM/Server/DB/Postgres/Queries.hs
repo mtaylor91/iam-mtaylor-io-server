@@ -45,26 +45,6 @@ insertUserId =
   |]
 
 
-insertUserName :: Statement (UUID, Text) ()
-insertUserName =
-  [resultlessStatement|
-    INSERT INTO
-      users_names (user_uuid, user_name)
-    VALUES
-      ($1 :: uuid, $2 :: text)
-  |]
-
-
-insertUserEmail :: Statement (UUID, Text) ()
-insertUserEmail =
-  [resultlessStatement|
-    INSERT INTO
-      users_emails (user_uuid, user_email)
-    VALUES
-      ($1 :: uuid, $2 :: text)
-  |]
-
-
 insertUserGroup :: Statement (UUID, UUID) ()
 insertUserGroup =
   [resultlessStatement|
@@ -1489,6 +1469,22 @@ updateSessionExpiration =
     WHERE
       session_uuid = $1 :: uuid
   |]
+
+
+upsertUserName :: Statement (UserId, Text) ()
+upsertUserName =
+  Statement sql userIdTextEncoder D.noResult True
+  where
+    sql = "INSERT INTO users_names (user_uuid, user_name) VALUES ($1, $2) \
+          \ON CONFLICT (user_uuid) DO UPDATE SET user_name = $2"
+
+
+upsertUserEmail :: Statement (UserId, Text) ()
+upsertUserEmail =
+  Statement sql userIdTextEncoder D.noResult True
+  where
+    sql = "INSERT INTO users_emails (user_uuid, user_email) VALUES ($1, $2) \
+          \ON CONFLICT (user_uuid) DO UPDATE SET user_email = $2"
 
 
 upsertLoginRequest :: Statement (LoginResponse SessionId) ()

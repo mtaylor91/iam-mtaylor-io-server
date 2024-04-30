@@ -69,6 +69,10 @@ class DB db where
   createUser :: (MonadIO m, MonadError Error m) =>
     db -> User -> m User
 
+  -- | updateUser updates an existing user in the database.
+  updateUser :: (MonadIO m, MonadError Error m) =>
+    db -> UserIdentifier -> UserUpdate -> m User
+
   -- | deleteUser removes a user from the database by its email.
   deleteUser :: (MonadIO m, MonadError Error m) =>
     db -> UserIdentifier -> m User

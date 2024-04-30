@@ -47,10 +47,36 @@ instance ToJSON User where
     ]
 
 
+data UserUpdate = UserUpdate
+  { userUpdateName :: !(Maybe Text)
+  , userUpdateEmail :: !(Maybe Text)
+  } deriving (Eq, Show)
+
+instance FromJSON UserUpdate where
+  parseJSON (Object obj) = do
+    maybeName <- obj .:? "name"
+    maybeEmail <- obj .:? "email"
+    return $ UserUpdate maybeName maybeEmail
+  parseJSON _ = fail "Invalid JSON"
+
+instance ToJSON UserUpdate where
+  toJSON (UserUpdate name email) = object
+    [ "name" .= name
+    , "email" .= email
+    ]
+
+
 validateUser :: User -> Either Error User
 validateUser u = do
   validateUserName $ userName u
   validateUserEmail $ userEmail u
+  return u
+
+
+validateUserUpdate :: UserUpdate -> Either Error UserUpdate
+validateUserUpdate u = do
+  validateUserName $ userUpdateName u
+  validateUserEmail $ userUpdateEmail u
   return u
 
 

@@ -235,25 +235,25 @@ pgListUsersBySearchTerm search (Range offset' (Just limit')) sort order = do
 
 
 pgCreateUser :: User -> Transaction (Either Error User)
-pgCreateUser (User (UserUUID uuid) mName mEmail groups policies publicKeys) = do
-  result0 <- statement uuid selectUserId
+pgCreateUser (User uid mName mEmail groups policies publicKeys) = do
+  result0 <- statement (unUserId uid) selectUserId
   result1 <- emailQuery mEmail
 
   case (result0, result1) of
     (Just _, _) -> return $ Left AlreadyExists
     (_, Just _) -> return $ Left AlreadyExists
     (Nothing, Nothing) -> do
-      statement uuid insertUserId
+      statement (unUserId uid) insertUserId
 
       case mName of
         Nothing -> return ()
         Just name -> do
-          statement (uuid, name) insertUserName
+          statement (uid, name) upsertUserName
 
       case mEmail of
         Nothing -> return ()
         Just email -> do
-          statement (uuid, email) insertUserEmail
+          statement (uid, email) upsertUserEmail
 
       result2 <- resolveUserGroups groups
       case result2 of
@@ -269,7 +269,7 @@ pgCreateUser (User (UserUUID uuid) mName mEmail groups policies publicKeys) = do
               mapM_ insertUserPublicKey' publicKeys
 
               return $ Right $
-                User (UserUUID uuid) mName mEmail groups policies publicKeys
+                User uid mName mEmail groups policies publicKeys
 
   where
 
@@ -282,14 +282,33 @@ pgCreateUser (User (UserUUID uuid) mName mEmail groups policies publicKeys) = do
       Just uuuid -> return $ Just uuuid
 
   insertUserGroup' :: GroupId -> Transaction ()
-  insertUserGroup' (GroupUUID guuid) = statement (uuid, guuid) insertUserGroup
+  insertUserGroup' (GroupUUID guuid) = statement (unUserId uid, guuid) insertUserGroup
 
   insertUserPolicy' :: UUID -> Transaction ()
-  insertUserPolicy' pid = statement (uuid, pid) insertUserPolicy
+  insertUserPolicy' pid = statement (unUserId uid, pid) insertUserPolicy
 
   insertUserPublicKey' :: UserPublicKey -> Transaction ()
   insertUserPublicKey' (UserPublicKey (PublicKey pk) description) =
-    statement (uuid, pk, description) insertUserPublicKey
+    statement (unUserId uid, pk, description) insertUserPublicKey
+
+
+pgUpdateUser :: UserIdentifier -> UserUpdate -> Transaction (Either Error User)
+pgUpdateUser uident uupdate = do
+  maybeUid <- resolveUserIdentifier uident
+  case maybeUid of
+    Nothing -> return $ Left $ NotFound $ UserIdentifier' uident
+    Just uid -> do
+      let mName = userUpdateName uupdate
+      let mEmail = userUpdateEmail uupdate
+      case mName of
+        Nothing -> return ()
+        Just name -> do
+          statement (uid, name) upsertUserName
+      case mEmail of
+        Nothing -> return ()
+        Just email -> do
+          statement (uid, email) upsertUserEmail
+      pgGetUserById uid
 
 
 pgUpsertUserPublicKey ::

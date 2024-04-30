@@ -79,6 +79,7 @@ type UsersAPI
 
 type UserAPI
   = ( Get '[JSON] User
+  :<|> ReqBody '[JSON] UserUpdate :> Put '[JSON] User
   :<|> Delete '[JSON] User
   :<|> "login-requests" :> LoginsAPI
   :<|> "public-keys" :> PublicKeysAPI

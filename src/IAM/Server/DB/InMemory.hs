@@ -1,5 +1,6 @@
 module IAM.Server.DB.InMemory ( inMemory, InMemory(..) ) where
 
+import Control.Applicative ((<|>))
 import Control.Concurrent.STM
 import Control.Lens
 import Control.Monad.IO.Class
@@ -159,6 +160,22 @@ instance DB InMemory where
       s <- readTVar tvar
       writeTVar tvar $ s & userIdState uid ?~ u
     return u
+
+  updateUser (InMemory tvar) uid upd = do
+    result <- liftIO $ atomically $
+      readTVar tvar >>= \s -> case s ^. userIdentifierState uid of
+        Just u -> do
+          writeTVar tvar $ s & userIdentifierState uid ?~ f u
+          return $ Right u
+        Nothing ->
+          return $ Left $ NotFound $ UserIdentifier' uid
+    either throwError return result
+    where
+      f :: User -> User
+      f u = u
+        { userName = userUpdateName upd <|> userName u
+        , userEmail = userUpdateEmail upd <|> userEmail u
+        }
 
   deleteUser (InMemory tvar) uid = do
     result <- liftIO $ atomically $ do
