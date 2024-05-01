@@ -36,6 +36,7 @@ dependencies:
 - http-client
 - http-client-tls
 - http-types
+- iam-mtaylor-io-core
 - lens
 - mtl
 - network

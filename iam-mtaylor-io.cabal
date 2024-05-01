@@ -25,9 +25,7 @@ source-repository head
 
 library
   exposed-modules:
-      IAM.API
       IAM.Authentication
-      IAM.Authorization
       IAM.Client
       IAM.Client.Auth
       IAM.Client.Util
@@ -59,17 +57,6 @@ library
       IAM.Command.Logout
       IAM.Command.Server
       IAM.Config
-      IAM.Error
-      IAM.Group
-      IAM.GroupIdentifier
-      IAM.GroupPolicy
-      IAM.Identifier
-      IAM.Ip
-      IAM.ListResponse
-      IAM.Login
-      IAM.Membership
-      IAM.Policy
-      IAM.PublicKey
       IAM.Range
       IAM.Server.API
       IAM.Server.App
@@ -85,12 +72,6 @@ library
       IAM.Server.DB.Postgres.Transactions
       IAM.Server.Handlers
       IAM.Server.Init
-      IAM.Session
-      IAM.Sort
-      IAM.User
-      IAM.UserIdentifier
-      IAM.UserPolicy
-      IAM.UserPublicKey
       IAM.Util
   other-modules:
       Paths_iam_mtaylor_io
@@ -116,6 +97,7 @@ library
     , http-client
     , http-client-tls
     , http-types
+    , iam-mtaylor-io-core
     , lens
     , mtl
     , network
@@ -160,6 +142,7 @@ executable iam-mtaylor-io
     , http-client-tls
     , http-types
     , iam-mtaylor-io
+    , iam-mtaylor-io-core
     , lens
     , mtl
     , network
@@ -208,6 +191,7 @@ test-suite iam-mtaylor-io-test
     , http-client-tls
     , http-types
     , iam-mtaylor-io
+    , iam-mtaylor-io-core
     , lens
     , mtl
     , network

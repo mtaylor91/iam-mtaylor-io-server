@@ -3,7 +3,18 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    commit: 103938f13d2590ee386af9dc4906a65ccdd6badd
+    git: https://github.com/mtaylor91/iam-mtaylor-io-core.git
+    name: iam-mtaylor-io-core
+    pantry-tree:
+      sha256: 093e1c038738999f1db4263c8a7488885838b9a7fba1f1af7ba9bc3f661f1b30
+      size: 1660
+    version: 0.1.0.0
+  original:
+    commit: 103938f13d2590ee386af9dc4906a65ccdd6badd
+    git: https://github.com/mtaylor91/iam-mtaylor-io-core.git
 snapshots:
 - completed:
     sha256: a81fb3877c4f9031e1325eb3935122e608d80715dc16b586eb11ddbff8671ecd
