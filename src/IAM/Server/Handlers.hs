@@ -525,6 +525,14 @@ authorizeHandler ctx req = do
     Left e -> errorHandler e
     Right uid' -> return uid'
 
+  case mToken of
+    Nothing -> return ()
+    Just token -> do
+      result <- liftIO $ runExceptT $ getSessionByToken (ctxDB ctx) userIdent token
+      case result of
+        Left err -> errorHandler err
+        Right _  -> return ()
+
   let host = authorizationRequestHost req
   result <- liftIO $ runExceptT $ listPoliciesForUser (ctxDB ctx) uid host
   case result of
@@ -537,6 +545,7 @@ authorizeHandler ctx req = do
 
   where
 
+  mToken = authorizationRequestToken req
   userIdent = authorizationRequestUser req
   reqAction = authorizationRequestAction req
   reqResource = authorizationRequestResource req
