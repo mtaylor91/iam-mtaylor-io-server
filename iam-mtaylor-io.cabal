@@ -25,38 +25,8 @@ source-repository head
 
 library
   exposed-modules:
-      IAM.Authentication
-      IAM.Client
-      IAM.Client.Auth
-      IAM.Client.Util
       IAM.Command
-      IAM.Command.Authorize
-      IAM.Command.Authorize.Login
-      IAM.Command.Authorize.Request
-      IAM.Command.Create
-      IAM.Command.Create.Group
-      IAM.Command.Create.Policy
-      IAM.Command.Create.User
-      IAM.Command.Delete
-      IAM.Command.Delete.Group
-      IAM.Command.Delete.Policy
-      IAM.Command.Delete.Session
-      IAM.Command.Delete.User
-      IAM.Command.Get
-      IAM.Command.Get.Group
-      IAM.Command.Get.Policy
-      IAM.Command.Get.User
-      IAM.Command.Keypair
-      IAM.Command.List
-      IAM.Command.List.Groups
-      IAM.Command.List.Logins
-      IAM.Command.List.Policies
-      IAM.Command.List.Sessions
-      IAM.Command.List.Users
-      IAM.Command.Login
-      IAM.Command.Logout
       IAM.Command.Server
-      IAM.Config
       IAM.Range
       IAM.Server.API
       IAM.Server.App
@@ -72,7 +42,6 @@ library
       IAM.Server.DB.Postgres.Transactions
       IAM.Server.Handlers
       IAM.Server.Init
-      IAM.Util
   other-modules:
       Paths_iam_mtaylor_io
   autogen-modules:

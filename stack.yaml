@@ -42,7 +42,7 @@ packages:
 #
 extra-deps:
 - git: https://github.com/mtaylor91/iam-mtaylor-io-core.git
-  commit: 103938f13d2590ee386af9dc4906a65ccdd6badd
+  commit: 313dea8cf46b40e74f0d2ec916d14594fd2e20b4
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
