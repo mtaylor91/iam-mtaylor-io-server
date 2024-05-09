@@ -686,6 +686,20 @@ selectUserEmail =
   |]
 
 
+selectUserGroup :: Statement (UUID, UUID) (Maybe UUID)
+selectUserGroup =
+  [maybeStatement|
+    SELECT
+      users_groups.group_uuid :: uuid
+    FROM
+      users_groups
+    WHERE
+      users_groups.user_uuid = $1 :: uuid
+    AND
+      users_groups.group_uuid = $2 :: uuid
+  |]
+
+
 selectUserGroups :: Statement UUID (Vector (UUID, Maybe Text))
 selectUserGroups =
   [vectorStatement|

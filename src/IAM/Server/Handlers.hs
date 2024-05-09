@@ -376,6 +376,16 @@ deletePolicyHandler ctx auth policy = do
     Left err      -> errorHandler err
 
 
+getMembershipHandler :: DB db =>
+  Ctx db -> Auth -> GroupIdentifier -> UserIdentifier -> Handler NoContent
+getMembershipHandler ctx auth gid uid = do
+  _ <- requireSession auth
+  result <- liftIO $ runExceptT $ getMembership (ctxDB ctx) uid gid
+  case result of
+    Right _ -> return NoContent
+    Left err -> errorHandler err
+
+
 createMembershipHandler ::
   DB db => Ctx db -> Auth -> GroupIdentifier -> UserIdentifier -> Handler Membership
 createMembershipHandler ctx auth gid uid = do

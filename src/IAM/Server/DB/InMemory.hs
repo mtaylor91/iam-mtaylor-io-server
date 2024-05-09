@@ -405,6 +405,22 @@ instance DB InMemory where
               return $ Left $ NotFound $ PolicyIdentifier $ PolicyId pid
     either throwError return result
 
+  getMembership (InMemory tvar) uid gid = do
+    result <- liftIO $ atomically $ do
+      s <- readTVar tvar
+      case (resolveUserIdentifier s uid, resolveGroupIdentifier s gid) of
+        (Just uid', Just gid') -> do
+          case Prelude.filter (== (uid', gid')) $ memberships s of
+            [] ->
+              return $ Left $ NotFound $ UserGroupIdentifier uid gid
+            _:_ ->
+              return $ Right $ Membership uid' gid'
+        (Nothing, _) ->
+          return $ Left $ NotFound $ UserIdentifier' uid
+        (_, Nothing) ->
+          return $ Left $ NotFound $ GroupIdentifier gid
+    either throwError return result
+
   createMembership (InMemory tvar) uid gid = do
     result <- liftIO $ atomically $ do
       s <- readTVar tvar

@@ -689,6 +689,24 @@ pgDeletePolicy (PolicyIdAndName (PolicyUUID pid) _) =
   pgDeletePolicy $ PolicyId $ PolicyUUID pid
 
 
+pgGetMembership ::
+  UserIdentifier -> GroupIdentifier -> Transaction (Either Error Membership)
+pgGetMembership userIdentifier groupIdentifier = do
+  maybeUid <- resolveUserIdentifier userIdentifier
+  maybeGid <- resolveGroupIdentifier groupIdentifier
+  case (maybeUid, maybeGid) of
+    (Just (UserUUID uid), Just (GroupUUID gid)) -> do
+      result <- statement (uid, gid) selectUserGroup
+      case result of
+        Nothing -> return $ Left $ NotFound $
+          UserGroupIdentifier userIdentifier groupIdentifier
+        Just _ -> return $ Right $ Membership (UserUUID uid) (GroupUUID gid)
+    (Nothing, _) ->
+      return $ Left $ NotFound $ UserIdentifier' userIdentifier
+    (_, Nothing) ->
+      return $ Left $ NotFound $ GroupIdentifier groupIdentifier
+
+
 pgCreateMembership ::
   UserIdentifier -> GroupIdentifier -> Transaction (Either Error Membership)
 pgCreateMembership userIdentifier groupIdentifier = do

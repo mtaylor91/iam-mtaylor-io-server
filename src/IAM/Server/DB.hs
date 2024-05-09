@@ -142,6 +142,10 @@ class DB db where
   deletePolicy :: (MonadIO m, MonadError Error m) =>
     db -> PolicyIdentifier -> m Policy
 
+  -- | getMembership returns a membership from the database by its ids.
+  getMembership :: (MonadIO m, MonadError Error m) =>
+    db -> UserIdentifier -> GroupIdentifier -> m Membership
+
   -- | createMembership adds a user to a group.
   createMembership :: (MonadIO m, MonadError Error m) =>
     db -> UserIdentifier -> GroupIdentifier -> m Membership

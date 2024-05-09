@@ -151,7 +151,8 @@ groupPolicyAPI ctx auth gid pid
 groupMembershipAPI ::
   DB db => Ctx db -> Auth -> GroupIdentifier -> UserIdentifier -> Server MembershipAPI
 groupMembershipAPI ctx auth gid uid
-  = createMembershipHandler ctx auth gid uid
+  = getMembershipHandler ctx auth gid uid
+  :<|> createMembershipHandler ctx auth gid uid
   :<|> deleteMembershipHandler ctx auth gid uid
 
 
