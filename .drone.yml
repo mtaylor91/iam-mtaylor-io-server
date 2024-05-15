@@ -3,6 +3,12 @@ kind: pipeline
 type: kubernetes
 name: build
 steps:
+- name: build
+  pull: always
+  image: images.home.mtaylor.io/iam-mtaylor-io:build
+  commands:
+  - ln -s /build/.stack-work /drone/src/.stack-work
+  - stack build --allow-different-user --copy-bins --local-bin-path .
 - name: image
   image: images.home.mtaylor.io/drone-kaniko:latest
   settings:
@@ -21,14 +27,12 @@ kind: pipeline
 type: kubernetes
 name: release
 steps:
-- name: version
-  image: images.home.mtaylor.io/base:latest
+- name: build
+  pull: always
+  image: images.home.mtaylor.io/iam-mtaylor-io:build
   commands:
-  - set -eux
-  - ./bin/version.sh $DRONE_TAG
-  when:
-    event:
-    - tag
+  - ln -s /build/.stack-work /drone/src/.stack-work
+  - stack build --allow-different-user --copy-bins --local-bin-path .
 - name: image
   image: images.home.mtaylor.io/drone-kaniko:latest
   settings:
@@ -67,9 +71,20 @@ kind: pipeline
 type: kubernetes
 name: promote
 steps:
+- name: version
+  image: images.home.mtaylor.io/base:latest
+  commands:
+  - set -eux
+  - git fetch origin --tags
+  - ./bin/version.sh $DRONE_TAG
+  when:
+    event:
+    - tag
 - name: release
   image: images.home.mtaylor.io/deployer:latest
   commands:
+  - set -eux
+  - git fetch origin --tags
   - ./bin/promote.sh
 trigger:
   event:

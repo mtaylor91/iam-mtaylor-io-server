@@ -1,0 +1,10 @@
+FROM images.home.mtaylor.io/haskell:latest
+# Install system dependencies
+USER root
+RUN apk add --no-cache libpq-dev zlib-dev
+# Create build workspace
+RUN mkdir /build
+WORKDIR /build
+# Add metadata files and build dependencies
+ADD . .
+RUN stack build --system-ghc --copy-bins
