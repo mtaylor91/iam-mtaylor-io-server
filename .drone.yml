@@ -84,13 +84,13 @@ steps:
   commands:
   - set -eux
   - git fetch origin --tags
-  - ./bin/version.sh $DRONE_TAG
+  - ./bin/version.sh $(get-release-tag)
 - name: release
   image: images.home.mtaylor.io/deployer:latest
   commands:
   - set -eux
   - git fetch origin --tags
-  - ./bin/promote.sh
+  - ./bin/promote.sh $(get-release-tag)
 trigger:
   event:
   - promote
