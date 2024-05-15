@@ -80,7 +80,7 @@ type: kubernetes
 name: promote
 steps:
 - name: version
-  image: images.home.mtaylor.io/base:latest
+  image: images.home.mtaylor.io/deployer:latest
   commands:
   - set -eux
   - git fetch origin --tags
