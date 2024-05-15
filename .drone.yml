@@ -60,9 +60,17 @@ steps:
   environment:
     SSH_KEY_BASE64:
       from_secret: ssh_key_base64
-  when:
-    event:
-    - tag
+- name: build-image
+  image: images.home.mtaylor.io/drone-kaniko:latest
+  settings:
+    repo: images.home.mtaylor.io/iam-mtaylor-io
+    dockerfile: Dockerfile.build
+    enable_cache: true
+    username: anonymous
+    password: anonymous
+    registry: images.home.mtaylor.io
+    tags:
+    - build
 trigger:
   event:
   - tag
@@ -77,9 +85,6 @@ steps:
   - set -eux
   - git fetch origin --tags
   - ./bin/version.sh $DRONE_TAG
-  when:
-    event:
-    - tag
 - name: release
   image: images.home.mtaylor.io/deployer:latest
   commands:
