@@ -30,6 +30,7 @@ dependencies:
 - entropy
 - email-validate
 - hasql
+- hasql-migration
 - hasql-pool
 - hasql-th
 - hasql-transaction

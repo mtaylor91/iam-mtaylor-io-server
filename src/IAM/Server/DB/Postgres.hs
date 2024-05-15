@@ -13,6 +13,7 @@ import qualified Hasql.Pool as Pool
 
 import IAM.Error
 import IAM.Server.DB
+import IAM.Server.DB.Postgres.Migrations
 import IAM.Server.DB.Postgres.Transactions
 import IAM.Session
 
@@ -20,10 +21,12 @@ import IAM.Session
 newtype PostgresDB = PostgresDB Pool
 
 connectToDatabase :: (MonadIO m) =>
-  ByteString -> Word16 -> ByteString -> ByteString -> ByteString -> m PostgresDB
-connectToDatabase host port database username password = do
+  ByteString -> Word16 -> ByteString -> ByteString -> ByteString -> FilePath ->
+    m PostgresDB
+connectToDatabase host port database username password migrations = do
   let settings = Connection.settings host port username password database
   pool <- liftIO $ Pool.acquire 3 1800 1800 settings
+  liftIO $ migrate migrations pool
   return $ PostgresDB pool
 
 

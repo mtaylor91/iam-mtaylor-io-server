@@ -38,6 +38,7 @@ library
       IAM.Server.DB.Postgres
       IAM.Server.DB.Postgres.Decoders
       IAM.Server.DB.Postgres.Encoders
+      IAM.Server.DB.Postgres.Migrations
       IAM.Server.DB.Postgres.Queries
       IAM.Server.DB.Postgres.Transactions
       IAM.Server.Handlers
@@ -60,6 +61,7 @@ library
     , email-validate
     , entropy
     , hasql
+    , hasql-migration
     , hasql-pool
     , hasql-th
     , hasql-transaction
@@ -104,6 +106,7 @@ executable iam-mtaylor-io
     , email-validate
     , entropy
     , hasql
+    , hasql-migration
     , hasql-pool
     , hasql-th
     , hasql-transaction
@@ -150,6 +153,7 @@ test-suite iam-mtaylor-io-test
     , email-validate
     , entropy
     , hasql
+    , hasql-migration
     , hasql-pool
     , hasql-th
     , hasql-transaction

@@ -25,6 +25,7 @@ import IAM.Server.Init
 data ServerOptions = ServerOptions
   { port :: !Int
   , postgres :: !Bool
+  , migrations :: !FilePath
   } deriving (Show)
 
 
@@ -40,7 +41,7 @@ server opts = do
       pgDatabase <- loadEnvConfig "POSTGRES_DATABASE"
       pgUserName <- loadEnvConfig "POSTGRES_USER"
       pgPassword <- loadEnvConfig "POSTGRES_PASSWORD"
-      connectToDatabase pgHost pgPort pgDatabase pgUserName pgPassword
+      connectToDatabase pgHost pgPort pgDatabase pgUserName pgPassword $ migrations opts
 
 
 startServer :: DB db => ServerOptions -> db -> IO ()
@@ -64,6 +65,13 @@ serverOptions = ServerOptions
       )
   <*> switch ( long "postgres"
       <> help "Use Postgres database"
+      )
+  <*> strOption
+      ( long "migrations"
+    <> metavar "DIRECTORY"
+    <> help "Directory containing SQL migrations"
+    <> value "/usr/local/share/iam-mtaylor-io/db"
+    <> showDefault
       )
 
 
