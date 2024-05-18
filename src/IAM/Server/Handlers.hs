@@ -390,10 +390,33 @@ createMembershipHandler ::
   DB db => Ctx db -> Auth -> GroupIdentifier -> UserIdentifier -> Handler Membership
 createMembershipHandler ctx auth gid uid = do
   _ <- requireSession auth
-  result <- liftIO $ runExceptT $ createMembership (ctxDB ctx) uid gid
-  case result of
-    Right membership -> return membership
-    Left err         -> errorHandler err
+  -- Check if the user is allowed to create the membership
+  authZ' <- requireAuthorization auth
+  let callerPolicies = authPolicies authZ'
+  result0 <- liftIO $ runExceptT $ getGroup (ctxDB ctx) gid
+  case result0 of
+    Left err -> errorHandler err
+    Right grp -> do
+      policies <- fetchPolicies $ groupPolicies grp
+      if Prelude.all (`isAllowedBy` policyRules callerPolicies) policies
+        then createMembership'
+        else errorHandler NotAuthorized
+  where
+    createMembership' :: Handler Membership
+    createMembership' = do
+      result <- liftIO $ runExceptT $ createMembership (ctxDB ctx) uid gid
+      case result of
+        Right membership -> return membership
+        Left err         -> errorHandler err
+    fetchPolicies :: [PolicyIdentifier] -> Handler [Policy]
+    fetchPolicies [] = return []
+    fetchPolicies (pid:pids) = do
+      result <- liftIO $ runExceptT $ getPolicy (ctxDB ctx) pid
+      case result of
+        Left err -> errorHandler err
+        Right policy -> do
+          policies <- fetchPolicies pids
+          return $ policy:policies
 
 
 deleteMembershipHandler ::
