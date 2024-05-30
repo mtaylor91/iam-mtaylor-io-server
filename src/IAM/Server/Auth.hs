@@ -22,6 +22,7 @@ import Data.ByteString.Base64.URL
 import Data.CaseInsensitive
 import Data.Text (Text, pack, unpack)
 import Data.Text.Encoding
+import Data.Time.Clock
 import Data.UUID
 import Network.HTTP.Types
 import Network.Socket (SockAddr)
@@ -165,14 +166,17 @@ authorize :: DB db =>
 authorize host ctx req authN' = do
   let callerUserId = userId $ authUser authN'
 
+  now <- liftIO getCurrentTime
   maybeSession <- case authRequestSessionToken $ authRequest authN' of
     Nothing -> return Nothing
     Just token -> do
       let uid = UserIdentifier (Just callerUserId) Nothing Nothing
       result <- liftIO $ runExceptT $ getSessionByToken (ctxDB ctx) uid token
       case result of
-        Right session ->
+        Right session | sessionExpiration session > now ->
           return $ Just session
+        Right _expiredSession ->
+          errorHandler $ AuthenticationFailed SessionExpired
         Left (NotFound _) ->
           errorHandler $ AuthenticationFailed SessionNotFound
         Left (InternalError e) ->
