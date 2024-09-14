@@ -72,6 +72,9 @@ jobs:
     name: "Docker Build"
     needs: "git-tag"
     runs-on: "iam-mtaylor-io-server-runner-dind"
+    outputs:
+      sha: "${{ needs.git-tag.outputs.sha }}"
+      tag: "${{ needs.git-tag.outputs.tag }}"
     steps:
     - name: "Set up Docker Buildx"
       uses: "docker/setup-buildx-action@v3"
@@ -95,3 +98,31 @@ jobs:
         context: "."
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+  release:
+    name: "Release"
+    environment: "production"
+    runs-on: "iam-mtaylor-io-server-runner-k8s"
+    container:
+      image: "images.home.mtaylor.io/deployer:0.0.7"
+    needs:
+    - "docker-build"
+    steps:
+    - name: "Configure git"
+      shell: "bash"
+      run: |
+        git config --global user.email "githubactions@mtaylor.io"
+        git config --global user.name "GitHub Actions"
+    - name: "Checkout argocd-deployment"
+      uses: "actions/checkout@v4"
+      with:
+        repository: "mtaylor91/argocd-deployment"
+        ref: "main"
+        ssh-key: ${{ secrets.ARGOCD_DEPLOYMENT_SSH_PRIVATE_KEY }}
+    - name: "Update argocd-deployment"
+      shell: "bash"
+      run: |
+        set -euxo pipefail
+        tag=${{ needs.docker-build.outputs.tag }}
+        ./bin/update-repo-tag.sh home/namespaced/mtaylor-io iam-mtaylor-io ${tag}
+        git commit -a -m "Update iam-mtaylor-io to ${tag}"
+        git push origin main
