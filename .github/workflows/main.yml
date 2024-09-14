@@ -1,0 +1,19 @@
+name: "Build Development Trunk"
+on:
+  push:
+    branches:
+    - main
+jobs:
+  build:
+    name: "Build Development Trunk"
+    runs-on: iam-mtaylor-io-server-runner-k8s
+    container:
+      image: images.home.mtaylor.io/iam-mtaylor-io:build
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Build
+      shell: bash
+      run: |
+        set -eux
+        stack build --allow-different-user --copy-bins --local-bin-path .
