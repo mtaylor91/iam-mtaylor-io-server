@@ -4,26 +4,75 @@ on:
     branches:
     - "main"
 jobs:
+  version:
+    name: "Assign Version"
+    runs-on: "iam-mtaylor-io-server-runner-k8s"
+    container:
+      image: "images.home.mtaylor.io/deployer:0.0.7"
+    outputs:
+      tag: "${{ steps.version.outputs.tag }}"
+    steps:
+    - name: "Checkout"
+      uses: "actions/checkout@v4"
+    - id: "version"
+      name: "Generate Version Tag"
+      run: |
+        set -eux
+        git config --global --add safe.directory $GITHUB_WORKSPACE
+        git fetch origin 'refs/tags/*:refs/tags/*'
+        export tag=$(get-release-tag)
+        echo "tag=$tag" >> $GITHUB_OUTPUT
   stack-build:
     name: "Stack Build"
+    needs: "version"
     runs-on: "iam-mtaylor-io-server-runner-k8s"
     container:
       image: "images.home.mtaylor.io/iam-mtaylor-io:build"
+    outputs:
+      tag: "${{ needs.version.outputs.tag }}"
     steps:
     - name: "Checkout"
       uses: "actions/checkout@v4"
     - name: "Build"
       run: |
         set -eux
+        ./bin/version.sh ${{ needs.version.outputs.tag }}
         stack build --allow-different-user --copy-bins --local-bin-path .
     - name: "Upload"
       uses: "actions/upload-artifact@v4"
       with:
         name: "iam-mtaylor-io"
         path: "iam-mtaylor-io"
+  git-tag:
+    name: "Git Tag"
+    needs: "stack-build"
+    runs-on: "iam-mtaylor-io-server-runner-k8s"
+    container:
+      image: "images.home.mtaylor.io/deployer:0.0.7"
+    outputs:
+      sha: "${{ steps.tag.outputs.sha }}"
+      tag: "${{ needs.stack-build.outputs.tag }}"
+    steps:
+    - name: "Checkout"
+      uses: "actions/checkout@v4"
+    - id: tag
+      name: "Tag"
+      shell: "bash"
+      run: |
+        set -euxo pipefail
+        tag=${{ needs.stack-build.outputs.tag }}
+        git config --global --add safe.directory $GITHUB_WORKSPACE
+        git config --global user.email "githubactions@mtaylor.io"
+        git config --global user.name "GitHub Actions"
+        ./bin/version.sh $tag
+        git commit -a -m "Release $tag"
+        git tag -a $tag -m "Release $tag"
+        git push origin $tag
+        sha=$(git rev-parse --short HEAD)
+        echo "sha=$sha" >> $GITHUB_OUTPUT
   docker-build:
     name: "Docker Build"
-    needs: "stack-build"
+    needs: "git-tag"
     runs-on: "iam-mtaylor-io-server-runner-dind"
     steps:
     - name: "Set up Docker Buildx"
@@ -39,7 +88,8 @@ jobs:
         images: "images.home.mtaylor.io/mtaylor.io"
         tags: |
           latest
-          type=sha
+          ${{ needs.git-tag.outputs.tag }}
+          sha-${{ needs.git-tag.outputs.sha }}
     - name: "Docker Build"
       uses: "docker/build-push-action@v6"
       with:
