@@ -2,21 +2,49 @@ name: "Build Development Trunk"
 on:
   push:
     branches:
-    - main
+    - "main"
 jobs:
   stack-build:
     name: "Stack Build"
-    runs-on: iam-mtaylor-io-server-runner-k8s
+    runs-on: "iam-mtaylor-io-server-runner-k8s"
     container:
-      image: images.home.mtaylor.io/iam-mtaylor-io:build
+      image: "images.home.mtaylor.io/iam-mtaylor-io:build"
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Build
+    - name: "Checkout"
+      uses: "actions/checkout@v4"
+    - name: "Build"
       run: |
         set -eux
         stack build --allow-different-user --copy-bins --local-bin-path .
-    - name: Upload
-      uses: actions/upload-artifact@v4
+    - name: "Upload"
+      uses: "actions/upload-artifact@v4"
       with:
-        name: iam-mtaylor-io
+        name: "iam-mtaylor-io"
+  docker-build:
+    name: "Docker Build"
+    needs: "stack-build"
+    runs-on: "iam-mtaylor-io-server-runner-dind"
+    steps:
+    - name: "Set up Docker Buildx"
+      uses: "docker/setup-buildx-action@v3"
+    - name: "Checkout"
+      uses: "actions/checkout@v4"
+    - name: "Download iam-mtaylor-io"
+      uses: "actions/download-artifact@v4"
+      with:
+        name: "iam-mtaylor-io"
+    - id: "meta"
+      name: "Docker Metadata"
+      uses: "docker/metadata-action@v5"
+      with:
+        images: "images.home.mtaylor.io/mtaylor.io"
+        tags: |
+          latest
+          type=sha
+    - name: "Docker Build"
+      uses: "docker/build-push-action@v6"
+      with:
+        push: true
+        context: "."
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
