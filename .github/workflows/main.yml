@@ -112,6 +112,7 @@ jobs:
       run: |
         git config --global user.email "githubactions@mtaylor.io"
         git config --global user.name "GitHub Actions"
+        git config --global --add safe.directory $GITHUB_WORKSPACE
     - name: "Checkout argocd-deployment"
       uses: "actions/checkout@v4"
       with:
