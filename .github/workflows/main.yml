@@ -86,7 +86,7 @@ jobs:
       name: "Docker Metadata"
       uses: "docker/metadata-action@v5"
       with:
-        images: "images.home.mtaylor.io/mtaylor.io"
+        images: "images.home.mtaylor.io/iam-mtaylor-io"
         tags: |
           latest
           ${{ needs.git-tag.outputs.tag }}
