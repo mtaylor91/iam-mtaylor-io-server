@@ -4,8 +4,8 @@ on:
     branches:
     - main
 jobs:
-  build:
-    name: "Build Development Trunk"
+  stack-build:
+    name: "Stack Build"
     runs-on: iam-mtaylor-io-server-runner-k8s
     container:
       image: images.home.mtaylor.io/iam-mtaylor-io:build
@@ -16,3 +16,7 @@ jobs:
       run: |
         set -eux
         stack build --allow-different-user --copy-bins --local-bin-path .
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: iam-mtaylor-io
