@@ -13,7 +13,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Build
-      shell: bash
       run: |
         set -eux
         stack build --allow-different-user --copy-bins --local-bin-path .
