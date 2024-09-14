@@ -20,6 +20,7 @@ jobs:
       uses: "actions/upload-artifact@v4"
       with:
         name: "iam-mtaylor-io"
+        path: "iam-mtaylor-io"
   docker-build:
     name: "Docker Build"
     needs: "stack-build"
@@ -29,10 +30,8 @@ jobs:
       uses: "docker/setup-buildx-action@v3"
     - name: "Checkout"
       uses: "actions/checkout@v4"
-    - name: "Download iam-mtaylor-io"
+    - name: "Download artifacts"
       uses: "actions/download-artifact@v4"
-      with:
-        name: "iam-mtaylor-io"
     - id: "meta"
       name: "Docker Metadata"
       uses: "docker/metadata-action@v5"
