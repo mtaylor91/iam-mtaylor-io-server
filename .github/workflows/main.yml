@@ -65,9 +65,7 @@ jobs:
         git config --global user.email "githubactions@mtaylor.io"
         git config --global user.name "GitHub Actions"
         ./bin/version.sh $tag
-        git commit -a -m "Release $tag"
-        git tag -a $tag -m "Release $tag"
-        git push origin $tag
+        ./bin/promote.sh $tag
         sha=$(git rev-parse --short HEAD)
         echo "sha=$sha" >> $GITHUB_OUTPUT
   docker-build:
