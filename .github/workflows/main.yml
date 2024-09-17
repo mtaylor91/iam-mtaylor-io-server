@@ -8,7 +8,7 @@ jobs:
     name: "Assign Version"
     runs-on: "iam-mtaylor-io-server-runner-k8s"
     container:
-      image: "images.home.mtaylor.io/deployer:0.0.7"
+      image: "images.home.mtaylor.io/deployer:0.0.9"
     outputs:
       tag: "${{ steps.version.outputs.tag }}"
     steps:
@@ -48,7 +48,7 @@ jobs:
     needs: "stack-build"
     runs-on: "iam-mtaylor-io-server-runner-k8s"
     container:
-      image: "images.home.mtaylor.io/deployer:0.0.7"
+      image: "images.home.mtaylor.io/deployer:0.0.9"
     outputs:
       sha: "${{ steps.tag.outputs.sha }}"
       tag: "${{ needs.stack-build.outputs.tag }}"
@@ -110,7 +110,7 @@ jobs:
     environment: "production"
     runs-on: "iam-mtaylor-io-server-runner-k8s"
     container:
-      image: "images.home.mtaylor.io/deployer:0.0.7"
+      image: "images.home.mtaylor.io/deployer:0.0.9"
     needs:
     - "docker-build"
     steps:
@@ -134,3 +134,12 @@ jobs:
         ./bin/update-repo-tag.sh home/namespaced/mtaylor-io iam-mtaylor-io ${tag}
         git commit -a -m "Update iam-mtaylor-io to ${tag}"
         git push origin main
+    - name: "Sync argocd"
+      shell: "bash"
+      env:
+        ARGOCD_SERVER: "argocd.mtaylor.io"
+        ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+      run: |
+        set -euxo pipefail
+        argocd app sync argocd/mtaylor-io --grpc-web
+        argocd app wait argocd/mtaylor-io --sync --health --timeout 300
