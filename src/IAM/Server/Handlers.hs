@@ -25,12 +25,18 @@ import IAM.Range
 import IAM.Server.Auth
 import IAM.Server.Context
 import IAM.Server.DB
+import IAM.Server.Version
 import IAM.Session
 import IAM.Sort
+import IAM.Status (Health(Healthy), Status(Status))
 import IAM.User
 import IAM.UserIdentifier
 import IAM.UserPolicy
 import IAM.UserPublicKey
+
+
+statusHandler :: Ctx db -> Handler Status
+statusHandler _ = return $ Status Healthy version
 
 
 loginRequestHandler :: DB db => Ctx db -> Auth -> LoginRequest ->

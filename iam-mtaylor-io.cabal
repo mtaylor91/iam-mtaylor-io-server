@@ -43,6 +43,7 @@ library
       IAM.Server.DB.Postgres.Transactions
       IAM.Server.Handlers
       IAM.Server.Init
+      IAM.Server.Version
   other-modules:
       Paths_iam_mtaylor_io
   autogen-modules:

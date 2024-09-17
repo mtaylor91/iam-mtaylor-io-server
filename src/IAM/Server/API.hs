@@ -27,7 +27,7 @@ import IAM.UserIdentifier
 
 
 server :: DB db => Ctx db -> Server API
-server = signedAPI
+server ctx = signedAPI ctx :<|> statusHandler ctx
 
 
 signedAPI :: DB db => Ctx db -> Server SignedAPI
