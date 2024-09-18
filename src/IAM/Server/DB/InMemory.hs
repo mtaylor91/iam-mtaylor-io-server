@@ -616,9 +616,9 @@ instance DB InMemory where
           return $ Left $ NotFound $ SessionIdentifier $ Just sid
     either throwError return result
 
-  listSessions (InMemory tvar) (Range offset' maybeLimit) sortBy sortOrder = do
+  listSessions (InMemory tvar) (Range offset' maybeLimit) sortSessionsBy sortOrder = do
     s <- liftIO $ readTVarIO tvar
-    let sessions' = sortSessions sortBy sortOrder $ snd <$> sessions s
+    let sessions' = sortSessions sortSessionsBy sortOrder $ snd <$> sessions s
     case maybeLimit of
       Just limit' ->
         let items' = Prelude.take limit' $ Prelude.drop offset' sessions'
@@ -629,6 +629,25 @@ instance DB InMemory where
             total' = Prelude.length sessions'
             limit' = total'
          in return $ ListResponse items' limit' offset' total'
+
+  listSessionsBySearchTerm (InMemory tvar) pattern (Range offset' maybeLimit) sortSessionsBy sortOrder = do
+    s <- liftIO $ readTVarIO tvar
+    let sessions' = sortSessions sortSessionsBy sortOrder $ Prelude.filter f $ snd <$> sessions s
+    case maybeLimit of
+      Just limit' ->
+        let items' = Prelude.take limit' $ Prelude.drop offset' sessions'
+            total' = Prelude.length sessions'
+         in return $ ListResponse items' limit' offset' total'
+      Nothing ->
+        let items' = Prelude.drop offset' sessions'
+            total' = Prelude.length sessions'
+            limit' = total'
+         in return $ ListResponse items' limit' offset' total'
+    where
+      f :: Session -> Bool
+      f s' =
+        pattern `isInfixOf` toText (unSessionId $ sessionId s') ||
+        pattern `isInfixOf` toText (unUserId $ sessionUser s')
 
   listUserSessions (InMemory tvar) uid (Range offset' maybeLimit) = do
     s <- liftIO $ readTVarIO tvar

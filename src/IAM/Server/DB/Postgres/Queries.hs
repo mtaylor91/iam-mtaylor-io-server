@@ -1453,6 +1453,13 @@ selectSessionCount = Statement sql encoder decoder True where
   decoder = D.singleRow (D.column (D.nonNullable D.int4))
 
 
+selectSessionCountLike :: Statement Text Int32
+selectSessionCountLike = Statement sql encoder decoder True where
+  sql = "SELECT COUNT(*) FROM sessions WHERE session_uuid :: text LIKE $1"
+  encoder = E.param (E.nonNullable E.text)
+  decoder = D.singleRow (D.column (D.nonNullable D.int4))
+
+
 selectUserSessionCount :: Statement UUID Int32
 selectUserSessionCount =
   [singletonStatement|
@@ -1487,6 +1494,41 @@ selectSessions sortBy sortOrder =
     Descending -> "DESC"
   encoder = (fst >$< E.param (E.nonNullable E.int4)) <>
             (snd >$< E.param (E.nonNullable E.int4))
+  decoder = D.rowList
+    ( Session <$> (SessionUUID <$> D.column (D.nonNullable D.uuid))
+              <*> (IpAddr <$> D.column (D.nonNullable D.inet))
+              <*> (UserUUID <$> D.column (D.nonNullable D.uuid))
+              <*> D.column (D.nonNullable D.timestamptz) )
+
+
+selectSessionsLike :: SortSessionsBy -> SortOrder ->
+  Statement (Text, (Int32, Int32)) [Session]
+selectSessionsLike sortBy sortOrder =
+  Statement sql encoder decoder True
+  where
+  sql = "SELECT \
+        \sessions.session_uuid, \
+        \sessions.user_uuid, \
+        \sessions.session_addr, \
+        \sessions.session_expires \
+        \FROM sessions \
+        \WHERE sessions.session_uuid :: text LIKE $1 \
+        \OR sessions.user_uuid :: text LIKE $1 \
+        \OR sessions.session_addr :: text LIKE $1 \
+        \OR sessions.session_expires :: text LIKE $1 \
+        \ORDER BY " <> sortByClause <> " " <> sortOrderClause <> " \
+        \OFFSET $2 LIMIT $3"
+  sortByClause = case sortBy of
+    SortSessionsById -> "sessions.session_uuid"
+    SortSessionsByUserId -> "sessions.user_uuid"
+    SortSessionsByAddress -> "sessions.session_addr"
+    SortSessionsByExpiration -> "sessions.session_expires"
+  sortOrderClause = case sortOrder of
+    Ascending -> "ASC"
+    Descending -> "DESC"
+  encoder = (fst >$< E.param (E.nonNullable E.text)) <>
+            ((fst . snd) >$< E.param (E.nonNullable E.int4)) <>
+            ((snd . snd) >$< E.param (E.nonNullable E.int4))
   decoder = D.rowList
     ( Session <$> (SessionUUID <$> D.column (D.nonNullable D.uuid))
               <*> (IpAddr <$> D.column (D.nonNullable D.inet))

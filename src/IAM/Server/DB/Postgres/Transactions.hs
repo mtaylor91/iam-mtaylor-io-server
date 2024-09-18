@@ -888,6 +888,19 @@ pgListSessions (Range offset' maybeLimit) sortSessionsBy sortOrder = do
   return $ Right $ ListResponse result limit' offset' $ fromIntegral total'
 
 
+pgListSessionsBySearchTerm :: Text -> Range -> SortSessionsBy -> SortOrder ->
+  Transaction (Either Error (ListResponse Session))
+pgListSessionsBySearchTerm search (Range offset' maybeLimit) sortSessionsBy sortOrder = do
+  let limit' = fromMaybe 100 maybeLimit
+  let likeExpr = "%" <> pgEscapeLike search <> "%"
+  let offset'' = fromIntegral offset'
+  let limit'' = fromIntegral limit'
+  let query = selectSessionsLike sortSessionsBy sortOrder
+  total' <- statement likeExpr selectSessionCountLike
+  result <- statement (likeExpr, (offset'', limit'')) query
+  return $ Right $ ListResponse result limit' offset' $ fromIntegral total'
+
+
 pgListUserSessions :: UserIdentifier -> Range ->
   Transaction (Either Error (ListResponse Session))
 pgListUserSessions userIdentifier (Range offset' maybeLimit) = do

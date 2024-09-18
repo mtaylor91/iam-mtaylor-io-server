@@ -202,6 +202,8 @@ class DB db where
   listSessions :: (MonadIO m, MonadError Error m) =>
     db -> Range -> SortSessionsBy -> SortOrder -> m (ListResponse Session)
 
+  -- | listSessionsBySearchTerm returns a list of all sessions in the
+  -- | database that match a search term.
   listSessionsBySearchTerm :: (MonadIO m, MonadError Error m) =>
     db -> Text -> Range -> SortSessionsBy -> SortOrder -> m (ListResponse Session)
 

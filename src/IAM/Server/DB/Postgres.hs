@@ -175,5 +175,8 @@ instance DB PostgresDB where
   listSessions (PostgresDB pool) range sortBy sortOrder =
     runTransaction pool $ pgListSessions range sortBy sortOrder
 
+  listSessionsBySearchTerm (PostgresDB pool) pattern range sortBy sortOrder =
+    runTransaction pool $ pgListSessionsBySearchTerm pattern range sortBy sortOrder
+
   listUserSessions (PostgresDB pool) uid range =
     runTransaction pool $ pgListUserSessions uid range
