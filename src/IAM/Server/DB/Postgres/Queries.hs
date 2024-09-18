@@ -7,6 +7,7 @@ module IAM.Server.DB.Postgres.Queries
 import Crypto.Sign.Ed25519 (PublicKey)
 import Data.Aeson (Value)
 import Data.ByteString (ByteString)
+import Data.Functor.Contravariant ((>$<))
 import Data.Int (Int32)
 import Data.Text (Text)
 import Data.Time (UTCTime)
@@ -16,7 +17,9 @@ import Hasql.Statement (Statement(..))
 import Hasql.TH (maybeStatement, resultlessStatement, singletonStatement, vectorStatement)
 import Network.IP.Addr (NetAddr, IP)
 import qualified Hasql.Decoders as D
+import qualified Hasql.Encoders as E
 
+import IAM.Ip
 import IAM.Login
 import IAM.Session
 import IAM.Server.DB.Postgres.Encoders
@@ -1397,8 +1400,22 @@ selectPolicy =
   |]
 
 
-selectSessionById :: Statement (UUID, UUID) (Maybe (NetAddr IP, UTCTime))
+selectSessionById :: Statement UUID (Maybe (UUID, NetAddr IP, UTCTime))
 selectSessionById =
+  [maybeStatement|
+    SELECT
+      sessions.user_uuid :: uuid,
+      sessions.session_addr :: inet,
+      sessions.session_expires :: timestamptz
+    FROM
+      sessions
+    WHERE
+      sessions.session_uuid = $1 :: uuid
+  |]
+
+
+selectUserSessionById :: Statement (UUID, UUID) (Maybe (NetAddr IP, UTCTime))
+selectUserSessionById =
   [maybeStatement|
     SELECT
       sessions.session_addr :: inet,
@@ -1428,6 +1445,13 @@ selectSessionByToken =
   |]
 
 
+selectSessionCount :: Statement () Int32
+selectSessionCount = Statement sql encoder decoder True where
+  sql = "SELECT COUNT(*) FROM sessions"
+  encoder = E.noParams
+  decoder = D.singleRow (D.column (D.nonNullable D.int4))
+
+
 selectUserSessionCount :: Statement UUID Int32
 selectUserSessionCount =
   [singletonStatement|
@@ -1438,6 +1462,25 @@ selectUserSessionCount =
     WHERE
       sessions.user_uuid = $1 :: uuid
   |]
+
+
+selectSessions :: Statement (Int32, Int32) [Session]
+selectSessions = Statement sql encoder decoder True where
+  sql = "SELECT \
+        \sessions.session_uuid, \
+        \sessions.user_uuid, \
+        \sessions.session_addr, \
+        \sessions.session_expires \
+        \FROM sessions \
+        \ORDER BY sessions.session_expires ASC \
+        \OFFSET $1 LIMIT $2"
+  encoder = (fst >$< E.param (E.nonNullable E.int4)) <>
+            (snd >$< E.param (E.nonNullable E.int4))
+  decoder = D.rowList
+    ( Session <$> (SessionUUID <$> D.column (D.nonNullable D.uuid))
+              <*> (IpAddr <$> D.column (D.nonNullable D.inet))
+              <*> (UserUUID <$> D.column (D.nonNullable D.uuid))
+              <*> D.column (D.nonNullable D.timestamptz) )
 
 
 selectUserSessions ::

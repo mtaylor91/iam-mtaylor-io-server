@@ -154,17 +154,26 @@ instance DB PostgresDB where
     s <- liftIO $ IAM.Session.createSession addr uid
     runTransaction pool $ pgCreateSession s
 
-  getUserSessionById (PostgresDB pool) uid sid =
-    runTransaction pool $ pgGetUserSessionById uid sid
+  getSessionById (PostgresDB pool) sid =
+    runTransaction pool $ pgGetSessionById sid
 
   getSessionByToken (PostgresDB pool) uid t =
     runTransaction pool $ pgGetSessionByToken uid t
 
-  deleteSession (PostgresDB pool) uid sid =
-    runTransaction pool $ pgDeleteSession uid sid
+  getUserSessionById (PostgresDB pool) uid sid =
+    runTransaction pool $ pgGetUserSessionById uid sid
+
+  deleteSession (PostgresDB pool) sid =
+    runTransaction pool $ pgDeleteSession sid
+
+  deleteUserSession (PostgresDB pool) uid sid =
+    runTransaction pool $ pgDeleteUserSession uid sid
 
   refreshSession (PostgresDB pool) uid sid =
     runTransaction pool $ pgRefreshSession uid sid
+
+  listSessions (PostgresDB pool) range =
+    runTransaction pool $ pgListSessions range
 
   listUserSessions (PostgresDB pool) uid range =
     runTransaction pool $ pgListUserSessions uid range

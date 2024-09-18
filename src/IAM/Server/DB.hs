@@ -174,13 +174,17 @@ class DB db where
   createSession :: (MonadIO m, MonadError Error m) =>
     db -> IpAddr -> UserId -> m CreateSession
 
-  -- | getUserSessionById returns a session from the database by its id.
-  getUserSessionById :: (MonadIO m, MonadError Error m) =>
-    db -> UserIdentifier -> SessionId -> m Session
+  -- | getSessionById returns a session from the database by its id.
+  getSessionById :: (MonadIO m, MonadError Error m) =>
+    db -> SessionId -> m Session
 
   -- | getSessionByToken returns a session from the database by its token.
   getSessionByToken :: (MonadIO m, MonadError Error m) =>
     db -> UserIdentifier -> Text -> m Session
+
+  -- | getUserSessionById returns a session from the database by its id.
+  getUserSessionById :: (MonadIO m, MonadError Error m) =>
+    db -> UserIdentifier -> SessionId -> m Session
 
   -- | refreshSession updates the expiration time of a session.
   refreshSession :: (MonadIO m, MonadError Error m) =>
@@ -188,7 +192,15 @@ class DB db where
 
   -- | deleteSession removes a session from the database by its id.
   deleteSession :: (MonadIO m, MonadError Error m) =>
+    db -> SessionId -> m Session
+
+  -- | deleteUserSession removes a session from the database by its id.
+  deleteUserSession :: (MonadIO m, MonadError Error m) =>
     db -> UserIdentifier -> SessionId -> m Session
+
+  -- | listSessions returns a list of all sessions in the database.
+  listSessions :: (MonadIO m, MonadError Error m) =>
+    db -> Range -> m (ListResponse Session)
 
   -- | listUserSessions returns a list of all sessions for a user.
   listUserSessions :: (MonadIO m, MonadError Error m) =>

@@ -541,18 +541,11 @@ instance DB InMemory where
       writeTVar tvar $ s' { sessions = newSession : sessions s' }
     return s
 
-  getUserSessionById (InMemory tvar) uid sid = do
+  getSessionById (InMemory tvar) sid = do
     s <- liftIO $ readTVarIO tvar
-    let maybeUid = resolveUserIdentifier s uid
-    case (s ^. sessionStateById sid, maybeUid) of
-      (Just session, Just uid') -> do
-        if sessionUser session == uid'
-          then return session
-          else throwError $ NotFound $ SessionIdentifier $ Just sid
-      (Nothing, _) ->
-        throwError $ NotFound $ SessionIdentifier $ Just sid
-      (_, Nothing) ->
-        throwError $ NotFound $ UserIdentifier' uid
+    case s ^. sessionStateById sid of
+      Just session -> return session
+      Nothing -> throwError $ NotFound $ SessionIdentifier $ Just sid
 
   getSessionByToken (InMemory tvar) uid token = do
     s <- liftIO $ readTVarIO tvar
@@ -568,6 +561,19 @@ instance DB InMemory where
               else throwError $ NotFound $ SessionIdentifier Nothing
           Nothing ->
             throwError $ NotFound $ SessionIdentifier Nothing
+
+  getUserSessionById (InMemory tvar) uid sid = do
+    s <- liftIO $ readTVarIO tvar
+    let maybeUid = resolveUserIdentifier s uid
+    case (s ^. sessionStateById sid, maybeUid) of
+      (Just session, Just uid') -> do
+        if sessionUser session == uid'
+          then return session
+          else throwError $ NotFound $ SessionIdentifier $ Just sid
+      (Nothing, _) ->
+        throwError $ NotFound $ SessionIdentifier $ Just sid
+      (_, Nothing) ->
+        throwError $ NotFound $ UserIdentifier' uid
 
   refreshSession (InMemory tvar) uid s = do
     result <- liftIO $ atomically $
@@ -585,7 +591,17 @@ instance DB InMemory where
           return $ Left $ NotFound $ SessionIdentifier $ Just s
     either throwError return result
 
-  deleteSession (InMemory tvar) uid sid = do
+  deleteSession (InMemory tvar) sid = do
+    result <- liftIO $ atomically $
+      readTVar tvar >>= \s -> case s ^. sessionStateById sid of
+        Just session -> do
+          writeTVar tvar $ s & sessionStateById sid .~ Nothing
+          return $ Right session
+        Nothing ->
+          return $ Left $ NotFound $ SessionIdentifier $ Just sid
+    either throwError return result
+
+  deleteUserSession (InMemory tvar) uid sid = do
     result <- liftIO $ atomically $
       readTVar tvar >>= \s -> case s ^. sessionStateById sid of
         Just session ->
@@ -599,6 +615,19 @@ instance DB InMemory where
         Nothing ->
           return $ Left $ NotFound $ SessionIdentifier $ Just sid
     either throwError return result
+
+  listSessions (InMemory tvar) (Range offset' maybeLimit) = do
+    s <- liftIO $ readTVarIO tvar
+    case maybeLimit of
+      Just limit' ->
+        let items' = Prelude.take limit' $ Prelude.drop offset' (snd <$> sessions s)
+            total' = Prelude.length (snd <$> sessions s)
+         in return $ ListResponse items' limit' offset' total'
+      Nothing ->
+        let items' = Prelude.drop offset' (snd <$> sessions s)
+            total' = Prelude.length (snd <$> sessions s)
+            limit' = total'
+         in return $ ListResponse items' limit' offset' total'
 
   listUserSessions (InMemory tvar) uid (Range offset' maybeLimit) = do
     s <- liftIO $ readTVarIO tvar

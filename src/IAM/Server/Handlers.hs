@@ -540,7 +540,7 @@ deleteUserSessionHandler :: DB db =>
   Ctx db -> Auth -> UserIdentifier -> SessionId -> Handler Session
 deleteUserSessionHandler ctx auth uid sid = do
   _ <- requireSession auth
-  result <- liftIO $ runExceptT $ deleteSession (ctxDB ctx) uid sid
+  result <- liftIO $ runExceptT $ deleteUserSession (ctxDB ctx) uid sid
   case result of
     Right session -> return session
     Left err      -> errorHandler err
@@ -560,19 +560,30 @@ listSessionsHandler :: DB db =>
   Ctx db -> Auth -> Maybe Int -> Maybe Int -> Handler (ListResponse Session)
 listSessionsHandler ctx auth maybeOffset maybeLimit = do
   _ <- requireSession auth
-  error "Not implemented"
+  let offset' = fromMaybe 0 maybeOffset
+  let dbOp = listSessions (ctxDB ctx) $ Range offset' maybeLimit
+  result <- liftIO $ runExceptT dbOp
+  case result of
+    Right sessions -> return sessions
+    Left err       -> errorHandler err
 
 
 getSessionHandler :: DB db => Ctx db -> Auth -> SessionId -> Handler Session
 getSessionHandler ctx auth sid = do
   _ <- requireSession auth
-  error "Not implemented"
+  result <- liftIO $ runExceptT $ getSessionById (ctxDB ctx) sid
+  case result of
+    Right session -> return session
+    Left err      -> errorHandler err
 
 
 deleteSessionHandler :: DB db => Ctx db -> Auth -> SessionId -> Handler Session
 deleteSessionHandler ctx auth sid = do
   _ <- requireSession auth
-  error "Not implemented"
+  result <- liftIO $ runExceptT $ deleteSession (ctxDB ctx) sid
+  case result of
+    Right session -> return session
+    Left err      -> errorHandler err
 
 
 authorizeHandler :: DB db =>

@@ -816,8 +816,18 @@ pgCreateSession session = do
   return $ Right session
 
 
-pgDeleteSession :: UserIdentifier -> SessionId -> Transaction (Either Error Session)
-pgDeleteSession uid sid = do
+pgDeleteSession :: SessionId -> Transaction (Either Error Session)
+pgDeleteSession sid = do
+  result <- pgGetSessionById sid
+  case result of
+    Left e -> return $ Left e
+    Right session -> do
+      statement (unSessionId sid) deleteSession
+      return $ Right session
+
+
+pgDeleteUserSession :: UserIdentifier -> SessionId -> Transaction (Either Error Session)
+pgDeleteUserSession uid sid = do
   result <- pgGetUserSessionById uid sid
   case result of
     Left e -> return $ Left e
@@ -835,6 +845,15 @@ pgRefreshSession uid sid = do
       let session' = refreshSession session
       statement (unSessionId sid, sessionExpiration session') updateSessionExpiration
       return $ Right session'
+
+
+pgGetSessionById :: SessionId -> Transaction (Either Error Session)
+pgGetSessionById sid = do
+  result <- statement (unSessionId sid) selectSessionById
+  case result of
+    Nothing -> return $ Left $ NotFound $ SessionIdentifier $ Just sid
+    Just (uid, addr, expires) ->
+      return $ Right $ Session sid (IpAddr addr) (UserUUID uid) expires
 
 
 pgGetUserSessionById :: UserIdentifier -> SessionId -> Transaction (Either Error Session)
@@ -856,6 +875,16 @@ pgGetSessionByToken uid token = do
         Just (sid, addr, expiry) ->
           return $ Right $ Session (SessionUUID sid) (IpAddr addr) (UserUUID uuid) expiry
     Nothing -> return $ Left $ NotFound $ UserIdentifier' uid
+
+
+pgListSessions :: Range -> Transaction (Either Error (ListResponse Session))
+pgListSessions (Range offset' maybeLimit) = do
+  let limit' = fromMaybe 100 maybeLimit
+  let offset'' = fromIntegral offset'
+  let limit'' = fromIntegral limit'
+  total' <- statement () selectSessionCount
+  result <- statement (offset'', limit'') selectSessions
+  return $ Right $ ListResponse result limit' offset' $ fromIntegral total'
 
 
 pgListUserSessions :: UserIdentifier -> Range ->
@@ -944,7 +973,7 @@ resolvePolicies (pident:rest) = do
 
 loadSession :: UserId -> SessionId -> Transaction (Either Error Session)
 loadSession (UserUUID uid) sid = do
-  result <- statement (uid, unSessionId sid) selectSessionById
+  result <- statement (uid, unSessionId sid) selectUserSessionById
   case result of
     Nothing -> return $ Left $ NotFound $ SessionIdentifier $ Just sid
     Just (addr, expires) ->
