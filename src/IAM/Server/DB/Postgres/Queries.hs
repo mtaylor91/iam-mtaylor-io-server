@@ -24,6 +24,7 @@ import IAM.Login
 import IAM.Session
 import IAM.Server.DB.Postgres.Encoders
 import IAM.Server.DB.Postgres.Decoders
+import IAM.Sort
 import IAM.UserIdentifier
 import IAM.UserPublicKey
 
@@ -1464,16 +1465,26 @@ selectUserSessionCount =
   |]
 
 
-selectSessions :: Statement (Int32, Int32) [Session]
-selectSessions = Statement sql encoder decoder True where
+selectSessions :: SortSessionsBy -> SortOrder -> Statement (Int32, Int32) [Session]
+selectSessions sortBy sortOrder =
+  Statement sql encoder decoder True
+  where
   sql = "SELECT \
         \sessions.session_uuid, \
         \sessions.user_uuid, \
         \sessions.session_addr, \
         \sessions.session_expires \
         \FROM sessions \
-        \ORDER BY sessions.session_expires ASC \
+        \ORDER BY " <> sortByClause <> " " <> sortOrderClause <> " \
         \OFFSET $1 LIMIT $2"
+  sortByClause = case sortBy of
+    SortSessionsById -> "sessions.session_uuid"
+    SortSessionsByUserId -> "sessions.user_uuid"
+    SortSessionsByAddress -> "sessions.session_addr"
+    SortSessionsByExpiration -> "sessions.session_expires"
+  sortOrderClause = case sortOrder of
+    Ascending -> "ASC"
+    Descending -> "DESC"
   encoder = (fst >$< E.param (E.nonNullable E.int4)) <>
             (snd >$< E.param (E.nonNullable E.int4))
   decoder = D.rowList

@@ -200,7 +200,10 @@ class DB db where
 
   -- | listSessions returns a list of all sessions in the database.
   listSessions :: (MonadIO m, MonadError Error m) =>
-    db -> Range -> m (ListResponse Session)
+    db -> Range -> SortSessionsBy -> SortOrder -> m (ListResponse Session)
+
+  listSessionsBySearchTerm :: (MonadIO m, MonadError Error m) =>
+    db -> Text -> Range -> SortSessionsBy -> SortOrder -> m (ListResponse Session)
 
   -- | listUserSessions returns a list of all sessions for a user.
   listUserSessions :: (MonadIO m, MonadError Error m) =>

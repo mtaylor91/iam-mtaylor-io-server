@@ -877,13 +877,14 @@ pgGetSessionByToken uid token = do
     Nothing -> return $ Left $ NotFound $ UserIdentifier' uid
 
 
-pgListSessions :: Range -> Transaction (Either Error (ListResponse Session))
-pgListSessions (Range offset' maybeLimit) = do
+pgListSessions :: Range -> SortSessionsBy -> SortOrder ->
+  Transaction (Either Error (ListResponse Session))
+pgListSessions (Range offset' maybeLimit) sortSessionsBy sortOrder = do
   let limit' = fromMaybe 100 maybeLimit
   let offset'' = fromIntegral offset'
   let limit'' = fromIntegral limit'
   total' <- statement () selectSessionCount
-  result <- statement (offset'', limit'') selectSessions
+  result <- statement (offset'', limit'') $ selectSessions sortSessionsBy sortOrder
   return $ Right $ ListResponse result limit' offset' $ fromIntegral total'
 
 

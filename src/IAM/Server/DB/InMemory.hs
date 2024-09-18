@@ -616,16 +616,17 @@ instance DB InMemory where
           return $ Left $ NotFound $ SessionIdentifier $ Just sid
     either throwError return result
 
-  listSessions (InMemory tvar) (Range offset' maybeLimit) = do
+  listSessions (InMemory tvar) (Range offset' maybeLimit) sortBy sortOrder = do
     s <- liftIO $ readTVarIO tvar
+    let sessions' = sortSessions sortBy sortOrder $ snd <$> sessions s
     case maybeLimit of
       Just limit' ->
-        let items' = Prelude.take limit' $ Prelude.drop offset' (snd <$> sessions s)
-            total' = Prelude.length (snd <$> sessions s)
+        let items' = Prelude.take limit' $ Prelude.drop offset' sessions'
+            total' = Prelude.length sessions'
          in return $ ListResponse items' limit' offset' total'
       Nothing ->
-        let items' = Prelude.drop offset' (snd <$> sessions s)
-            total' = Prelude.length (snd <$> sessions s)
+        let items' = Prelude.drop offset' sessions'
+            total' = Prelude.length sessions'
             limit' = total'
          in return $ ListResponse items' limit' offset' total'
 
@@ -647,6 +648,29 @@ instance DB InMemory where
                 total' = Prelude.length sessions'
                 limit' = total'
              in return $ ListResponse items' limit' offset' total'
+
+
+sortSessions :: SortSessionsBy -> SortOrder -> [Session] -> [Session]
+sortSessions sort order = sortBy f where
+  f :: Session -> Session -> Ordering
+  f s1 s2 =
+    case (sort, order) of
+      (SortSessionsById, Ascending) ->
+        compare (unSessionId $ sessionId s1) (unSessionId $ sessionId s2)
+      (SortSessionsById, Descending) ->
+        compare (unSessionId $ sessionId s2) (unSessionId $ sessionId s1)
+      (SortSessionsByUserId, Ascending) ->
+        compare (unUserId $ sessionUser s1) (unUserId $ sessionUser s2)
+      (SortSessionsByUserId, Descending) ->
+        compare (unUserId $ sessionUser s2) (unUserId $ sessionUser s1)
+      (SortSessionsByAddress, Ascending) ->
+        compare (sessionAddr s1) (sessionAddr s2)
+      (SortSessionsByAddress, Descending) ->
+        compare (sessionAddr s2) (sessionAddr s1)
+      (SortSessionsByExpiration, Ascending) ->
+        compare (sessionExpiration s1) (sessionExpiration s2)
+      (SortSessionsByExpiration, Descending) ->
+        compare (sessionExpiration s2) (sessionExpiration s1)
 
 
 sortUsers :: SortUsersBy -> SortOrder -> [UserIdentifier] -> [UserIdentifier]

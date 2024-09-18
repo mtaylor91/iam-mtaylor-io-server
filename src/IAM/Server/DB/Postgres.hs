@@ -172,8 +172,8 @@ instance DB PostgresDB where
   refreshSession (PostgresDB pool) uid sid =
     runTransaction pool $ pgRefreshSession uid sid
 
-  listSessions (PostgresDB pool) range =
-    runTransaction pool $ pgListSessions range
+  listSessions (PostgresDB pool) range sortBy sortOrder =
+    runTransaction pool $ pgListSessions range sortBy sortOrder
 
   listUserSessions (PostgresDB pool) uid range =
     runTransaction pool $ pgListUserSessions uid range

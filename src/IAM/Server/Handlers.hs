@@ -557,11 +557,24 @@ refreshUserSessionHandler ctx auth uid sid = do
 
 
 listSessionsHandler :: DB db =>
-  Ctx db -> Auth -> Maybe Int -> Maybe Int -> Handler (ListResponse Session)
-listSessionsHandler ctx auth maybeOffset maybeLimit = do
+  Ctx db -> Auth -> Maybe Text -> Maybe SortSessionsBy -> Maybe SortOrder ->
+    Maybe Int -> Maybe Int -> Handler (ListResponse Session)
+listSessionsHandler ctx auth Nothing maybeSort maybeOrder maybeOffset maybeLimit = do
   _ <- requireSession auth
   let offset' = fromMaybe 0 maybeOffset
-  let dbOp = listSessions (ctxDB ctx) $ Range offset' maybeLimit
+  let sortBy = fromMaybe SortSessionsByUserId maybeSort
+  let sortOrder = fromMaybe Ascending maybeOrder
+  let dbOp = listSessions (ctxDB ctx) (Range offset' maybeLimit) sortBy sortOrder
+  result <- liftIO $ runExceptT dbOp
+  case result of
+    Right sessions -> return sessions
+    Left err       -> errorHandler err
+listSessionsHandler ctx auth (Just search) maybeSort maybeOrder maybeOffset maybeLimit = do
+  _ <- requireSession auth
+  let offset' = fromMaybe 0 maybeOffset
+  let dbOp = listSessionsBySearchTerm (ctxDB ctx) search
+        (Range offset' maybeLimit) (fromMaybe SortSessionsByUserId maybeSort)
+        (fromMaybe Ascending maybeOrder)
   result <- liftIO $ runExceptT dbOp
   case result of
     Right sessions -> return sessions
