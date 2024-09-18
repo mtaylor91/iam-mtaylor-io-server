@@ -1478,8 +1478,8 @@ selectSessions sortBy sortOrder =
   where
   sql = "SELECT \
         \sessions.session_uuid, \
-        \sessions.user_uuid, \
         \sessions.session_addr, \
+        \sessions.user_uuid, \
         \sessions.session_expires \
         \FROM sessions \
         \ORDER BY " <> sortByClause <> " " <> sortOrderClause <> " \
@@ -1508,8 +1508,8 @@ selectSessionsLike sortBy sortOrder =
   where
   sql = "SELECT \
         \sessions.session_uuid, \
-        \sessions.user_uuid, \
         \sessions.session_addr, \
+        \sessions.user_uuid, \
         \sessions.session_expires \
         \FROM sessions \
         \WHERE sessions.session_uuid :: text LIKE $1 \
