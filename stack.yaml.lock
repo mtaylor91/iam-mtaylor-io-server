@@ -5,15 +5,15 @@
 
 packages:
 - completed:
-    commit: ebb1465d90f7408970c441ea14a84ef45d61154c
+    commit: d7fe7b89233887d4ee64344c4ff0cf6e8a5a07b6
     git: https://github.com/mtaylor91/iam-mtaylor-io-core.git
     name: iam-mtaylor-io-core
     pantry-tree:
-      sha256: 05a52842c5276378a7a736e6c46d4da257bc76392c0d491db850ca9b0a52becd
+      sha256: 4a23ca2de7b514517a2c5d342d9adf5a88cb09c3ec3c600a35576f230bdc4c22
       size: 1896
     version: 0.1.0.0
   original:
-    commit: ebb1465d90f7408970c441ea14a84ef45d61154c
+    commit: d7fe7b89233887d4ee64344c4ff0cf6e8a5a07b6
     git: https://github.com/mtaylor91/iam-mtaylor-io-core.git
 snapshots:
 - completed:

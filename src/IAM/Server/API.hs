@@ -36,6 +36,7 @@ signedAPI ctx auth
   :<|> usersAPI ctx auth
   :<|> groupsAPI ctx auth
   :<|> policiesAPI ctx auth
+  :<|> sessionsAPI ctx auth
   :<|> authorizeAPI ctx auth
   :<|> loginRequestHandler ctx auth
 
@@ -167,6 +168,18 @@ policyAPI :: DB db => Ctx db -> Auth -> PolicyIdentifier -> Server PolicyAPI
 policyAPI ctx auth pid
   = getPolicyHandler ctx auth pid
   :<|> deletePolicyHandler ctx auth pid
+
+
+sessionsAPI :: DB db => Ctx db -> Auth -> Server SessionsAPI
+sessionsAPI ctx auth
+  = listSessionsHandler ctx auth
+  :<|> sessionAPI ctx auth
+
+
+sessionAPI :: DB db => Ctx db -> Auth -> SessionId -> Server SessionAPI
+sessionAPI ctx auth sid
+  = getSessionHandler ctx auth sid
+  :<|> deleteSessionHandler ctx auth sid
 
 
 authorizeAPI :: DB db => Ctx db -> Auth -> Server AuthorizeAPI

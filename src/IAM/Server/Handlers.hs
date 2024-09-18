@@ -556,6 +556,25 @@ refreshUserSessionHandler ctx auth uid sid = do
     Left err       -> errorHandler err
 
 
+listSessionsHandler :: DB db =>
+  Ctx db -> Auth -> Maybe Int -> Maybe Int -> Handler (ListResponse Session)
+listSessionsHandler ctx auth maybeOffset maybeLimit = do
+  _ <- requireSession auth
+  error "Not implemented"
+
+
+getSessionHandler :: DB db => Ctx db -> Auth -> SessionId -> Handler Session
+getSessionHandler ctx auth sid = do
+  _ <- requireSession auth
+  error "Not implemented"
+
+
+deleteSessionHandler :: DB db => Ctx db -> Auth -> SessionId -> Handler Session
+deleteSessionHandler ctx auth sid = do
+  _ <- requireSession auth
+  error "Not implemented"
+
+
 authorizeHandler :: DB db =>
   Ctx db ->  AuthorizationRequest -> Handler AuthorizationResponse
 authorizeHandler ctx req = do
