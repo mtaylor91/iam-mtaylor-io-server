@@ -541,7 +541,7 @@ instance DB InMemory where
       writeTVar tvar $ s' { sessions = newSession : sessions s' }
     return s
 
-  getSessionById (InMemory tvar) uid sid = do
+  getUserSessionById (InMemory tvar) uid sid = do
     s <- liftIO $ readTVarIO tvar
     let maybeUid = resolveUserIdentifier s uid
     case (s ^. sessionStateById sid, maybeUid) of

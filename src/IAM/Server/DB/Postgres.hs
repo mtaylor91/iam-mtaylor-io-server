@@ -154,8 +154,8 @@ instance DB PostgresDB where
     s <- liftIO $ IAM.Session.createSession addr uid
     runTransaction pool $ pgCreateSession s
 
-  getSessionById (PostgresDB pool) uid sid =
-    runTransaction pool $ pgGetSessionById uid sid
+  getUserSessionById (PostgresDB pool) uid sid =
+    runTransaction pool $ pgGetUserSessionById uid sid
 
   getSessionByToken (PostgresDB pool) uid t =
     runTransaction pool $ pgGetSessionByToken uid t

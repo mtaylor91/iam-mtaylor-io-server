@@ -174,8 +174,8 @@ class DB db where
   createSession :: (MonadIO m, MonadError Error m) =>
     db -> IpAddr -> UserId -> m CreateSession
 
-  -- | getSessionById returns a session from the database by its id.
-  getSessionById :: (MonadIO m, MonadError Error m) =>
+  -- | getUserSessionById returns a session from the database by its id.
+  getUserSessionById :: (MonadIO m, MonadError Error m) =>
     db -> UserIdentifier -> SessionId -> m Session
 
   -- | getSessionByToken returns a session from the database by its token.

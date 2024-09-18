@@ -818,7 +818,7 @@ pgCreateSession session = do
 
 pgDeleteSession :: UserIdentifier -> SessionId -> Transaction (Either Error Session)
 pgDeleteSession uid sid = do
-  result <- pgGetSessionById uid sid
+  result <- pgGetUserSessionById uid sid
   case result of
     Left e -> return $ Left e
     Right session -> do
@@ -828,7 +828,7 @@ pgDeleteSession uid sid = do
 
 pgRefreshSession :: UserIdentifier -> SessionId -> Transaction (Either Error Session)
 pgRefreshSession uid sid = do
-  result <- pgGetSessionById uid sid
+  result <- pgGetUserSessionById uid sid
   case result of
     Left e -> return $ Left e
     Right session -> do
@@ -837,8 +837,8 @@ pgRefreshSession uid sid = do
       return $ Right session'
 
 
-pgGetSessionById :: UserIdentifier -> SessionId -> Transaction (Either Error Session)
-pgGetSessionById uid sid = do
+pgGetUserSessionById :: UserIdentifier -> SessionId -> Transaction (Either Error Session)
+pgGetUserSessionById uid sid = do
   maybeUid <- resolveUserIdentifier uid
   case maybeUid of
     Just uid' -> loadSession uid' sid

@@ -530,7 +530,7 @@ getUserSessionHandler :: DB db =>
   Ctx db -> Auth -> UserIdentifier -> SessionId -> Handler Session
 getUserSessionHandler ctx auth uid sid = do
   _ <- requireSession auth
-  result <- liftIO $ runExceptT $ getSessionById (ctxDB ctx) uid sid
+  result <- liftIO $ runExceptT $ getUserSessionById (ctxDB ctx) uid sid
   case result of
     Right session -> return session
     Left err      -> errorHandler err
