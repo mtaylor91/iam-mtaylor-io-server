@@ -143,3 +143,37 @@ jobs:
         set -euxo pipefail
         argocd app sync argocd/mtaylor-io --grpc-web
         argocd app wait argocd/mtaylor-io --sync --health --timeout 300
+  build-image:
+    name: "Docker Build Image"
+    needs: "docker-build"
+    runs-on: "iam-mtaylor-io-server-runner-dind"
+    steps:
+    - name: "Set up Docker Buildx"
+      uses: "docker/setup-buildx-action@v3"
+    - name: "Checkout"
+      uses: "actions/checkout@v4"
+    - name: "Download artifacts"
+      uses: "actions/download-artifact@v4"
+    - name: "Fix path and permissions"
+      run: |
+        set -eux
+        mv iam-mtaylor-io iam-mtaylor-io.dir
+        mv iam-mtaylor-io.dir/iam-mtaylor-io iam-mtaylor-io
+        rmdir iam-mtaylor-io.dir
+        chmod 0755 iam-mtaylor-io
+    - id: "meta"
+      name: "Docker Metadata"
+      uses: "docker/metadata-action@v5"
+      with:
+        images: "images.home.mtaylor.io/iam-mtaylor-io"
+        tags: |
+          build
+          build-${{ needs.docker-build.outputs.tag }}
+    - name: "Docker Build"
+      uses: "docker/build-push-action@v6"
+      with:
+        push: true
+        context: "."
+        file: "Dockerfile.build"
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
