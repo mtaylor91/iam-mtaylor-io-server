@@ -6,7 +6,7 @@
 packages:
 - completed:
     commit: 32956ae3c5f9a54cb0b5016d94399b147d7f51db
-    git: https://github.com/mtaylor91/iam-mtaylor-io-core.git
+    git: https://github.com/mtaylorio/iam-core.git
     name: iam-mtaylor-io-core
     pantry-tree:
       sha256: 3106d7ffe007c3effd0d50e36ba2a2c98f99d668433d9e255f202cf4dd434194
@@ -14,7 +14,7 @@ packages:
     version: 0.1.0.0
   original:
     commit: 32956ae3c5f9a54cb0b5016d94399b147d7f51db
-    git: https://github.com/mtaylor91/iam-mtaylor-io-core.git
+    git: https://github.com/mtaylorio/iam-core.git
 snapshots:
 - completed:
     sha256: a81fb3877c4f9031e1325eb3935122e608d80715dc16b586eb11ddbff8671ecd
