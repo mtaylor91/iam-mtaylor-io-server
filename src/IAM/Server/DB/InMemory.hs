@@ -6,6 +6,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Except
 import Data.List (sortBy)
 import Data.Text (isInfixOf)
+import Data.Time.Clock (getCurrentTime, addUTCTime)
 import Data.UUID (toText)
 
 import IAM.Error
@@ -576,13 +577,15 @@ instance DB InMemory where
         throwError $ NotFound $ UserIdentifier' uid
 
   refreshSession (InMemory tvar) uid s = do
+    now <- liftIO getCurrentTime
+    let newExpiration = addUTCTime 3600 now
     result <- liftIO $ atomically $
       readTVar tvar >>= \s' -> case s' ^. sessionStateById s of
         Just session ->
           let maybeUid = resolveUserIdentifier s' uid
            in if Just (sessionUser session) == maybeUid
             then do
-              let session' = IAM.Session.refreshSession session
+              let session' = session { sessionExpiration = newExpiration }
               writeTVar tvar $ s' & sessionStateById s ?~ session'
               return $ Right session'
             else

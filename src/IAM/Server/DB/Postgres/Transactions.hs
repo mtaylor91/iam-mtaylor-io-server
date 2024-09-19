@@ -841,10 +841,13 @@ pgRefreshSession uid sid = do
   result <- pgGetUserSessionById uid sid
   case result of
     Left e -> return $ Left e
-    Right session -> do
-      let session' = refreshSession session
-      statement (unSessionId sid, sessionExpiration session') updateSessionExpiration
-      return $ Right session'
+    Right _ -> do
+      statement (unSessionId sid) updateSessionExpiration
+      result' <- pgGetUserSessionById uid sid
+      case result' of
+        Left e -> return $ Left e
+        Right session -> do
+          return $ Right session
 
 
 pgGetSessionById :: SessionId -> Transaction (Either Error Session)

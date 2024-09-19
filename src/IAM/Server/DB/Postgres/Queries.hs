@@ -1569,16 +1569,14 @@ updatePolicy =
   |]
 
 
-updateSessionExpiration :: Statement (UUID, UTCTime) ()
+updateSessionExpiration :: Statement UUID ()
 updateSessionExpiration =
-  [resultlessStatement|
-    UPDATE
-      sessions
-    SET
-      session_expires = $2 :: timestamptz
-    WHERE
-      session_uuid = $1 :: uuid
-  |]
+  Statement sql (E.param (E.nonNullable E.uuid)) D.noResult True
+  where
+    sql =
+      "UPDATE sessions \
+      \SET session_expires = now() + interval '60 minutes' \
+      \WHERE session_uuid = $1"
 
 
 upsertUserName :: Statement (UserId, Text) ()
