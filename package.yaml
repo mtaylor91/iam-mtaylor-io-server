@@ -1,6 +1,6 @@
-name:                iam-mtaylor-io
+name:                mtaylor-io-iam-server
 version:             0.0.0.0
-github:              "mtaylor91/iam-mtaylor-io"
+github:              "mtaylorio/iam-server"
 license:             BSD-3-Clause
 author:              "Mike Taylor"
 maintainer:          "mike.charles.taylor@gmail.com"
@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/mtaylor91/iam-mtaylor-io#readme>
+description:         Please see the README on GitHub at <https://github.com/mtaylorio/iam-server#readme>
 
 dependencies:
 - aeson
@@ -37,8 +37,8 @@ dependencies:
 - http-client
 - http-client-tls
 - http-types
-- iam-mtaylor-io-core
 - lens
+- mtaylor-io-iam-core
 - mtl
 - network
 - network-ip
@@ -78,7 +78,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - base
-    - iam-mtaylor-io
+    - mtaylor-io-iam-server
 
 tests:
   iam-mtaylor-io-test:
@@ -90,8 +90,8 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - base
-    - iam-mtaylor-io
     - hspec
     - hspec-wai
     - hspec-wai-json
     - aeson
+    - mtaylor-io-iam-server

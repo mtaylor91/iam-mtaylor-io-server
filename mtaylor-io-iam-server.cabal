@@ -4,11 +4,11 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 
-name:           iam-mtaylor-io
+name:           mtaylor-io-iam-server
 version:        0.0.0.0
-description:    Please see the README on GitHub at <https://github.com/mtaylor91/iam-mtaylor-io#readme>
-homepage:       https://github.com/mtaylor91/iam-mtaylor-io#readme
-bug-reports:    https://github.com/mtaylor91/iam-mtaylor-io/issues
+description:    Please see the README on GitHub at <https://github.com/mtaylorio/iam-server#readme>
+homepage:       https://github.com/mtaylorio/iam-server#readme
+bug-reports:    https://github.com/mtaylorio/iam-server/issues
 author:         Mike Taylor
 maintainer:     mike.charles.taylor@gmail.com
 copyright:      2024 Mike Taylor
@@ -21,7 +21,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/mtaylor91/iam-mtaylor-io
+  location: https://github.com/mtaylorio/iam-server
 
 library
   exposed-modules:
@@ -45,9 +45,9 @@ library
       IAM.Server.Init
       IAM.Server.Version
   other-modules:
-      Paths_iam_mtaylor_io
+      Paths_mtaylor_io_iam_server
   autogen-modules:
-      Paths_iam_mtaylor_io
+      Paths_mtaylor_io_iam_server
   hs-source-dirs:
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
@@ -69,8 +69,8 @@ library
     , http-client
     , http-client-tls
     , http-types
-    , iam-mtaylor-io-core
     , lens
+    , mtaylor-io-iam-core
     , mtl
     , network
     , network-ip
@@ -90,9 +90,9 @@ library
 executable iam-mtaylor-io
   main-is: Main.hs
   other-modules:
-      Paths_iam_mtaylor_io
+      Paths_mtaylor_io_iam_server
   autogen-modules:
-      Paths_iam_mtaylor_io
+      Paths_mtaylor_io_iam_server
   hs-source-dirs:
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
@@ -114,9 +114,9 @@ executable iam-mtaylor-io
     , http-client
     , http-client-tls
     , http-types
-    , iam-mtaylor-io
-    , iam-mtaylor-io-core
     , lens
+    , mtaylor-io-iam-core
+    , mtaylor-io-iam-server
     , mtl
     , network
     , network-ip
@@ -137,9 +137,9 @@ test-suite iam-mtaylor-io-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Paths_iam_mtaylor_io
+      Paths_mtaylor_io_iam_server
   autogen-modules:
-      Paths_iam_mtaylor_io
+      Paths_mtaylor_io_iam_server
   hs-source-dirs:
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
@@ -164,9 +164,9 @@ test-suite iam-mtaylor-io-test
     , http-client
     , http-client-tls
     , http-types
-    , iam-mtaylor-io
-    , iam-mtaylor-io-core
     , lens
+    , mtaylor-io-iam-core
+    , mtaylor-io-iam-server
     , mtl
     , network
     , network-ip
