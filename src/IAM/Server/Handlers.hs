@@ -22,6 +22,7 @@ import IAM.Membership
 import IAM.Policy
 import IAM.PublicKey
 import IAM.Range
+import IAM.Server.Audit
 import IAM.Server.Auth
 import IAM.Server.Context
 import IAM.Server.DB
@@ -84,7 +85,9 @@ loginRequestHandler ctx auth req = do
             case result of
               Left err -> errorHandler err
               -- Return the updated login request
-              Right _ -> return $ resp { loginResponseSession = Just s' }
+              Right _ -> do
+                liftIO $ auditLoginSuccess ctx uid
+                return $ resp { loginResponseSession = Just s' }
       (_, _) -> return $ resp { loginResponseSession = Nothing }
 
 

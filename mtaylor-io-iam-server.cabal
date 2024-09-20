@@ -29,6 +29,7 @@ library
       IAM.Range
       IAM.Server.API
       IAM.Server.App
+      IAM.Server.Audit
       IAM.Server.Auth
       IAM.Server.Command
       IAM.Server.Config
