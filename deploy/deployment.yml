@@ -29,6 +29,11 @@ spec:
             configMapKeyRef:
               name: iam-mtaylor-io
               key: public-key
+        - name: MTAYLOR_IO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: iam-mtaylor-io
+              key: secret-key
         ports:
         - name: http
           protocol: TCP
