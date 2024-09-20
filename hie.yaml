@@ -1,10 +1,10 @@
 cradle:
   stack:
     - path: "./src"
-      component: "iam-mtaylor-io:lib"
+      component: "mtaylor-io-iam-server:lib"
 
     - path: "./app/Main.hs"
-      component: "iam-mtaylor-io:exe:iam-mtaylor-io-exe"
+      component: "mtaylor-io-iam-server:exe:iam-mtaylor-io"
 
     - path: "./test"
-      component: "iam-mtaylor-io:test:iam-mtaylor-io-test"
+      component: "mtaylor-io-iam-server:test:iam-mtaylor-io-test"
