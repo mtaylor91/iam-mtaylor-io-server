@@ -13,6 +13,7 @@ import IAM.Client.Auth
 import IAM.Error
 import IAM.Group
 import IAM.GroupIdentifier
+import IAM.Ip
 import IAM.Policy
 import IAM.Server.DB
 import IAM.Session
@@ -109,7 +110,7 @@ createSystemUser eventsHost db iamClient = do
         Right _ -> return uid
 
   -- Create a session for the system user
-  r3 <- runExceptT $ IAM.Server.DB.createSession db (read "127.0.0.1") uid
+  r3 <- runExceptT $ IAM.Server.DB.createSession db localIp4 uid
   case r3 of
     Left e -> error $ "Error creating system session: " ++ show e
     Right sid -> do
