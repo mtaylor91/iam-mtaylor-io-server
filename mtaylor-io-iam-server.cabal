@@ -70,6 +70,8 @@ library
     , http-client-tls
     , http-types
     , lens
+    , mtaylor-io-events-client
+    , mtaylor-io-events-core
     , mtaylor-io-iam-core
     , mtl
     , network
@@ -115,6 +117,8 @@ executable iam-mtaylor-io
     , http-client-tls
     , http-types
     , lens
+    , mtaylor-io-events-client
+    , mtaylor-io-events-core
     , mtaylor-io-iam-core
     , mtaylor-io-iam-server
     , mtl
@@ -165,6 +169,8 @@ test-suite iam-mtaylor-io-test
     , http-client-tls
     , http-types
     , lens
+    , mtaylor-io-events-client
+    , mtaylor-io-events-core
     , mtaylor-io-iam-core
     , mtaylor-io-iam-server
     , mtl

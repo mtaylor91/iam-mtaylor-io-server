@@ -38,6 +38,8 @@ dependencies:
 - http-client-tls
 - http-types
 - lens
+- mtaylor-io-events-core
+- mtaylor-io-events-client
 - mtaylor-io-iam-core
 - mtl
 - network
