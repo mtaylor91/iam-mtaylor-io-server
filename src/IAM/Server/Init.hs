@@ -89,29 +89,33 @@ createSystemUser eventsHost db iamClient = do
     Left e -> error $ "Error creating system policy: " ++ show e
     Right _ -> return ()
 
+  -- Check if the system user exists
+  r2 <- runExceptT $ getUser db $ UserIdentifier Nothing (Just "iam-system") Nothing
+  uid <- case r2 of
+    Left (NotFound _) -> UserUUID <$> nextRandom
+    Left e -> error $ "Error querying system user: " ++ show e
+    Right user -> return $ userId user
+
   -- Create the system user
   let iamConfig = C.iamClientConfig iamClient
   let systemPublicKeyBase64 = encodePublicKey $ C.iamClientConfigSecretKey iamConfig
   let systemUserIdentifier = C.iamClientConfigUserIdentifier iamConfig
-  uid <- case decodeBase64 $ encodeUtf8 systemPublicKeyBase64 of
+  case decodeBase64 $ encodeUtf8 systemPublicKeyBase64 of
     Left _ -> error "Invalid base64 public key"
     Right systemPublicKey -> do
-      uid <- case unUserIdentifierId systemUserIdentifier of
-        Nothing -> UserUUID <$> nextRandom
-        Just uid -> return uid
       let mName = Just "iam-system"
           mEmail = unUserIdentifierEmail systemUserIdentifier
           pk = UserPublicKey (PublicKey systemPublicKey) "System public key"
-          user = User uid mName mEmail [] [PolicyId systemPolicyId] [pk]
-      r2 <- runExceptT $ createUser db user
-      case r2 of
-        Left AlreadyExists -> return uid
+      let user = User uid mName mEmail [] [PolicyId systemPolicyId] [pk]
+      r3 <- runExceptT $ createUser db user
+      case r3 of
+        Left AlreadyExists -> return ()
         Left e -> error $ "Error creating system user: " ++ show e
-        Right _ -> return uid
+        Right _ -> return ()
 
   -- Create a session for the system user
-  r3 <- runExceptT $ IAM.Server.DB.createSession db localIp4 uid
-  case r3 of
+  r4 <- runExceptT $ IAM.Server.DB.createSession db localIp4 uid
+  case r4 of
     Left e -> error $ "Error creating system session: " ++ show e
     Right sid -> do
       setSessionToken iamClient $ Just $ createSessionToken sid
