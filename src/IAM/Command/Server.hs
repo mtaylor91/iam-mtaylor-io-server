@@ -9,6 +9,7 @@ import Data.Text as T
 import Data.Text.Encoding
 import Options.Applicative
 
+import Events.Client
 import IAM.Client
 import IAM.Server.App
 import IAM.Server.Config
@@ -49,8 +50,10 @@ startServer opts db = do
   adminPublicKey <- T.pack <$> configAdminPublicKey
   iamHost <- decodeUtf8 <$> loadEnvConfig "HOST"
   eventsHost <- decodeUtf8 <$> loadEnvConfig "EVENTS_HOST"
+  eventsConfig <- loadEventsClientConfig
+  eventsClient <- newEventsClient eventsConfig iamClient
   db' <- initDB iamHost eventsHost adminEmail adminPublicKey db iamClient
-  startApp (port opts) iamHost $ Ctx db' iamClient
+  startApp (port opts) iamHost $ Ctx db' iamClient eventsClient
 
 
 serverOptions :: Parser ServerOptions
