@@ -512,8 +512,10 @@ createSessionHandler ctx auth uid = do
           let dbOp = IAM.Server.DB.createSession (ctxDB ctx) addr uid'
           result <- liftIO $ runExceptT dbOp
           case result of
-            Right session' -> return session'
-            Left err       -> errorHandler err
+            Left err -> errorHandler err
+            Right session' -> do
+              liftIO $ auditSessionCreated ctx uid' (createSessionId session')
+              return session'
 
 
 listUserSessionsHandler :: DB db =>
@@ -555,8 +557,10 @@ refreshUserSessionHandler ctx auth uid sid = do
   _ <- requireSession auth
   result' <- liftIO $ runExceptT $ IAM.Server.DB.refreshSession (ctxDB ctx) uid sid
   case result' of
-    Right session' -> return session'
-    Left err       -> errorHandler err
+    Left err -> errorHandler err
+    Right session' -> do
+      liftIO $ auditSessionRefreshed ctx (sessionUser session') sid
+      return session'
 
 
 listSessionsHandler :: DB db =>
