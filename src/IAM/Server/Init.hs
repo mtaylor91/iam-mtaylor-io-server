@@ -53,19 +53,31 @@ createAdmin iamHost adminEmail adminPublicKeyBase64 db = do
     Left e -> error $ "Error creating admins group: " ++ show e
     Right _ -> return ()
 
+  -- Check if the admin user exists
+  r2 <- runExceptT $ getUser db $ UserIdentifier Nothing (Just "admin") Nothing
+  uid <- case r2 of
+    Left (NotFound _) -> UserUUID <$> nextRandom
+    Left e -> error $ "Error querying admin: " ++ show e
+    Right user -> return $ userId user
+
   -- Create the admin user
+  let mName = Just "admin"
+      mEmail = Just adminEmail
+      user = User uid mName mEmail [GroupId adminsGroupId] [] []
+  r3 <- runExceptT $ createUser db user
+  case r3 of
+    Left AlreadyExists -> return ()
+    Left e -> error $ "Error creating admin: " ++ show e
+    Right _ -> return ()
+
+  -- Register the admin public key
   case decodeBase64 $ encodeUtf8 adminPublicKeyBase64 of
     Left _ -> error "Invalid base64 public key"
     Right adminPublicKey -> do
-      uid <- UserUUID <$> nextRandom
-      let mName = Just "admin"
-          mEmail = Just adminEmail
-          pk = UserPublicKey (PublicKey adminPublicKey) "Admin public key"
-          user = User uid mName mEmail [GroupId adminsGroupId] [] [pk]
-      r2 <- runExceptT $ createUser db user
-      case r2 of
-        Left AlreadyExists -> return ()
-        Left e -> error $ "Error creating admin: " ++ show e
+      let pk = UserPublicKey (PublicKey adminPublicKey) "Admin public key"
+      r4 <- runExceptT $ upsertUserPublicKey db uid pk
+      case r4 of
+        Left e -> error $ "Error registering admin public key: " ++ show e
         Right _ -> return ()
 
 
