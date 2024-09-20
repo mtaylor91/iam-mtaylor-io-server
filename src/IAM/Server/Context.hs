@@ -2,5 +2,10 @@ module IAM.Server.Context
   ( Ctx(..)
   ) where
 
+import IAM.Client
 
-newtype Ctx db = Ctx { ctxDB :: db }
+
+data Ctx db = Ctx
+  { ctxDB :: db
+  , ctxIAMClient :: IAMClient
+  }

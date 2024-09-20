@@ -9,6 +9,7 @@ import Data.Text as T
 import Data.Text.Encoding
 import Options.Applicative
 
+import IAM.Client
 import IAM.Server.App
 import IAM.Server.Config
 import IAM.Server.Context
@@ -42,11 +43,13 @@ server opts = do
 
 startServer :: DB db => ServerOptions -> db -> IO ()
 startServer opts db = do
+  iamConfig <- iamClientConfigEnv
+  iamClient <- newIAMClient iamConfig
   adminEmail <- T.pack <$> configAdminEmail
   adminPublicKey <- T.pack <$> configAdminPublicKey
   host <- decodeUtf8 <$> loadEnvConfig "HOST"
   db' <- initDB host adminEmail adminPublicKey db
-  startApp (port opts) host $ Ctx db'
+  startApp (port opts) host $ Ctx db' iamClient
 
 
 serverOptions :: Parser ServerOptions
