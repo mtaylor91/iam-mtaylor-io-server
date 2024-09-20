@@ -47,9 +47,10 @@ startServer opts db = do
   iamClient <- newIAMClient iamConfig
   adminEmail <- T.pack <$> configAdminEmail
   adminPublicKey <- T.pack <$> configAdminPublicKey
-  host <- decodeUtf8 <$> loadEnvConfig "HOST"
-  db' <- initDB host adminEmail adminPublicKey db
-  startApp (port opts) host $ Ctx db' iamClient
+  iamHost <- decodeUtf8 <$> loadEnvConfig "HOST"
+  eventsHost <- decodeUtf8 <$> loadEnvConfig "EVENTS_HOST"
+  db' <- initDB iamHost eventsHost adminEmail adminPublicKey db iamClient
+  startApp (port opts) iamHost $ Ctx db' iamClient
 
 
 serverOptions :: Parser ServerOptions
