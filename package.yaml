@@ -1,5 +1,5 @@
 name:                mtaylor-io-iam-server
-version:             0.0.0.0
+version:             0.1.76
 github:              "mtaylorio/iam-server"
 license:             BSD-3-Clause
 author:              "Mike Taylor"
