@@ -44,11 +44,11 @@ extra-deps:
 - git: https://github.com/mtaylorio/events-core.git
   commit: 9f54138b78b81f4252ffd918c3338b5ee5a9a4be
 - git: https://github.com/mtaylorio/events-client-haskell.git
-  commit: f41d200b17aa45d2995eec008b6315015cc642c4
+  commit: 45fbdb5e3741af4d0ac306513205430ff44397f0
 - git: https://github.com/mtaylorio/iam-core.git
-  commit: 39ffbefc9affe37c1ccacf4bb9199224baeb4a23
+  commit: 3682e99d85ec9c4de6cf233ad9ded61f3f053e9e
 - git: https://github.com/mtaylorio/iam-client-haskell.git
-  commit: 93e260f4339dbff896073eb963586019002c8578
+  commit: cf49b299a1a09f6f1b0f7d5fd5a5b96e0ccd56c9
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

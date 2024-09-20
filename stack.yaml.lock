@@ -16,37 +16,37 @@ packages:
     commit: 9f54138b78b81f4252ffd918c3338b5ee5a9a4be
     git: https://github.com/mtaylorio/events-core.git
 - completed:
-    commit: f41d200b17aa45d2995eec008b6315015cc642c4
+    commit: 45fbdb5e3741af4d0ac306513205430ff44397f0
     git: https://github.com/mtaylorio/events-client-haskell.git
     name: mtaylor-io-events-client
     pantry-tree:
-      sha256: 862681c409947f84d5a5a7393b961ddb69529288f1fa2d63242414e1915446b0
+      sha256: 2b2c21e101a3ddab8988b75af72a14535bf081e193d181be76eb942966e03aa6
       size: 703
     version: 0.1.0.0
   original:
-    commit: f41d200b17aa45d2995eec008b6315015cc642c4
+    commit: 45fbdb5e3741af4d0ac306513205430ff44397f0
     git: https://github.com/mtaylorio/events-client-haskell.git
 - completed:
-    commit: 39ffbefc9affe37c1ccacf4bb9199224baeb4a23
+    commit: 3682e99d85ec9c4de6cf233ad9ded61f3f053e9e
     git: https://github.com/mtaylorio/iam-core.git
     name: mtaylor-io-iam-core
     pantry-tree:
-      sha256: 374a236d47bfa7c41dc0799eeabb74f82c740b1859d578316e68eeed122e8efa
+      sha256: edecf67f6ab058a6f1048ba96134d193156a84e1cf5b81d7551057411cfba24f
       size: 1896
     version: 0.1.0.0
   original:
-    commit: 39ffbefc9affe37c1ccacf4bb9199224baeb4a23
+    commit: 3682e99d85ec9c4de6cf233ad9ded61f3f053e9e
     git: https://github.com/mtaylorio/iam-core.git
 - completed:
-    commit: 93e260f4339dbff896073eb963586019002c8578
+    commit: cf49b299a1a09f6f1b0f7d5fd5a5b96e0ccd56c9
     git: https://github.com/mtaylorio/iam-client-haskell.git
     name: mtaylor-io-iam-client
     pantry-tree:
-      sha256: d20a5250e181c6efc9226d9249f628ea6af79f670ff898a1567b7d454c180dfd
+      sha256: 1c14fbe1a62c96e3dadd234ca66131e32370b1da6a38ea87dc275a04d2fb6aec
       size: 2624
     version: 0.1.0.0
   original:
-    commit: 93e260f4339dbff896073eb963586019002c8578
+    commit: cf49b299a1a09f6f1b0f7d5fd5a5b96e0ccd56c9
     git: https://github.com/mtaylorio/iam-client-haskell.git
 snapshots:
 - completed:
