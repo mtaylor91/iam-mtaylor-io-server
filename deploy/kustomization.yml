@@ -1,9 +1,12 @@
 
+commonLabels:
+  app: iam-mtaylor-io
+
 configMapGenerator:
 - name: iam-mtaylor-io
 
-commonLabels:
-  app: iam-mtaylor-io
+secretGenerator:
+- name: iam-mtaylor-io
 
 resources:
 - deployment.yml

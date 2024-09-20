@@ -9,6 +9,16 @@ spec:
       - name: iam
         image: images.home.mtaylor.io/iam-mtaylor-io
         env:
+        - name: MTAYLOR_IO_ADMIN_EMAIL
+          valueFrom:
+            configMapKeyRef:
+              name: iam-mtaylor-io
+              key: admin-email
+        - name: MTAYLOR_IO_ADMIN_PUBLIC_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: iam-mtaylor-io
+              key: admin-public-key
         - name: MTAYLOR_IO_EMAIL
           valueFrom:
             configMapKeyRef:

@@ -31,6 +31,7 @@ library
       IAM.Server.API
       IAM.Server.App
       IAM.Server.Auth
+      IAM.Server.Config
       IAM.Server.Context
       IAM.Server.DB
       IAM.Server.DB.InMemory

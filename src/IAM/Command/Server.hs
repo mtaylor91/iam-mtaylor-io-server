@@ -5,16 +5,12 @@ module IAM.Command.Server
   , ServerOptions(..)
   ) where
 
-import Control.Exception
-import Data.ByteString (ByteString)
 import Data.Text as T
 import Data.Text.Encoding
 import Options.Applicative
-import System.Environment
-import Text.Read
 
-import IAM.Config
 import IAM.Server.App
+import IAM.Server.Config
 import IAM.Server.Context
 import IAM.Server.DB
 import IAM.Server.DB.InMemory
@@ -46,8 +42,8 @@ server opts = do
 
 startServer :: DB db => ServerOptions -> db -> IO ()
 startServer opts db = do
-  adminEmail <- T.pack <$> configEmail
-  adminPublicKey <- T.pack <$> configPublicKey
+  adminEmail <- T.pack <$> configAdminEmail
+  adminPublicKey <- T.pack <$> configAdminPublicKey
   host <- decodeUtf8 <$> loadEnvConfig "HOST"
   db' <- initDB host adminEmail adminPublicKey db
   startApp (port opts) host $ Ctx db'
@@ -73,21 +69,3 @@ serverOptions = ServerOptions
     <> value "/usr/local/share/iam-mtaylor-io/db"
     <> showDefault
       )
-
-
-loadEnvConfig :: String -> IO ByteString
-loadEnvConfig key = do
-  maybeValue <- lookupEnv key
-  case maybeValue of
-    Nothing -> throw $ userError $ key ++ " environment variable not set"
-    Just val -> return $ encodeUtf8 $ T.pack val
-
-
-readEnvConfig :: Read t => String -> IO t
-readEnvConfig key = do
-  maybeValue <- lookupEnv key
-  case maybeValue of
-    Nothing -> throw $ userError $ key ++ " environment variable not set"
-    Just val -> case readMaybe val of
-      Nothing -> throw $ userError $ key ++ " environment variable not a valid value"
-      Just val' -> return val'
