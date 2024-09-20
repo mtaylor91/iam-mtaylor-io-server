@@ -97,7 +97,7 @@ createSystemUser eventsHost db iamClient = do
       uid <- case unUserIdentifierId systemUserIdentifier of
         Nothing -> UserUUID <$> nextRandom
         Just uid -> return uid
-      let mName = unUserIdentifierName systemUserIdentifier
+      let mName = Just "iam-system"
           mEmail = unUserIdentifierEmail systemUserIdentifier
           pk = UserPublicKey (PublicKey systemPublicKey) "System public key"
           user = User uid mName mEmail [] [PolicyId systemPolicyId] [pk]
