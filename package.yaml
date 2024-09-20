@@ -41,6 +41,7 @@ dependencies:
 - mtaylor-io-events-core
 - mtaylor-io-events-client
 - mtaylor-io-iam-core
+- mtaylor-io-iam-client
 - mtl
 - network
 - network-ip

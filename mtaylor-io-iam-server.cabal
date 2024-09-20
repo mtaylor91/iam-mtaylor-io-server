@@ -25,12 +25,12 @@ source-repository head
 
 library
   exposed-modules:
-      IAM.Command
       IAM.Command.Server
       IAM.Range
       IAM.Server.API
       IAM.Server.App
       IAM.Server.Auth
+      IAM.Server.Command
       IAM.Server.Config
       IAM.Server.Context
       IAM.Server.DB
@@ -73,6 +73,7 @@ library
     , lens
     , mtaylor-io-events-client
     , mtaylor-io-events-core
+    , mtaylor-io-iam-client
     , mtaylor-io-iam-core
     , mtl
     , network
@@ -120,6 +121,7 @@ executable iam-mtaylor-io
     , lens
     , mtaylor-io-events-client
     , mtaylor-io-events-core
+    , mtaylor-io-iam-client
     , mtaylor-io-iam-core
     , mtaylor-io-iam-server
     , mtl
@@ -172,6 +174,7 @@ test-suite iam-mtaylor-io-test
     , lens
     , mtaylor-io-events-client
     , mtaylor-io-events-core
+    , mtaylor-io-iam-client
     , mtaylor-io-iam-core
     , mtaylor-io-iam-server
     , mtl

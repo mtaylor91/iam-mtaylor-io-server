@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module IAM.Command ( options, run, ServerOptions(..) ) where
+module IAM.Server.Command ( options, run, ServerOptions(..) ) where
 
 import Options.Applicative
 
