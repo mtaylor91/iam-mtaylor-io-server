@@ -18,6 +18,8 @@ import IAM.Server.DB
 import IAM.Server.DB.InMemory
 import IAM.Server.DB.Postgres
 import IAM.Server.Init
+import IAM.Server.Session
+import IAM.UserIdentifier
 
 
 data ServerOptions = ServerOptions
@@ -52,8 +54,11 @@ startServer opts db = do
   eventsHost <- decodeUtf8 <$> loadEnvConfig "EVENTS_HOST"
   eventsConfig <- loadEventsClientConfig
   eventsClient <- newEventsClient eventsConfig iamClient
-  db' <- initDB iamHost eventsHost adminEmail adminPublicKey db iamClient
-  startApp (port opts) iamHost $ Ctx db' iamClient eventsClient
+  sid <- initDB iamHost eventsHost adminEmail adminPublicKey db iamClient
+  let ctx = Ctx db iamClient eventsClient
+  let uid = UserIdentifier Nothing (Just "iam-system") Nothing
+  startSessionManager ctx uid sid
+  startApp (port opts) iamHost ctx
 
 
 serverOptions :: Parser ServerOptions

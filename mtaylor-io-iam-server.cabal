@@ -44,6 +44,7 @@ library
       IAM.Server.DB.Postgres.Transactions
       IAM.Server.Handlers
       IAM.Server.Init
+      IAM.Server.Session
       IAM.Server.Version
   other-modules:
       Paths_mtaylor_io_iam_server

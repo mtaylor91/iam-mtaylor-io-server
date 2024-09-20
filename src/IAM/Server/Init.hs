@@ -8,23 +8,24 @@ import Data.Text
 import Data.Text.Encoding
 import Data.UUID.V4
 
+import IAM.Client (setSessionToken)
 import IAM.Client.Auth
 import IAM.Error
 import IAM.Group
 import IAM.GroupIdentifier
 import IAM.Policy
 import IAM.Server.DB
+import IAM.Session
 import IAM.User
 import IAM.UserIdentifier
 import IAM.UserPublicKey
 import qualified IAM.Client as C
 
 
-initDB :: DB db => Text -> Text -> Text -> Text -> db -> C.IAMClient -> IO db
+initDB :: DB db => Text -> Text -> Text -> Text -> db -> C.IAMClient -> IO SessionId
 initDB iamHost eventsHost adminEmail adminPublicKeyBase64 db iamClient = do
   createAdmin iamHost adminEmail adminPublicKeyBase64 db
   createSystemUser eventsHost db iamClient
-  return db
 
 
 createAdmin :: DB db => Text -> Text -> Text -> db -> IO ()
@@ -67,7 +68,7 @@ createAdmin iamHost adminEmail adminPublicKeyBase64 db = do
         Right _ -> return ()
 
 
-createSystemUser :: DB db => Text -> db -> C.IAMClient -> IO ()
+createSystemUser :: DB db => Text -> db -> C.IAMClient -> IO SessionId
 createSystemUser eventsHost db iamClient = do
   -- Check if the system policy exists
   r0 <- runExceptT $ getPolicy db $ PolicyName "iam-system"
@@ -91,7 +92,7 @@ createSystemUser eventsHost db iamClient = do
   let iamConfig = C.iamClientConfig iamClient
   let systemPublicKeyBase64 = encodePublicKey $ C.iamClientConfigSecretKey iamConfig
   let systemUserIdentifier = C.iamClientConfigUserIdentifier iamConfig
-  case decodeBase64 $ encodeUtf8 systemPublicKeyBase64 of
+  uid <- case decodeBase64 $ encodeUtf8 systemPublicKeyBase64 of
     Left _ -> error "Invalid base64 public key"
     Right systemPublicKey -> do
       uid <- case unUserIdentifierId systemUserIdentifier of
@@ -103,6 +104,14 @@ createSystemUser eventsHost db iamClient = do
           user = User uid mName mEmail [] [PolicyId systemPolicyId] [pk]
       r2 <- runExceptT $ createUser db user
       case r2 of
-        Left AlreadyExists -> return ()
+        Left AlreadyExists -> return uid
         Left e -> error $ "Error creating system user: " ++ show e
-        Right _ -> return ()
+        Right _ -> return uid
+
+  -- Create a session for the system user
+  r3 <- runExceptT $ IAM.Server.DB.createSession db (read "127.0.0.1") uid
+  case r3 of
+    Left e -> error $ "Error creating system session: " ++ show e
+    Right sid -> do
+      setSessionToken iamClient $ Just $ createSessionToken sid
+      return $ createSessionId sid
