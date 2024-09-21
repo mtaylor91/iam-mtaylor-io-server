@@ -31,7 +31,7 @@ dependencies:
 - email-validate
 - hasql
 - hasql-migration
-- hasql-pool
+- hasql-pool >= 0.9 && < 0.10
 - hasql-th
 - hasql-transaction
 - http-client
