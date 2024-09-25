@@ -5,26 +5,26 @@
 
 packages:
 - completed:
-    commit: deb4b0ff1a009043345fd376d59f9e3df12156da
+    commit: 5f52c7e3fb0bd766059ee762ce716530f2faeda9
     git: https://github.com/mtaylorio/events-core.git
     name: mtaylor-io-events-core
     pantry-tree:
-      sha256: c7b127af45302dfcc297e5ddc50ba0ed9c42ed0e9c7622d7c7e61b0bef53011e
+      sha256: 40fe8cb69bbc73fadff3b2d54853f0c346cdf1939f6bb884e192a23e16f5e86d
       size: 899
     version: 0.1.0.0
   original:
-    commit: deb4b0ff1a009043345fd376d59f9e3df12156da
+    commit: 5f52c7e3fb0bd766059ee762ce716530f2faeda9
     git: https://github.com/mtaylorio/events-core.git
 - completed:
-    commit: a6cce6724d5a5d956dc841e0758a9921d1034aa6
+    commit: 7189647c3ccd442cae235efab0f0b1744856bb59
     git: https://github.com/mtaylorio/events-client-haskell.git
     name: mtaylor-io-events-client
     pantry-tree:
-      sha256: f6c196432509ff65d52f98f7bc46267af1df40ef0afbe13626a5184f570f6975
+      sha256: 01e70bff82693f6d8682e9bca7c63e8bc61e107fdb783b4a20943568692ad146
       size: 703
     version: 0.1.0.0
   original:
-    commit: a6cce6724d5a5d956dc841e0758a9921d1034aa6
+    commit: 7189647c3ccd442cae235efab0f0b1744856bb59
     git: https://github.com/mtaylorio/events-client-haskell.git
 - completed:
     commit: 11603609698149174aa7d0ba085652e9c64ed4e8

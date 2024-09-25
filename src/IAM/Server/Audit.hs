@@ -9,7 +9,6 @@ import Data.Aeson
 import Data.Aeson.KeyMap as KM
 import Data.Text
 import Data.UUID
-import Data.UUID.V4
 
 import Events.Client
 import Events.Client.API
@@ -39,17 +38,15 @@ auditSessionRefreshed = auditSession "session-refreshed"
 
 auditSession :: Text -> Ctx db -> UserId -> SessionId -> IO ()
 auditSession evt ctx (UserUUID uid) (SessionUUID sid) = do
-  eventId <- nextRandom
   let eventsClient = ctxEventsClient ctx
   let auditTopicClient = topicClient auditLogUUID
-  let auditEventClient = topicEventClient auditTopicClient eventId
-  let updateEventClient = updateTopicEventClient auditEventClient
+  let createEventClient = createTopicEventClient auditTopicClient
   let eventData = fromList
         [ ("event", String evt)
         , ("userId", String $ toText uid)
         , ("sessionId", String $ toText sid)
         ]
-  result <- runEventsClient eventsClient $ updateEventClient eventData
+  result <- runEventsClient eventsClient $ createEventClient eventData
   case result of
     Left e -> error $ "Error auditing session creation: " ++ show e
     Right _ -> return ()
@@ -57,16 +54,14 @@ auditSession evt ctx (UserUUID uid) (SessionUUID sid) = do
 
 auditUser :: Text -> Ctx db -> UserId -> IO ()
 auditUser evt ctx (UserUUID uid) = do
-  eventId <- nextRandom
   let eventsClient = ctxEventsClient ctx
   let auditTopicClient = topicClient auditLogUUID
-  let auditEventClient = topicEventClient auditTopicClient eventId
-  let updateEventClient = updateTopicEventClient auditEventClient
+  let createEventClient = createTopicEventClient auditTopicClient
   let eventData = fromList
         [ ("event", String evt)
         , ("userId", String $ toText uid)
         ]
-  result <- runEventsClient eventsClient $ updateEventClient eventData
+  result <- runEventsClient eventsClient $ createEventClient eventData
   case result of
     Left e -> error $ "Error auditing login success: " ++ show e
     Right _ -> return ()
