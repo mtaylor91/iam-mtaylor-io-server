@@ -93,7 +93,7 @@ createSystemUser eventsHost db iamClient = do
   -- Create the system policy
   let name = "iam-system"
       auditTopic = "f2d7835b-29f1-4f29-b3dd-04ce1d1ef939"
-      writeAudit = Rule Allow Write $ "/topics/" <> auditTopic <> "/events/*"
+      writeAudit = Rule Allow Write $ "/topics/" <> auditTopic <> "/events"
       systemPolicy = Policy systemPolicyId (Just name) eventsHost [writeAudit]
   r1 <- runExceptT $ createPolicy db systemPolicy
   case r1 of
